@@ -1,0 +1,1 @@
+*/15 * * * * bash -c /opt/dataflo/python/ops/docker/refresh_git_config.sh >> /var/log/cron.log 2>&1
