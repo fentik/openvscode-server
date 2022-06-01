@@ -87,4 +87,4 @@ cat <<EOF > $VSCODE_WORKSPACE/.vscode/settings.json
 EOF
 
 cd /opt/vscode-reh-web-linux-x64
-./bin/openvscode-server --port 3001 --host 0.0.0.0 --without-connection-token $VSCODE_WORKSPACE
+./bin/openvscode-server --port 3001 --host 0.0.0.0 --without-connection-token --default-folder $VSCODE_WORKSPACE
