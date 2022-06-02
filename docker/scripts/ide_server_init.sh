@@ -47,6 +47,8 @@ fi
 
 git config --global core.excludesFile '~/.gitignore'
 echo ".vscode" > ~/.gitignore
+# for legacy repos, we want to ignore the old theia directory
+echo ".theia" > ~/.gitignore
 
 # post checkout hook to update current working branch
 git config --global core.hooksPath ~/.git/hooks
