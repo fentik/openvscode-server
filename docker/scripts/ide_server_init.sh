@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Sets up the environment for the IDE server and start it up.
-cat <<EOF >> $HOME/.bashrc
+cat <<EOF > $HOME/.bashrc
 #
 # Environment variables added by Docker init script that are used by other programs.
 #
@@ -47,9 +47,6 @@ fi
 
 git config --global core.excludesFile '~/.gitignore'
 echo ".vscode" > ~/.gitignore
-
-# for legacy repos, we want to ignore the old theia directory
-echo ".theia" > ~/.gitignore
 
 # post checkout hook to update current working branch
 git config --global core.hooksPath ~/.git/hooks
