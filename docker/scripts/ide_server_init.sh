@@ -47,6 +47,7 @@ fi
 
 git config --global core.excludesFile '~/.gitignore'
 echo ".vscode" > ~/.gitignore
+
 # for legacy repos, we want to ignore the old theia directory
 echo ".theia" > ~/.gitignore
 
@@ -71,6 +72,12 @@ chmod u+x ~/.git/hooks/post-checkout
 
 
 VSCODE_WORKSPACE=$HOME/repo/$REPO_NAME
+
+# for users migrating from theia to vscode, we want to move
+# the .theia directory out of the way
+if [ -d $VSCODE_WORKSPACE/.theia ]; then
+	mv $VSCODE_WORKSPACE/.theia ~/theia-backup
+fi
 
 # Autoload Fentik driver so that we can run SQL queries
 mkdir -p $VSCODE_WORKSPACE/.vscode
