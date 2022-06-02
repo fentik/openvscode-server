@@ -15,6 +15,6 @@ RUN chmod 0644 /etc/cron.d/refresh_git_config_cron
 RUN crontab /etc/cron.d/refresh_git_config_cron
 WORKDIR "/opt/openvscode-server"
 COPY "./" "./"
-RUN yarn && yarn gulp vscode-reh-web-linux-x64
+RUN ./docker/build_vscode.sh
 CMD [ "bash", "-c", "./docker/scripts/ide_server_init.sh" ]
 EXPOSE 3001/tcp
