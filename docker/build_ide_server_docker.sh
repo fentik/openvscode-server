@@ -32,7 +32,6 @@ done
 
 if [ $DEPLOY_ENV == "prod" ]; then
     ECR_REPOSITORY="prod-dataflo-ide-server"
-    GIT_BRANCH="main"
 fi
 
 
@@ -45,8 +44,8 @@ if [ ! $LOCAL ]; then
     TMP_DIR=$(mktemp -d)
     echo "Using $TMP_DIR to build docker image..."
     cd $TMP_DIR
-    git clone -b $GIT_BRANCH git@github.com:fentik/dataflo.git
-    cd dataflo
+    git clone -b $GIT_BRANCH git@github.com:fentik/openvscode-server.git
+    cd openvscode-server
 else
     echo "Building docker image from local repo assuming the script was run from dataflo/python..."
 fi
