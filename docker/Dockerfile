@@ -15,6 +15,6 @@ RUN chmod 0644 /etc/cron.d/refresh_git_config_cron
 RUN crontab /etc/cron.d/refresh_git_config_cron
 WORKDIR "/opt/openvscode-server"
 COPY "./" "./"
-RUN ./docker/build_vscode.sh
+RUN ./docker/build_vscode.sh ${BUILDARCH}
 CMD [ "bash", "-c", "./docker/scripts/ide_server_init.sh" ]
 EXPOSE 3001/tcp
