@@ -12,4 +12,9 @@ case $1 in
     arm64)
        yarn gulp vscode-reh-web-linux-arm64-min
        ;;
+
+    *)
+       echo Unsupported platform $1
+       exit 1
+       ;;
 esac
