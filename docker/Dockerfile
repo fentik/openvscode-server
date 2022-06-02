@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 FROM node:16.15.0-buster
+ARG BUILDARCH
 RUN apt-get update && \
     apt-get install -y libsecret-1-dev libx11-dev libxkbfile-dev \
     bash \
