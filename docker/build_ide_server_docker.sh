@@ -2,6 +2,17 @@
 
 # Builds dataflo-ide-server docker.
 
+#
+# To build production docker
+#      build_docker_ide_server.sh --prod
+#
+# To build a dev docker image for linux (x86)
+#      build_docker_ide_server.sh --dev
+#
+# To build a dev docker image for arm64
+#      build_docker_ide_server.sh --dev --arm
+#
+
 set -e
 
 ECR_HOST="460511261886.dkr.ecr.us-east-1.amazonaws.com"
@@ -9,6 +20,8 @@ ECR_REPOSITORY="dev-dataflo-ide-server"
 GIT_BRANCH='fentik'
 ECR_REGION='us-east-1'
 DEPLOY_ENV='dev'
+
+PLATFORM=`uname -m`
 
 while :; do
     case $1 in
@@ -24,6 +37,9 @@ while :; do
         --local)
             LOCAL='TRUE'
             ;;
+	--arm)
+           PLATFORM='arm64'
+           ;;
         *)
             break
     esac
