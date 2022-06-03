@@ -54,8 +54,6 @@ fi
 ECR_REPO_FQN="$ECR_HOST/$ECR_REPOSITORY"
 DOCKER_FILE_PATH="docker/Dockerfile"
 
-PLATFORM=`uname -m`
-
 case $PLATFORM in
     x86_64)
 	BUILDARCH='x64'
