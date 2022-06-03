@@ -40,6 +40,15 @@ DOCKER_FILE_PATH="docker/Dockerfile"
 
 PLATFORM=`uname -m`
 
+case $PLATFORM in
+    x86_64)
+	BUILDARCH='x64'
+	;;
+    *)
+	BUILDARCH=$PLATFORM
+	;;
+esac
+
 if [ ! $LOCAL ]; then
     TMP_DIR=$(mktemp -d)
     echo "Using $TMP_DIR to build docker image..."
@@ -53,7 +62,7 @@ fi
 GIT_SHA=$(git rev-parse $GIT_BRANCH)
 # Login to ECR.
 aws ecr get-login-password --region $ECR_REGION|docker login --username AWS --password-stdin $ECR_HOST
-docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" -f "$DOCKER_FILE_PATH" .
+docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg BUILDARCH=$BUILDARCH -f "$DOCKER_FILE_PATH" .
 
 if [ ! $NO_PUSH ] && [ ! $LOCAL ]; then
     docker push -a "$ECR_REPO_FQN"
