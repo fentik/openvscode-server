@@ -3,13 +3,13 @@
 # Builds dataflo-ide-server docker.
 
 #
-# To build production docker
+# To build production docker (Should be run on a Linux box)
 #      build_docker_ide_server.sh --prod
 #
-# To build a dev docker image for linux (x86)
+# To build a dev docker image (Builds a Linux or Mac build depending on where you run it)
 #      build_docker_ide_server.sh --dev
 #
-# To build a dev docker image for arm64
+# To build a dev docker image for arm64 (Mac)
 #      build_docker_ide_server.sh --dev --arm
 #
 
@@ -22,6 +22,7 @@ ECR_REGION='us-east-1'
 DEPLOY_ENV='dev'
 
 PLATFORM=`uname -m`
+BUILDARCH='linux-x64'
 
 while :; do
     case $1 in
@@ -37,9 +38,9 @@ while :; do
         --local)
             LOCAL='TRUE'
             ;;
-	--arm)
-           PLATFORM='arm64'
-           ;;
+        --arm)
+            BUILDARCH='darwin-arm64'
+            PLATFORM='arm64'
         *)
             break
     esac
@@ -54,14 +55,6 @@ fi
 ECR_REPO_FQN="$ECR_HOST/$ECR_REPOSITORY"
 DOCKER_FILE_PATH="docker/Dockerfile"
 
-case $PLATFORM in
-    x86_64)
-	BUILDARCH='x64'
-	;;
-    *)
-	BUILDARCH=$PLATFORM
-	;;
-esac
 
 if [ ! $LOCAL ]; then
     TMP_DIR=$(mktemp -d)
