@@ -5,7 +5,7 @@ set -e
 yarn
 
 case $1 in
-    x86_64)
+    x64)
        yarn gulp vscode-reh-web-linux-x64-min
        ;;
 
