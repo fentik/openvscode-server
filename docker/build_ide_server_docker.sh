@@ -39,8 +39,9 @@ while :; do
             LOCAL='TRUE'
             ;;
         --arm)
-            BUILDARCH='darwin-arm64'
+            BUILDARCH='linux-arm64'
             PLATFORM='arm64'
+            ;;
         *)
             break
     esac
