@@ -40,7 +40,6 @@ while :; do
             ;;
         --arm)
             BUILDARCH='linux-arm64'
-            PLATFORM='arm64'
             ;;
         *)
             break
