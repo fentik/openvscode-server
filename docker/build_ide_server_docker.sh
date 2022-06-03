@@ -10,7 +10,7 @@
 #      build_docker_ide_server.sh --dev
 #
 # To build a dev docker image for arm64 (Mac)
-#      build_docker_ide_server.sh --dev --arm
+#      build_docker_ide_server.sh --dev
 #
 
 set -e
@@ -22,7 +22,12 @@ ECR_REGION='us-east-1'
 DEPLOY_ENV='dev'
 
 PLATFORM=`uname -m`
-BUILDARCH='linux-x64'
+
+if [ "$PLATFORM" == "x86_64" ]; then
+    BUILDARCH='linux-x64'
+elif [ "$PLATFORM" == "arm64" ]; then
+    BUILDARCH='linux-arm64'
+fi
 
 while :; do
     case $1 in
@@ -37,9 +42,6 @@ while :; do
             ;;
         --local)
             LOCAL='TRUE'
-            ;;
-        --arm)
-            BUILDARCH='linux-arm64'
             ;;
         *)
             break
@@ -69,7 +71,7 @@ fi
 GIT_SHA=$(git rev-parse $GIT_BRANCH)
 # Login to ECR.
 aws ecr get-login-password --region $ECR_REGION|docker login --username AWS --password-stdin $ECR_HOST
-docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg BUILDARCH=$BUILDARCH -f "$DOCKER_FILE_PATH" .
+docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg "BUILDARCH=$BUILDARCH" -f "$DOCKER_FILE_PATH" .
 
 if [ ! $NO_PUSH ] && [ ! $LOCAL ]; then
     docker push -a "$ECR_REPO_FQN"
