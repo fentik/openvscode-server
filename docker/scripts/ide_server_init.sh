@@ -94,6 +94,6 @@ EOF
 
 cd /opt/vscode-reh-web
 ./bin/openvscode-server --install-extension /opt/openvscode-server/binary-dependencies/vscode-fentik-0.0.1.vsix
-./bin/openvscode-server --install-extension /opt/openvscode-server/binary-dependencies/sqltools-0.24.0.vsix
-./bin/openvscode-server --install-extension /opt/openvscode-server/binary-dependencies/sqltools-driver-fentik-0.1.0.vsix
+#./bin/openvscode-server --install-extension /opt/openvscode-server/binary-dependencies/sqltools-0.24.0.vsix
+#./bin/openvscode-server --install-extension /opt/openvscode-server/binary-dependencies/sqltools-driver-fentik-0.1.0.vsix
 ./bin/openvscode-server --port 3001 --host 0.0.0.0 --without-connection-token --default-folder $VSCODE_WORKSPACE --default-workspace $VSCODE_WORKSPACE
