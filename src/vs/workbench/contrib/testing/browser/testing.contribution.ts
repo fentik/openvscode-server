@@ -27,7 +27,7 @@ import { ITestingOutputTerminalService, TestingOutputTerminalService } from 'vs/
 import { ITestingProgressUiService, TestingProgressTrigger, TestingProgressUiService } from 'vs/workbench/contrib/testing/browser/testingProgressUiService';
 import { TestingViewPaneContainer } from 'vs/workbench/contrib/testing/browser/testingViewPaneContainer';
 import { testingConfiguation } from 'vs/workbench/contrib/testing/common/configuration';
-import { TestCommandId, Testing } from 'vs/workbench/contrib/testing/common/constants';
+import { Testing } from 'vs/workbench/contrib/testing/common/constants';
 import { ITestItem, TestRunProfileBitset } from 'vs/workbench/contrib/testing/common/testTypes';
 import { ITestExplorerFilterState, TestExplorerFilterState } from 'vs/workbench/contrib/testing/common/testExplorerFilterState';
 import { TestId, TestPosition } from 'vs/workbench/contrib/testing/common/testId';
