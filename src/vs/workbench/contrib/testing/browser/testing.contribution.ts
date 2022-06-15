@@ -77,10 +77,12 @@ viewsRegistry.registerViewWelcomeContent(Testing.ExplorerViewId, {
 	content: localize('noTestProvidersRegistered', "No tests have been found in this workspace yet."),
 });
 
+/*
 viewsRegistry.registerViewWelcomeContent(Testing.ExplorerViewId, {
 	content: '[' + localize('searchForAdditionalTestExtensions', "Install Additional Test Extensions...") + `](command:${TestCommandId.SearchForTestExtension})`,
 	order: 10
 });
+*/
 
 viewsRegistry.registerViews([{
 	id: Testing.ExplorerViewId,
