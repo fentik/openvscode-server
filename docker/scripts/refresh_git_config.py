@@ -11,7 +11,7 @@ This script runs as a cron job in the IDE docker container, so make sure we don'
 other than core python
 """
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.basicConfig(format='[%(asctime)s %(levelname)-2s] %(message)s', stream=sys.stdout, level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def update_git_config(access_token):
