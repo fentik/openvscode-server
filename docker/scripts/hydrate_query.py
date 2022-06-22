@@ -108,6 +108,10 @@ if __name__ == '__main__':
         models_path = os.path.dirname(path) + '/models'
         break
 
-    query = sys.stdin.read()
+    query = ""
+    if len(sys.argv) == 2:
+       query = file_contents(sys.argv[1])
+    else:
+       query = sys.stdin.read()
     query = build_cte(sanitize(query), models_path)
     sys.stdout.write(query)
