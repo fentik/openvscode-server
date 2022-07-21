@@ -88,7 +88,9 @@ cat <<EOF > $VSCODE_WORKSPACE/.vscode/settings.json
         }
     ],
     "sqltools.highlightQuery": false,
-    "workbench.colorTheme": "light"
+    "workbench.colorTheme": "light",
+    "workbench.editor.closeEmptyGroup": false,
+    "workbench.editor.enablePreview": false,
 }
 EOF
 
