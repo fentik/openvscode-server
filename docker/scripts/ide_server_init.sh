@@ -80,16 +80,8 @@ fi
 mkdir -p $VSCODE_WORKSPACE/.vscode
 cat <<EOF > $VSCODE_WORKSPACE/.vscode/settings.json
 {
-    "sqltools.connections": [
-        {
-            "previewLimit": 100,
-            "driver": "Fentik",
-            "name": "Fentik"
-        }
-    ],
-    "sqltools.highlightQuery": false,
     "workbench.colorTheme": "light",
-    "workbench.editor.closeEmptyGroup": false,
+    "workbench.editor.closeEmptyGroups": false,
     "workbench.editor.enablePreview": false,
 }
 EOF
