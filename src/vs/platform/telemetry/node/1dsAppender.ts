@@ -6,8 +6,6 @@
 import type { AppInsightsCore } from '@microsoft/1ds-core-js';
 import type { IPayloadData, IXHROverride } from '@microsoft/1ds-post-js';
 import * as https from 'https';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { AbstractOneDataSystemAppender } from 'vs/platform/telemetry/common/1dsAppender';
 
 

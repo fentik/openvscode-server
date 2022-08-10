@@ -7,8 +7,6 @@ import type { AppInsightsCore, IExtendedConfiguration } from '@microsoft/1ds-cor
 import type { IChannelConfiguration, IXHROverride, PostChannel } from '@microsoft/1ds-post-js';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { mixin } from 'vs/base/common/objects';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ITelemetryAppender, validateTelemetryData } from 'vs/platform/telemetry/common/telemetryUtils';
 
 const endpointUrl = 'https://mobile.events.data.microsoft.com/OneCollector/1.0';
