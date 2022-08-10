@@ -4,11 +4,22 @@
 	"applicationName": "openvscode-server",
 	"dataFolderName": ".openvscode-server",
 	"win32MutexName": "openvscodeserver",
+	"nameShort": "OpenVSCode Server",
+	"nameLong": "OpenVSCode Server",
+	"applicationName": "openvscode-server",
+	"dataFolderName": ".openvscode-server",
+	"win32MutexName": "openvscodeserver",
 	"licenseName": "MIT",
+	"licenseUrl": "https://github.com/gitpod-io/openvscode-server/blob/main/LICENSE.txt",
 	"licenseUrl": "https://github.com/gitpod-io/openvscode-server/blob/main/LICENSE.txt",
 	"serverGreeting": [],
 	"serverLicense": [],
 	"serverLicensePrompt": "",
+	"serverApplicationName": "openvscode-server",
+	"serverDataFolderName": ".openvscode-server",
+	"win32DirName": "OpenVSCode Server",
+	"win32NameVersion": "OpenVSCode Server",
+	"win32RegValueName": "OpenVSCodeServer",
 	"serverApplicationName": "openvscode-server",
 	"serverDataFolderName": ".openvscode-server",
 	"win32DirName": "OpenVSCode Server",
@@ -24,9 +35,21 @@
 	"win32ShellNameShort": "OpenVSC&ode Server",
 	"darwinBundleIdentifier": "openvscode.server",
 	"linuxIconName": "openvscode.server",
+	"win32AppUserModelId": "OpenVSCode Server",
+	"win32ShellNameShort": "OpenVSC&ode Server",
+	"darwinBundleIdentifier": "openvscode.server",
+	"linuxIconName": "openvscode.server",
 	"licenseFileName": "LICENSE.txt",
+	"twitterUrl": "https://twitter.com/gitpod",
 	"reportIssueUrl": "https://github.com/gitpod-io/openvscode-server/issues/new",
+	"requestFeatureUrl": "https://github.com/gitpod-io/openvscode-server/issues",
+	"reportMarketplaceIssueUrl": "https://github.com/eclipse/openvsx/issues",
+	"sendASmile": {
+		"reportIssueUrl": "https://github.com/gitpod-io/openvscode-server/issues/new",
+		"requestFeatureUrl": "https://github.com/gitpod-io/openvscode-server/issues"
+	},
 	"urlProtocol": "openvscode-server",
+	"embedderIdentifier": "openvscode-server",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/3c8520fab514b9f56070214496b26ff68d1b1cb5/out/vs/workbench/contrib/webview/browser/pre/",
 	"extensionEnabledApiProposals": {
 		"ms-vscode.vscode-selfhost-test-provider": [
@@ -48,14 +71,10 @@
 			"notebookControllerKind",
 			"notebookDebugOptions",
 			"notebookEditor",
-			"notebookEditorEdit",
 			"notebookLiveShare",
 			"notebookMessaging",
 			"notebookMime",
 			"notebookWorkspaceEdit"
-		],
-		"tanhakabir.rest-book": [
-			"notebookEditor"
 		],
 		"ms-vscode.js-debug-nightly": [
 			"portsAttributes",
@@ -79,13 +98,13 @@
 			"notebookDebugOptions",
 			"notebookDeprecated",
 			"notebookEditor",
-			"notebookEditorDecorationType",
 			"notebookWorkspaceEdit",
 			"notebookMessaging",
 			"notebookMime",
 			"notebookCellExecutionState",
 			"portsAttributes",
-			"quickPickSortByLabel"
+			"quickPickSortByLabel",
+			"notebookKernelSource"
 		],
 		"ms-toolsai.vscode-jupyter-powertoys": [
 			"notebookEditor",
@@ -691,7 +710,7 @@
 		},
 		{
 			"name": "ms-vscode.js-debug",
-			"version": "1.68.0",
+			"version": "1.69.0",
 			"repo": "https://github.com/microsoft/vscode-js-debug",
 			"metadata": {
 				"id": "25629058-ddac-4e17-abba-74678e126c5d",
