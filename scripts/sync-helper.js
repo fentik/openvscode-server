@@ -85,6 +85,7 @@ const propiertaryExtension = [
 	'ms-vscode.remote-repositories',
 	'ms-vscode-remote.remote-wsl',
 	'ms-vscode-remote.remote-ssh',
+	'ms-vscode.remote-server',
 	'GitHub.copilot',
 	'GitHub.copilot-nightly',
 	'GitHub.remotehub',
@@ -93,6 +94,29 @@ const propiertaryExtension = [
 	'ms-vscode.azure-sphere-tools-ui',
 	'ms-azuretools.vscode-azureappservice',
 ];
+
+const openvsxExtensionMap = {
+	'ms-dotnettools.csharp': 'muhammad-sammy.csharp'
+};
+
+function filterObj(obj, predicate) {
+	const result = Object.create(null);
+	for (const [key, value] of Object.entries(obj)) {
+		if (predicate(key, value)) {
+			result[key] = value;
+		}
+	}
+	return result;
+}
+
+function renameObjKey(obj, predicate) {
+	const result = Object.create(null);
+	for (const [key, value] of Object.entries(obj)) {
+		const newKey = predicate(key, value) ?? key;
+		result[newKey] = value;
+	}
+	return result;
+}
 
 async function start() {
 	const localPath = path.join(__dirname, '../product.json');
@@ -106,7 +130,14 @@ async function start() {
 	const releaseProduct = JSON.parse(await fs.promises.readFile(releasePath, { encoding: 'utf8' }));
 	const tmpProductPath = path.join(__dirname, '../product-tmp.json');
 	for (let key of pickKeys) {
-		branchProduct[key] = releaseProduct[key];
+		let newValue = releaseProduct[key];
+		if (Array.isArray(newValue) && newValue.length && typeof newValue[0] === 'string') {
+			newValue = newValue.map(v => openvsxExtensionMap[v] ?? v).filter(v => !propiertaryExtension.includes(v));
+		} else if (typeof newValue === 'object' && newValue !== null) {
+			newValue = renameObjKey(newValue, k => openvsxExtensionMap[k] ?? k);
+			newValue = filterObj(newValue, k => !propiertaryExtension.includes(k));
+		}
+		branchProduct[key] = newValue;
 	}
 
 	await fs.promises.writeFile(tmpProductPath, JSON.stringify(branchProduct, null, '\t'));
