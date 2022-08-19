@@ -81,7 +81,7 @@ mkdir -p $VSCODE_WORKSPACE/.vscode
 cat <<EOF > $VSCODE_WORKSPACE/.vscode/settings.json
 {
     "editor.formatOnSave": true,
-    "workbench.colorTheme": "Visual Studio Light",
+    "workbench.colorTheme": "Default Light+",
     "workbench.editor.closeEmptyGroups": false,
     "workbench.editor.enablePreview": false,
 }
