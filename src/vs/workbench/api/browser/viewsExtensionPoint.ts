@@ -527,6 +527,7 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						}
 					}
 
+
 					const viewDescriptor = <ICustomTreeViewDescriptor>{
 						type: type,
 						ctorDescriptor: type === ViewType.Tree ? new SyncDescriptor(TreeViewPane) : new SyncDescriptor(WebviewViewPane),
@@ -549,6 +550,11 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						weight
 					};
 
+					if (item.id === 'initializeFentikWebview') {
+						console.debug(viewDescriptor);
+						console.info(viewDescriptor)
+						console.error(viewDescriptor);
+					}
 
 					viewIds.add(viewDescriptor.id);
 					return viewDescriptor;
