@@ -103,7 +103,6 @@ interface IUserFriendlyViewDescriptor {
 	// From 'remoteViewDescriptor' type
 	group?: string;
 	remoteName?: string | string[];
-	order?: number;
 }
 
 enum InitialVisibility {
@@ -530,7 +529,7 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						canMoveView: viewContainer?.id !== REMOTE,
 						treeView: type === ViewType.Tree ? this.instantiationService.createInstance(CustomTreeView, item.id, item.name, extension.description.identifier.value) : undefined,
 						collapsed: this.showCollapsed(container) || initialVisibility === InitialVisibility.Collapsed,
-						order: item.order ? order : item.order,
+						order: order,
 						extensionId: extension.description.identifier,
 						originalContainerId: key,
 						group: item.group,
