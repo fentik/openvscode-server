@@ -104,6 +104,7 @@ interface IUserFriendlyViewDescriptor {
 	group?: string;
 	remoteName?: string | string[];
 	order?: number;
+	canMoveView?: boolean
 }
 
 enum InitialVisibility {
@@ -166,7 +167,15 @@ const viewDescriptor: IJSONSchema = {
 		},
 		size: {
 			type: 'number',
-			description: localize('vscode.extension.contributs.view.size', "The size of the view. Using a number will behave like the css 'flex' property, and the size will set the initial size when the view is first shown. In the side bar, this is the height of the view."),
+			description: localize('vscode.extension.contributes.view.size', "The size of the view. Using a number will behave like the css 'flex' property, and the size will set the initial size when the view is first shown. In the side bar, this is the height of the view."),
+		},
+		order: {
+			type: 'number',
+			description: localize('vscode.extension.contributes.view.order', "The order in which the view should appear")
+		},
+		canMoveView: {
+			type: 'boolean',
+			description: localize('vscode.extension.contributes.view.canMoveView', 'Determines if a view is movable or not.')
 		}
 	}
 };
@@ -527,7 +536,7 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						containerIcon: icon || viewContainer?.icon,
 						containerTitle: item.contextualTitle || viewContainer?.title,
 						canToggleVisibility: true,
-						canMoveView: viewContainer?.id !== REMOTE,
+						canMoveView: item.canMoveView || viewContainer?.id !== REMOTE,
 						treeView: type === ViewType.Tree ? this.instantiationService.createInstance(CustomTreeView, item.id, item.name, extension.description.identifier.value) : undefined,
 						collapsed: this.showCollapsed(container) || initialVisibility === InitialVisibility.Collapsed,
 						order: item.order ? item.order : order,
