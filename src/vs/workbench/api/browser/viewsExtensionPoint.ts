@@ -550,11 +550,6 @@ class ViewsExtensionHandler implements IWorkbenchContribution {
 						weight
 					};
 
-					if (viewDescriptor.id === 'initializeFentikWebview') {
-						this.logService.warn("Ending values for order, group, and canMoveView {0}, {1}, {2}", viewDescriptor.order, viewDescriptor.group, viewDescriptor.canMoveView)
-
-					}
-
 					viewIds.add(viewDescriptor.id);
 					return viewDescriptor;
 				}));
