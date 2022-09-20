@@ -37,6 +37,8 @@ const textMimeType = {
 	'.svg': 'image/svg+xml',
 } as { [ext: string]: string | undefined };
 
+const cdnQueryName = "cdn";
+
 /**
  * Return an error to the client.
  */
@@ -326,6 +328,7 @@ export class WebClientServer {
 			WORKBENCH_WEB_CONFIGURATION: asJSON(workbenchWebConfiguration),
 			WORKBENCH_AUTH_SESSION: authSessionInfo ? asJSON(authSessionInfo) : '',
 			WORKBENCH_WEB_BASE_URL: this._staticRoute,
+			WORKBENCH_WEB_CDN_URL: parsedUrl.query[cdnQueryName] ? parsedUrl.query[cdnQueryName] : '',
 			WORKBENCH_NLS_BASE_URL: nlsBaseUrl ? `${nlsBaseUrl}${!nlsBaseUrl.endsWith('/') ? '/' : ''}${this._productService.commit}/${this._productService.version}/` : '',
 		};
 
