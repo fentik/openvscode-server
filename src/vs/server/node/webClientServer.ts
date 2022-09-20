@@ -327,8 +327,7 @@ export class WebClientServer {
 		const values: { [key: string]: string } = {
 			WORKBENCH_WEB_CONFIGURATION: asJSON(workbenchWebConfiguration),
 			WORKBENCH_AUTH_SESSION: authSessionInfo ? asJSON(authSessionInfo) : '',
-			WORKBENCH_WEB_BASE_URL: this._staticRoute,
-			WORKBENCH_WEB_CDN_URL: parsedUrl.query[cdnQueryName] ? parsedUrl.query[cdnQueryName] : '',
+			WORKBENCH_WEB_BASE_URL: parsedUrl.query[cdnQueryName] ? parsedUrl.query[cdnQueryName]  + this._staticRoute : this._staticRoute,
 			WORKBENCH_NLS_BASE_URL: nlsBaseUrl ? `${nlsBaseUrl}${!nlsBaseUrl.endsWith('/') ? '/' : ''}${this._productService.commit}/${this._productService.version}/` : '',
 		};
 
