@@ -349,7 +349,7 @@ export class WebClientServer {
 			'child-src \'self\';',
 			`frame-src 'self' https://*.vscode-cdn.net data:;`,
 			'worker-src \'self\' data:;',
-			'style-src \'self\' \'unsafe-inline\';',
+			'style-src \'self\' \'unsafe-inline\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;',
 			'connect-src \'self\' ws: wss: https:;',
 			'font-src \'self\' blob:;',
 			'manifest-src \'self\';'
