@@ -84,7 +84,9 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
-		responseHeaders['Access-Control-Allow-Origin'] = remoteAuthority
+		if (remoteAuthority) {
+			responseHeaders['Access-Control-Allow-Origin'] = `http://${remoteAuthority}`;
+		}
 
 		res.writeHead(200, responseHeaders);
 
