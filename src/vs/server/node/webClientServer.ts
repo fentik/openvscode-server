@@ -344,15 +344,15 @@ export class WebClientServer {
 		const cspDirectives = [
 			'default-src \'self\';',
 			'img-src \'self\' https: data: blob:;',
-			'media-src \'self\';',
+			'media-src \'self\'https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;',
 			`script-src 'self' 'unsafe-eval' ${this._getScriptCspHashes(data).join(' ')} 'sha256-fh3TwPMflhsEIpR8g1OYTIMVWhXTLcjQ9kh2tIpmv54=' http://${remoteAuthority} https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;`, // the sha is the same as in src/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.html
 			'child-src \'self\';',
-			`frame-src 'self' https://*.vscode-cdn.net data:;`,
+			`frame-src 'self' https://*.vscode-cdn.net https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com data:;`,
 			'worker-src \'self\' data:;',
 			'style-src \'self\' \'unsafe-inline\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;',
 			'connect-src \'self\' ws: wss: https:;',
-			'font-src \'self\' blob:;',
-			'manifest-src \'self\';'
+			'font-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com blob:;',
+			'manifest-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;'
 		].join(' ');
 
 		const headers: http.OutgoingHttpHeaders = {
