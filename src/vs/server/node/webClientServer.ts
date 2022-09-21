@@ -37,7 +37,12 @@ const textMimeType = {
 	'.svg': 'image/svg+xml',
 } as { [ext: string]: string | undefined };
 
-const cdnQueryName = "cdn";
+const cdnEnvironmentName = "cdn";
+
+enum AllowedCdnResources {
+	staging ='https://cdn-ide.staging.fentik.com',
+	production ='https://cdn-ide.fentik.com'
+}
 
 /**
  * Return an error to the client.
@@ -324,10 +329,12 @@ export class WebClientServer {
 		};
 
 		const nlsBaseUrl = this._productService.extensionsGallery?.nlsBaseUrl;
+		const cdnEnvironment = parsedUrl.query[cdnEnvironmentName];
+		const cdn = AllowedCdnResources[cdnEnvironment as keyof typeof AllowedCdnResources] || '';
 		const values: { [key: string]: string } = {
 			WORKBENCH_WEB_CONFIGURATION: asJSON(workbenchWebConfiguration),
 			WORKBENCH_AUTH_SESSION: authSessionInfo ? asJSON(authSessionInfo) : '',
-			WORKBENCH_WEB_BASE_URL: parsedUrl.query[cdnQueryName] ? parsedUrl.query[cdnQueryName]  + this._staticRoute : this._staticRoute,
+			WORKBENCH_WEB_BASE_URL: cdn + this._staticRoute,
 			WORKBENCH_NLS_BASE_URL: nlsBaseUrl ? `${nlsBaseUrl}${!nlsBaseUrl.endsWith('/') ? '/' : ''}${this._productService.commit}/${this._productService.version}/` : '',
 		};
 
@@ -344,20 +351,21 @@ export class WebClientServer {
 		const cspDirectives = [
 			'default-src \'self\';',
 			'img-src \'self\' https: data: blob:;',
-			'media-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;',
-			`script-src 'self' 'unsafe-eval' ${this._getScriptCspHashes(data).join(' ')} 'sha256-fh3TwPMflhsEIpR8g1OYTIMVWhXTLcjQ9kh2tIpmv54=' http://${remoteAuthority} https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;`, // the sha is the same as in src/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.html
+			`media-src \'self\' ${cdn};`,
+			`script-src 'self' 'unsafe-eval' ${this._getScriptCspHashes(data).join(' ')} 'sha256-fh3TwPMflhsEIpR8g1OYTIMVWhXTLcjQ9kh2tIpmv54=' http://${remoteAuthority} ${cdn};`, // the sha is the same as in src/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.html
 			'child-src \'self\';',
-			`frame-src 'self' https://*.vscode-cdn.net https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com data:;`,
-			'worker-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com data:;',
-			'style-src \'self\' \'unsafe-inline\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;',
+			`frame-src 'self' https://*.vscode-cdn.net ${cdn} data:;`,
+			`worker-src \'self\' ${cdn} data:;`,
+			`style-src \'self\' \'unsafe-inline\' ${cdn};`,
 			'connect-src \'self\' ws: wss: https:;',
-			'font-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com blob:;',
-			'manifest-src \'self\' https://cdn-ide.staging.fentik.com https://cdn-ide.fentik.com;'
+			`font-src \'self\' ${cdn} blob:;`,
+			`manifest-src \'self\' ${cdn};`
 		].join(' ');
 
 		const headers: http.OutgoingHttpHeaders = {
 			'Content-Type': 'text/html',
-			'Content-Security-Policy': cspDirectives
+			'Content-Security-Policy': cspDirectives,
+			'Access-Control-Allow-Origin': cdn,
 		};
 		if (this._connectionToken.type !== ServerConnectionTokenType.None) {
 			// At this point we know the client has a valid cookie
