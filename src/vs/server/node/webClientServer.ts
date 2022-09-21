@@ -60,7 +60,12 @@ export const enum CacheControl {
  * Serve a file at a given path or 404 if the file is missing.
  */
 export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void> {
+	const getFirstHeader = (headerName: string) => {
+		const val = req.headers[headerName];
+		return Array.isArray(val) ? val[0] : val;
+	};
 	try {
+		const remoteAuthority = getFirstHeader('x-original-host') || getFirstHeader('x-forwarded-host') || req.headers.host;
 		const stat = await fsp.stat(filePath); // throws an error if file doesn't exist
 		if (cacheControl === CacheControl.ETAG) {
 
@@ -79,6 +84,7 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
+		responseHeaders['Access-Control-Allow-Origin'] = remoteAuthority
 
 		res.writeHead(200, responseHeaders);
 
