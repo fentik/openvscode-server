@@ -83,6 +83,8 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 			responseHeaders['Cache-Control'] = 'no-store';
 		}
 
+		responseHeaders['Content-Length'] = stat.size;
+
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
 		if (remoteAuthority) {
 			responseHeaders['Access-Control-Allow-Origin'] = `https://${remoteAuthority}`;
