@@ -83,7 +83,7 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 			responseHeaders['Cache-Control'] = 'no-store';
 		}
 
-		responseHeaders['Content-Length'] = stat.size;
+		if (stat.size) { responseHeaders['Content-Length'] = stat.size.toString() } ;
 
 		responseHeaders['Content-Type'] = textMimeType[extname(filePath)] || getMediaMime(filePath) || 'text/plain';
 		if (remoteAuthority) {
