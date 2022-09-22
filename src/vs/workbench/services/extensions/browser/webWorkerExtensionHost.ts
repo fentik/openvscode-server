@@ -113,7 +113,8 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				);
 
 				const res = new URL(`${baseUrl}/out/${iframeModulePath}${suffix}`);
-				debugger;
+				console.warn(window.origin);
+				console.warn(stableOriginUUID)
 				res.searchParams.set('parentOrigin', window.origin);
 				res.searchParams.set('salt', stableOriginUUID);
 				return res.toString();
