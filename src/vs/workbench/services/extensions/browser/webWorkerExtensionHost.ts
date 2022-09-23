@@ -107,6 +107,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				const hash = await parentOriginHash(window.origin, stableOriginUUID);
 				const baseUrl = (
 					webEndpointUrlTemplate
+						.replace('{{baseUrl}}', "")
 						.replace('{{uuid}}', `v--${hash}`) // using `v--` as a marker to require `parentOrigin`/`salt` verification
 						.replace('{{commit}}', commit)
 						.replace('{{quality}}', quality)

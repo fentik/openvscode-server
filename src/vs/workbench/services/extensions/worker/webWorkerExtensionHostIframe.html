@@ -4,9 +4,8 @@
 		<meta http-equiv="Content-Security-Policy" content="
 			default-src 'none';
 			child-src 'self' data: blob:;
-			script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+			script-src 'self' 'unsafe-eval' 'sha256-/r7rqQ+yrxt57sxLuQ6AMYcy/lUpvAIzHjIJt/OeLWU=' https:;
 			connect-src 'self' https: wss: http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*;"/>
-			<!-- 'sha256-/r7rqQ+yrxt57sxLuQ6AMYcy/lUpvAIzHjIJt/OeLWU=' -->
 	</head>
 	<body>
 	<script>
@@ -78,7 +77,6 @@
 
 			worker.onmessage = (event) => {
 				const { data } = event;
-				debugger;
 
 				if (data?.type === '_newWorker') {
 					const { id, port, url, options } = data;
