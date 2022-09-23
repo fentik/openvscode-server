@@ -4,13 +4,10 @@
 
 #
 # To build production docker (Should be run on a Linux box)
-#      build_docker_ide_server.sh --prod
+#      build_ide_server_docker.sh --prod
 #
-# To build a dev docker image (Builds a Linux or Mac build depending on where you run it)
-#      build_docker_ide_server.sh --dev
-#
-# To build a dev docker image for arm64 (Mac)
-#      build_docker_ide_server.sh --dev
+# To build a dev docker image (Builds a Linux or Mac (arm64) build depending on where you run it)
+#      build_ide_server_docker.sh --dev
 #
 
 set -e
