@@ -348,7 +348,7 @@ function packageTask(type, platform, arch, sourceFolderName, destinationFolderNa
  */
 function tweakProductForServerWeb(product) {
 	const result = { ...product };
-	delete result.webEndpointUrlTemplate;
+	// delete result.webEndpointUrlTemplate;
 	return result;
 }
 
