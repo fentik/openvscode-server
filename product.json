@@ -35,7 +35,7 @@
 	},
 	"urlProtocol": "openvscode-server",
 	"embedderIdentifier": "openvscode-server",
-	"webEndpointUrlTemplate": "{{baseUrl}}",
+	"webEndpointUrlTemplate": "",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/3c8520fab514b9f56070214496b26ff68d1b1cb5/out/vs/workbench/contrib/webview/browser/pre/",
 	"quality": "stable",
 	"extensionEnabledApiProposals": {

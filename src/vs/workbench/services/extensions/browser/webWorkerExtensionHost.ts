@@ -96,7 +96,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			const webEndpointUrlTemplate = this._productService.webEndpointUrlTemplate;
 			const commit = this._productService.commit;
 			const quality = this._productService.quality;
-			if (webEndpointUrlTemplate && commit && quality) {
+			if (webEndpointUrlTemplate !== null && webEndpointUrlTemplate !== undefined && commit && quality) {
 				// Try to keep the web worker extension host iframe origin stable by storing it in workspace storage
 				const key = 'webWorkerExtensionHostIframeStableOriginUUID';
 				let stableOriginUUID = this._storageService.get(key, StorageScope.WORKSPACE);
@@ -107,7 +107,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				const hash = await parentOriginHash(window.origin, stableOriginUUID);
 				const baseUrl = (
 					webEndpointUrlTemplate
-						.replace('{{baseUrl}}', "")
 						.replace('{{uuid}}', `v--${hash}`) // using `v--` as a marker to require `parentOrigin`/`salt` verification
 						.replace('{{commit}}', commit)
 						.replace('{{quality}}', quality)
