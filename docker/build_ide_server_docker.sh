@@ -62,12 +62,13 @@ if [ ! $LOCAL ]; then
     git clone -b $GIT_BRANCH git@github.com:fentik/openvscode-server.git
     cd openvscode-server
 else
-    echo "Building docker image from local repo assuming the script was run from dataflo/python..."
+    echo "Building docker image from local repo assuming the script was run from local openvscode-server repo..."
 fi
 
 GIT_SHA=$(git rev-parse $GIT_BRANCH)
 # Login to ECR.
 aws ecr get-login-password --region $ECR_REGION|docker login --username AWS --password-stdin $ECR_HOST
+echo "Building docker image for $BUILDARCH with git sha $GIT_SHA (Tag: $ECR_REPO_FQN:$PLATFORM-latest)"
 docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg "BUILDARCH=$BUILDARCH" -f "$DOCKER_FILE_PATH" .
 
 if [ ! $NO_PUSH ] && [ ! $LOCAL ]; then
