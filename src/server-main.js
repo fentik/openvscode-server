@@ -99,7 +99,6 @@ async function start() {
 	let address = null;
 	var app = connect();
 
-
  	app.use(compression());
 	app.use(async (req, res) => {
 //	const server = http.createServer(async (req, res) => {
