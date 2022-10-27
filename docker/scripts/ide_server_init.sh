@@ -83,6 +83,9 @@ cat <<EOF > $VSCODE_WORKSPACE/.vscode/settings.json
     "workbench.colorTheme": "Default Light+",
     "workbench.editor.closeEmptyGroups": false,
     "workbench.editor.enablePreview": false,
+	"files.watcherExclude": {
+		"**/.git/**": false
+	}
 }
 EOF
 
