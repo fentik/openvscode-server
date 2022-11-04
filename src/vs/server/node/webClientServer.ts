@@ -40,7 +40,7 @@ const textMimeType = {
 const cdnEnvironmentName = "cdn";
 
 enum AllowedCdnResources {
-	staging ='https://cdn-ide.staging.fentik.com',
+	staging ='https://cdn-ide.staging.rubicon.io',
 	production ='https://cdn-ide.fentik.com'
 }
 
