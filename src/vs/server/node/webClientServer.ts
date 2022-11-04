@@ -41,7 +41,8 @@ const cdnEnvironmentName = "cdn";
 
 enum AllowedCdnResources {
 	staging ='https://cdn-ide.staging.rubicon.io',
-	production ='https://cdn-ide.fentik.com'
+	production ='https://cdn-ide.fentik.com',
+	productionnew ='https://cdn-ide.rubicon.io'
 }
 
 /**
