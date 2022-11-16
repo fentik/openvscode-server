@@ -1,0 +1,32 @@
+name: openvscode-ci
+
+on:
+  push:
+    branches: [fentik]
+  pull_request:
+    branches: [fentik]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    strategy:
+      max-parallel: 4
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          docker/build_ide_server_docker.sh --ci
+        env:
+           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           AWS_EC2_METADATA_DISABLED: true
+
+      - uses: act10ns/slack@v1
+        with:
+          status: ${{ job.status }}
+          channel: '#fentik-github'
+        if: always()
+
