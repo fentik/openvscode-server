@@ -40,6 +40,10 @@ while :; do
         --local)
             LOCAL='TRUE'
             ;;
+        --ci)
+            LOCAL="TRUE"
+            DEPLOY_ENV="dev"
+            ;;
         *)
             break
     esac
@@ -50,28 +54,36 @@ if [ $DEPLOY_ENV == "prod" ]; then
     ECR_REPOSITORY="prod-dataflo-ide-server"
 fi
 
-
 ECR_REPO_FQN="$ECR_HOST/$ECR_REPOSITORY"
 DOCKER_FILE_PATH="docker/Dockerfile"
 
-
-if [ ! $LOCAL ]; then
+if [ ! $LOCAL ] && [ ! $CI ]; then
     TMP_DIR=$(mktemp -d)
     echo "Using $TMP_DIR to build docker image..."
     cd $TMP_DIR
     git clone -b $GIT_BRANCH git@github.com:fentik/openvscode-server.git
     cd openvscode-server
+    GIT_SHA=$(git rev-parse $GIT_BRANCH)
 else
     echo "Building docker image from local repo assuming the script was run from local openvscode-server repo..."
+    GIT_SHA=$(git rev-parse HEAD)
 fi
 
-GIT_SHA=$(git rev-parse $GIT_BRANCH)
 # Login to ECR.
-aws ecr get-login-password --region $ECR_REGION|docker login --username AWS --password-stdin $ECR_HOST
+aws ecr get-login-password --region $ECR_REGION | docker login --username AWS --password-stdin $ECR_HOST
 echo "Building docker image for $BUILDARCH with git sha $GIT_SHA (Tag: $ECR_REPO_FQN:$PLATFORM-latest)"
-docker build -t "$ECR_REPO_FQN:$GIT_SHA"  -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg "BUILDARCH=$BUILDARCH" -f "$DOCKER_FILE_PATH" .
+docker build -t "$ECR_REPO_FQN:$PLATFORM-$GIT_SHA" -t "$ECR_REPO_FQN:$PLATFORM-latest" --build-arg "BUILDARCH=$BUILDARCH" -f "$DOCKER_FILE_PATH" .
 
-if [ ! $NO_PUSH ] && [ ! $LOCAL ]; then
+if [ $CI ]; then
+    # Push the dev image.
+    docker push -a "$ECR_REPO_FQN"
+    # Now also build the prod image and push it.  Without the latest tag, until we start pegging versions.
+    ECR_REPOSITORY="prod-dataflo-ide-server"
+    ECR_REPO_FQN="$ECR_HOST/$ECR_REPOSITORY"
+    docker build -t "$ECR_REPO_FQN:$PLATFORM-$GIT_SHA" --build-arg "BUILDARCH=$BUILDARCH" -f "$DOCKER_FILE_PATH" .
+    docker push -a "$ECR_REPO_FQN"
+
+elif [ ! $NO_PUSH ] && [ ! $LOCAL ]; then
     docker push -a "$ECR_REPO_FQN"
 else
     echo "Not pushing the docker image to ECR because either --no-push or --local was passed as a flag."
