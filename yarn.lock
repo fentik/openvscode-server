@@ -7273,6 +7273,13 @@ minimatch@4.2.1:
   dependencies:
     brace-expansion "^1.1.7"
 
+minimatch@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-4.0.0.tgz#befe49964c07e98a5eb7c5191be997b2aaffacc8"
+  integrity sha512-nUXi6viDR8DREKfJTnzZLh1amprrt6Hepx/WUngirNdiNEDmfkW2DLfiTeXWcMkMY0bRkuQ8eyCSbG3W4D0Qcg==
+  dependencies:
+    brace-expansion "^1.1.7"
+
 minimatch@^5.0.1, minimatch@^5.1.0:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-5.1.1.tgz#6c9dffcf9927ff2a31e74b5af11adf8b9604b022"
