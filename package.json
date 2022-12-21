@@ -230,7 +230,6 @@
   },
   "resolutions": {
     "elliptic": "^6.5.3",
-    "nwmatcher": "^1.4.4",
-    "gulp-untar/tar":  "^6.1.13"
+    "nwmatcher": "^1.4.4"
   }
 }
