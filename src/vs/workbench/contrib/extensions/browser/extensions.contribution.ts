@@ -31,7 +31,7 @@ import { ExtensionActivationProgress } from 'vs/workbench/contrib/extensions/bro
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { ExtensionDependencyChecker } from 'vs/workbench/contrib/extensions/browser/extensionsDependencyChecker';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { ViewContainerLocation, IViewsService } from 'vs/workbench/common/views';
+import { ViewContainerLocation, Extensions as ViewContainerExtensions, IViewsService, IViewContainersRegistry } from 'vs/workbench/common/views';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import { ContextKeyExpr, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
@@ -56,7 +56,7 @@ import { IWorkspaceExtensionsConfigService } from 'vs/workbench/services/extensi
 import { Schemas } from 'vs/base/common/network';
 import { ShowRuntimeExtensionsAction } from 'vs/workbench/contrib/extensions/browser/abstractRuntimeExtensionsEditor';
 import { ExtensionEnablementWorkspaceTrustTransitionParticipant } from 'vs/workbench/contrib/extensions/browser/extensionEnablementWorkspaceTrustTransitionParticipant';
-import { clearSearchResultsIcon, configureRecommendedIcon, filterIcon, installWorkspaceRecommendedIcon, refreshIcon } from 'vs/workbench/contrib/extensions/browser/extensionsIcons';
+import { clearSearchResultsIcon, configureRecommendedIcon, extensionsViewIcon, filterIcon, installWorkspaceRecommendedIcon, refreshIcon } from 'vs/workbench/contrib/extensions/browser/extensionsIcons';
 import { EXTENSION_CATEGORIES } from 'vs/platform/extensions/common/extensions';
 import { Disposable, DisposableStore, IDisposable, isDisposable } from 'vs/base/common/lifecycle';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -76,6 +76,7 @@ import { ExtensionStorageService } from 'vs/platform/extensionManagement/common/
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import product from 'vs/platform/product/common/product';
 import { IStringDictionary } from 'vs/base/common/collections';
+import { KeyMod, KeyCode } from 'vs/editor/editor.api';
 
 // Singletons
 registerSingleton(IExtensionsWorkbenchService, ExtensionsWorkbenchService, InstantiationType.Eager /* Auto updates extensions */);
