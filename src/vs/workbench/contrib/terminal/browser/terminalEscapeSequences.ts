@@ -89,8 +89,7 @@ export const enum VSCodeOscPt {
 }
 
 export const enum VSCodeOscProperty {
-	Task = 'Task',
-	Cwd = 'Cwd'
+	Task = 'Task'
 }
 
 /**
@@ -104,19 +103,9 @@ export const enum ITermOscPt {
 }
 
 export function VSCodeSequence(osc: VSCodeOscPt, data?: string | VSCodeOscProperty): string {
-	return oscSequence(ShellIntegrationOscPs.VSCode, osc, data);
+	return `\x1b]${ShellIntegrationOscPs.VSCode};${osc};${data}\x07`;
 }
 
 export function ITermSequence(osc: ITermOscPt, data?: string): string {
-	return oscSequence(ShellIntegrationOscPs.ITerm, osc, data);
-}
-
-function oscSequence(ps: number, pt: string, data?: string): string {
-	let result = `\x1b]${ps};${pt}`;
-	if (data) {
-		result += `;${data}`;
-	}
-	result += `\x07`;
-	return result;
-
+	return `\x1b]${ShellIntegrationOscPs.ITerm};${osc};${data}\x07`;
 }

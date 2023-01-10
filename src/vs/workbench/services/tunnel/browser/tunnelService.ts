@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { URI } from 'vs/base/common/uri';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IAddressProvider } from 'vs/platform/remote/common/remoteAgentConnection';
 import { AbstractTunnelService, ITunnelService, RemoteTunnel } from 'vs/platform/tunnel/common/tunnel';
@@ -14,14 +13,9 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 export class TunnelService extends AbstractTunnelService {
 	constructor(
 		@ILogService logService: ILogService,
-		@IWorkbenchEnvironmentService private environmentService: IWorkbenchEnvironmentService,
-		@IConfigurationService configurationService: IConfigurationService
+		@IWorkbenchEnvironmentService private environmentService: IWorkbenchEnvironmentService
 	) {
-		super(logService, configurationService);
-	}
-
-	public isPortPrivileged(_port: number): boolean {
-		return false;
+		super(logService);
 	}
 
 	protected retainOrCreateTunnel(_addressProvider: IAddressProvider, remoteHost: string, remotePort: number, localPort: number | undefined, elevateIfNeeded: boolean, privacy?: string, protocol?: string): Promise<RemoteTunnel | undefined> | undefined {
@@ -42,4 +36,4 @@ export class TunnelService extends AbstractTunnelService {
 	}
 }
 
-registerSingleton(ITunnelService, TunnelService, InstantiationType.Delayed);
+registerSingleton(ITunnelService, TunnelService, true);

@@ -21,6 +21,7 @@ const HistoryNavigationForwardsEnablementContext = 'historyNavigationForwardsEna
 const HistoryNavigationBackwardsEnablementContext = 'historyNavigationBackwardsEnabled';
 
 export interface IHistoryNavigationContext extends IDisposable {
+	scopedContextKeyService: IContextKeyService;
 	historyNavigationForwardsEnablement: IContextKey<boolean>;
 	historyNavigationBackwardsEnablement: IContextKey<boolean>;
 }
@@ -28,13 +29,14 @@ export interface IHistoryNavigationContext extends IDisposable {
 let lastFocusedWidget: IHistoryNavigationWidget | undefined = undefined;
 const widgets: IHistoryNavigationWidget[] = [];
 
-export function registerAndCreateHistoryNavigationContext(scopedContextKeyService: IContextKeyService, widget: IHistoryNavigationWidget): IHistoryNavigationContext {
+export function registerAndCreateHistoryNavigationContext(contextKeyService: IContextKeyService, widget: IHistoryNavigationWidget): IHistoryNavigationContext {
 	if (widgets.includes(widget)) {
 		throw new Error('Cannot register the same widget multiple times');
 	}
 
 	widgets.push(widget);
 	const disposableStore = new DisposableStore();
+	const scopedContextKeyService = disposableStore.add(contextKeyService.createScoped(widget.element));
 	const historyNavigationWidgetFocus = new RawContextKey<boolean>(HistoryNavigationWidgetFocusContext, false).bindTo(scopedContextKeyService);
 	const historyNavigationForwardsEnablement = new RawContextKey<boolean>(HistoryNavigationForwardsEnablementContext, true).bindTo(scopedContextKeyService);
 	const historyNavigationBackwardsEnablement = new RawContextKey<boolean>(HistoryNavigationBackwardsEnablementContext, true).bindTo(scopedContextKeyService);
@@ -64,6 +66,7 @@ export function registerAndCreateHistoryNavigationContext(scopedContextKeyServic
 	}));
 
 	return {
+		scopedContextKeyService,
 		historyNavigationForwardsEnablement,
 		historyNavigationBackwardsEnablement,
 		dispose() {
@@ -78,8 +81,7 @@ export class ContextScopedHistoryInputBox extends HistoryInputBox {
 		@IContextKeyService contextKeyService: IContextKeyService
 	) {
 		super(container, contextViewProvider, options);
-		const scopedContextKeyService = this._register(contextKeyService.createScoped(this.element));
-		this._register(registerAndCreateHistoryNavigationContext(scopedContextKeyService, this));
+		this._register(registerAndCreateHistoryNavigationContext(contextKeyService, this));
 	}
 
 }
@@ -87,11 +89,10 @@ export class ContextScopedHistoryInputBox extends HistoryInputBox {
 export class ContextScopedFindInput extends FindInput {
 
 	constructor(container: HTMLElement | null, contextViewProvider: IContextViewProvider, options: IFindInputOptions,
-		@IContextKeyService contextKeyService: IContextKeyService
+		@IContextKeyService contextKeyService: IContextKeyService, showFindOptions: boolean = false
 	) {
-		super(container, contextViewProvider, options);
-		const scopedContextKeyService = this._register(contextKeyService.createScoped(this.inputBox.element));
-		this._register(registerAndCreateHistoryNavigationContext(scopedContextKeyService, this.inputBox));
+		super(container, contextViewProvider, showFindOptions, options);
+		this._register(registerAndCreateHistoryNavigationContext(contextKeyService, this.inputBox));
 	}
 }
 
@@ -101,8 +102,7 @@ export class ContextScopedReplaceInput extends ReplaceInput {
 		@IContextKeyService contextKeyService: IContextKeyService, showReplaceOptions: boolean = false
 	) {
 		super(container, contextViewProvider, showReplaceOptions, options);
-		const scopedContextKeyService = this._register(contextKeyService.createScoped(this.inputBox.element));
-		this._register(registerAndCreateHistoryNavigationContext(scopedContextKeyService, this.inputBox));
+		this._register(registerAndCreateHistoryNavigationContext(contextKeyService, this.inputBox));
 	}
 
 }
@@ -118,7 +118,9 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	primary: KeyCode.UpArrow,
 	secondary: [KeyMod.Alt | KeyCode.UpArrow],
 	handler: (accessor) => {
-		lastFocusedWidget?.showPreviousValue();
+		if (lastFocusedWidget) {
+			lastFocusedWidget.showPreviousValue();
+		}
 	}
 });
 
@@ -133,6 +135,8 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	primary: KeyCode.DownArrow,
 	secondary: [KeyMod.Alt | KeyCode.DownArrow],
 	handler: (accessor) => {
-		lastFocusedWidget?.showNextValue();
+		if (lastFocusedWidget) {
+			lastFocusedWidget.showNextValue();
+		}
 	}
 });

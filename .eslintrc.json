@@ -8,8 +8,7 @@
 	"plugins": [
 		"@typescript-eslint",
 		"jsdoc",
-		"header",
-		"local"
+		"header"
 	],
 	"rules": {
 		"constructor-super": "warn",
@@ -62,18 +61,17 @@
 				]
 			}
 		],
-		"local/code-no-unused-expressions": [
+		"code-no-unused-expressions": [
 			"warn",
 			{
 				"allowTernary": true
 			}
 		],
-		"local/code-translation-remind": "warn",
-		"local/code-no-nls-in-standalone-editor": "warn",
-		"local/code-no-standalone-editor": "warn",
-		"local/code-no-unexternalized-strings": "warn",
-		"local/code-declare-service-brand": "warn",
-		"local/code-layering": [
+		"code-translation-remind": "warn",
+		"code-no-nls-in-standalone-editor": "warn",
+		"code-no-standalone-editor": "warn",
+		"code-no-unexternalized-strings": "warn",
+		"code-layering": [
 			"warn",
 			{
 				"common": [],
@@ -124,8 +122,8 @@
 				"**/*.test.ts"
 			],
 			"rules": {
-				"local/code-no-test-only": "error",
-				"local/code-no-unexternalized-strings": "off"
+				"code-no-test-only": "error",
+				"code-no-unexternalized-strings": "off"
 			}
 		},
 		{
@@ -134,14 +132,14 @@
 				"**/vscode.proposed.*.d.ts"
 			],
 			"rules": {
-				"local/vscode-dts-create-func": "warn",
-				"local/vscode-dts-literal-or-types": "warn",
-				"local/vscode-dts-interface-naming": "warn",
-				"local/vscode-dts-cancellation": "warn",
-				"local/vscode-dts-use-thenable": "warn",
-				"local/vscode-dts-region-comments": "warn",
-				"local/vscode-dts-vscode-in-comments": "warn",
-				"local/vscode-dts-provider-naming": [
+				"vscode-dts-create-func": "warn",
+				"vscode-dts-literal-or-types": "warn",
+				"vscode-dts-interface-naming": "warn",
+				"vscode-dts-cancellation": "warn",
+				"vscode-dts-use-thenable": "warn",
+				"vscode-dts-region-comments": "warn",
+				"vscode-dts-vscode-in-comments": "warn",
+				"vscode-dts-provider-naming": [
 					"warn",
 					{
 						"allowed": [
@@ -156,7 +154,7 @@
 						]
 					}
 				],
-				"local/vscode-dts-event-naming": [
+				"vscode-dts-event-naming": [
 					"warn",
 					{
 						"allowed": [
@@ -202,8 +200,8 @@
 				"src/**/*.ts"
 			],
 			"rules": {
-				"local/code-no-look-behind-regex": "warn",
-				"local/code-import-patterns": [
+				"code-no-look-behind-regex": "warn",
+				"code-import-patterns": [
 					"warn",
 					{
 						// imports that are allowed in all files of layers:
@@ -261,7 +259,6 @@
 							"windows-process-tree",
 							"worker_threads",
 							"xterm",
-							"xterm-addon-canvas",
 							"xterm-addon-search",
 							"xterm-addon-serialize",
 							"xterm-addon-unicode11",
@@ -332,7 +329,7 @@
 							"vs/base/parts/*/~",
 							"vs/platform/*/~",
 							"tas-client-umd", // node module allowed even in /common/
-							"@microsoft/1ds-core-js", // node module allowed even in /common/
+							"@microsoft/1ds-core-js",// node module allowed even in /common/
 							"@microsoft/1ds-post-js" // node module allowed even in /common/
 						]
 					},
@@ -488,14 +485,6 @@
 							{
 								"when": "hasBrowser",
 								"pattern": "vs/workbench/workbench.web.main"
-							},
-							{
-								"when": "hasBrowser",
-								"pattern": "vs/workbench/~"
-							},
-							{
-								"when": "hasBrowser",
-								"pattern": "vs/workbench/services/*/~"
 							}
 						]
 					},
@@ -586,7 +575,7 @@
 				"test/**/*.ts"
 			],
 			"rules": {
-				"local/code-import-patterns": [
+				"code-import-patterns": [
 					"warn",
 					{
 						"target": "test/smoke/**",

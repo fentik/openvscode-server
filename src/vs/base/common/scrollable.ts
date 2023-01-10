@@ -404,7 +404,7 @@ export class SmoothScrollingUpdate {
 
 }
 
-interface IAnimation {
+export interface IAnimation {
 	(completion: number): number;
 }
 

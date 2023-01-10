@@ -124,7 +124,7 @@ function tokenToObj(token: Token, offset: Length, model: TextModel, keyProvider:
 	};
 }
 
-export class TokenizedDocument {
+class TokenizedDocument {
 	private readonly tokensByLine: readonly TokenInfo[][];
 	constructor(tokens: TokenInfo[]) {
 		const tokensByLine = new Array<TokenInfo[]>();
@@ -189,7 +189,7 @@ export class TokenizedDocument {
 	}
 }
 
-export class TokenInfo {
+class TokenInfo {
 	constructor(
 		public readonly text: string,
 		public readonly languageId: LanguageId,

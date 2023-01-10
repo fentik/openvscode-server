@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from 'vs/nls';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
 import { Action2, IMenuService } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -15,10 +14,10 @@ export class MenuHiddenStatesReset extends Action2 {
 		super({
 			id: 'menu.resetHiddenStates',
 			title: {
-				value: localize('title', 'Reset All Menus'),
-				original: 'Reset All Menus'
+				value: localize('title', 'Reset Hidden Menus'),
+				original: 'Reset Hidden Menus'
 			},
-			category: Categories.View,
+			category: localize('cat', 'View'),
 			f1: true
 		});
 	}

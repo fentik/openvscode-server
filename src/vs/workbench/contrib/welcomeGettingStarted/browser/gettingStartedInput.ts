@@ -46,7 +46,7 @@ export class GettingStartedInput extends EditorInput {
 	}
 
 	override getName() {
-		return localize('getStarted', "Welcome");
+		return localize('getStarted', "Get Started");
 	}
 
 	selectedCategory: string | undefined;

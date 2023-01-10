@@ -11,7 +11,7 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { CancellationTokenSource, CancellationToken } from 'vs/base/common/cancellation';
 import { LinkedList } from 'vs/base/common/linkedList';
 import { createDecorator, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { localize } from 'vs/nls';
 
 
@@ -70,7 +70,7 @@ registerSingleton(IEditorCancellationTokens, class implements IEditorCancellatio
 		}
 	}
 
-}, InstantiationType.Delayed);
+}, true);
 
 export class EditorKeybindingCancellationTokenSource extends CancellationTokenSource {
 

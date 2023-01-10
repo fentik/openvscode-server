@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { ClassifiedEvent, IGDPRProperty, OmitMetadata, StrictPropertyCheck } from 'vs/platform/telemetry/common/gdprTypings';
+import { ClassifiedEvent, GDPRClassification, StrictPropertyCheck } from 'vs/platform/telemetry/common/gdprTypings';
+import { IObservableValue } from 'vs/base/common/observableValue';
 
 export const ITelemetryService = createDecorator<ITelemetryService>('telemetryService');
 
@@ -33,26 +34,26 @@ export interface ITelemetryService {
 	/**
 	 * @deprecated Use publicLog2 and the typescript GDPR annotation where possible
 	 */
-	publicLog(eventName: string, data?: ITelemetryData): Promise<void>;
+	publicLog(eventName: string, data?: ITelemetryData, anonymizeFilePaths?: boolean): Promise<void>;
 
 	/**
 	 * Sends a telemetry event that has been privacy approved.
 	 * Do not call this unless you have been given approval.
 	 */
-	publicLog2<E extends ClassifiedEvent<OmitMetadata<T>> = never, T extends IGDPRProperty = never>(eventName: string, data?: StrictPropertyCheck<T, E>): Promise<void>;
+	publicLog2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>, anonymizeFilePaths?: boolean): Promise<void>;
 
 	/**
 	 * @deprecated Use publicLogError2 and the typescript GDPR annotation where possible
 	 */
 	publicLogError(errorEventName: string, data?: ITelemetryData): Promise<void>;
 
-	publicLogError2<E extends ClassifiedEvent<OmitMetadata<T>> = never, T extends IGDPRProperty = never>(eventName: string, data?: StrictPropertyCheck<T, E>): Promise<void>;
+	publicLogError2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>): Promise<void>;
 
 	getTelemetryInfo(): Promise<ITelemetryInfo>;
 
 	setExperimentProperty(name: string, value: string): void;
 
-	readonly telemetryLevel: TelemetryLevel;
+	readonly telemetryLevel: IObservableValue<TelemetryLevel>;
 }
 
 export interface ITelemetryEndpoint {
@@ -79,7 +80,6 @@ export const machineIdKey = 'telemetry.machineId';
 // Configuration Keys
 export const TELEMETRY_SECTION_ID = 'telemetry';
 export const TELEMETRY_SETTING_ID = 'telemetry.telemetryLevel';
-export const TELEMETRY_CRASH_REPORTER_SETTING_ID = 'telemetry.enableCrashReporter';
 export const TELEMETRY_OLD_SETTING_ID = 'telemetry.enableTelemetry';
 
 export const enum TelemetryLevel {

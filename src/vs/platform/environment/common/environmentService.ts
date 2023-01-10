@@ -14,8 +14,6 @@ import { NativeParsedArgs } from 'vs/platform/environment/common/argv';
 import { ExtensionKind, IDebugParams, IExtensionHostDebugParams, INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IProductService } from 'vs/platform/product/common/productService';
 
-export const EXTENSION_IDENTIFIER_WITH_LOG_REGEX = /^([^.]+\..+):(.+)$/;
-
 export interface INativeEnvironmentPaths {
 
 	/**
@@ -44,7 +42,7 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	declare readonly _serviceBrand: undefined;
 
 	@memoize
-	get appRoot(): string { return dirname(FileAccess.asFileUri('').fsPath); }
+	get appRoot(): string { return dirname(FileAccess.asFileUri('', require).fsPath); }
 
 	@memoize
 	get userHome(): URI { return URI.file(this.paths.homeDir); }
@@ -126,16 +124,16 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 			return resolve(cliBuiltinExtensionsDir);
 		}
 
-		return normalize(join(FileAccess.asFileUri('').fsPath, '..', 'extensions'));
+		return normalize(join(FileAccess.asFileUri('', require).fsPath, '..', 'extensions'));
 	}
 
-	get extensionsDownloadLocation(): URI {
+	get extensionsDownloadPath(): string {
 		const cliExtensionsDownloadDir = this.args['extensions-download-dir'];
 		if (cliExtensionsDownloadDir) {
-			return URI.file(resolve(cliExtensionsDownloadDir));
+			return resolve(cliExtensionsDownloadDir);
 		}
 
-		return URI.file(join(this.userDataPath, 'CachedExtensionVSIXs'));
+		return join(this.userDataPath, 'CachedExtensionVSIXs');
 	}
 
 	@memoize
@@ -218,20 +216,7 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 
 	get isBuilt(): boolean { return !env['VSCODE_DEV']; }
 	get verbose(): boolean { return !!this.args.verbose; }
-
-	@memoize
-	get logLevel(): string | undefined { return this.args.log?.find(entry => !EXTENSION_IDENTIFIER_WITH_LOG_REGEX.test(entry)); }
-	@memoize
-	get extensionLogLevel(): [string, string][] | undefined {
-		const result: [string, string][] = [];
-		for (const entry of this.args.log || []) {
-			const matches = EXTENSION_IDENTIFIER_WITH_LOG_REGEX.exec(entry);
-			if (matches && matches[1] && matches[2]) {
-				result.push([matches[1], matches[2]]);
-			}
-		}
-		return result.length ? result : undefined;
-	}
+	get logLevel(): string | undefined { return this.args.log; }
 
 	@memoize
 	get serviceMachineIdResource(): URI { return joinPath(URI.file(this.userDataPath), 'machineid'); }
@@ -261,14 +246,6 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 
 	editSessionId: string | undefined = this.args['editSessionId'];
 
-	get continueOn(): string | undefined {
-		return this.args['continueOn'];
-	}
-
-	set continueOn(value: string | undefined) {
-		this.args['continueOn'] = value;
-	}
-
 	get args(): NativeParsedArgs { return this._args; }
 
 	constructor(
@@ -280,6 +257,10 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 
 export function parseExtensionHostPort(args: NativeParsedArgs, isBuild: boolean): IExtensionHostDebugParams {
 	return parseDebugParams(args['inspect-extensions'], args['inspect-brk-extensions'], 5870, isBuild, args.debugId, args.extensionEnvironment);
+}
+
+export function parseSearchPort(args: NativeParsedArgs, isBuild: boolean): IDebugParams {
+	return parseDebugParams(args['inspect-search'], args['inspect-brk-search'], 5876, isBuild, args.extensionEnvironment);
 }
 
 export function parsePtyHostPort(args: NativeParsedArgs, isBuild: boolean): IDebugParams {

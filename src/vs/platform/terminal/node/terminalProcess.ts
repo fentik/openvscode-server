@@ -6,16 +6,17 @@
 import { exec } from 'child_process';
 import { promises as fs } from 'fs';
 import type * as pty from 'node-pty';
+import { tmpdir } from 'os';
 import { timeout } from 'vs/base/common/async';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
+import { FileAccess } from 'vs/base/common/network';
 import * as path from 'vs/base/common/path';
 import { IProcessEnvironment, isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { URI } from 'vs/base/common/uri';
 import { Promises } from 'vs/base/node/pfs';
 import { localize } from 'vs/nls';
 import { ILogService } from 'vs/platform/log/common/log';
-import { IProductService } from 'vs/platform/product/common/productService';
 import { FlowControlConstants, IShellLaunchConfig, ITerminalChildProcess, ITerminalLaunchError, IProcessProperty, IProcessPropertyMap as IProcessPropertyMap, ProcessPropertyType, TerminalShellType, IProcessReadyEvent, ITerminalProcessOptions, PosixShellType } from 'vs/platform/terminal/common/terminal';
 import { ChildProcessMonitor } from 'vs/platform/terminal/node/childProcessMonitor';
 import { findExecutable, getShellIntegrationInjection, getWindowsBuildNumber, IShellIntegrationConfigInjection } from 'vs/platform/terminal/node/terminalEnvironment';
@@ -122,8 +123,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 	get exitMessage(): string | undefined { return this._exitMessage; }
 
 	get currentTitle(): string { return this._windowsShellHelper?.shellTitle || this._currentTitle; }
-	get shellType(): TerminalShellType | undefined { return isWindows ? this._windowsShellHelper?.shellType : posixShellTypeMap.get(this._currentTitle); }
-	get hasChildProcesses(): boolean { return this._childProcessMonitor?.hasChildProcesses || false; }
+	get shellType(): TerminalShellType { return isWindows ? this._windowsShellHelper?.shellType : posixShellTypeMap.get(this._currentTitle); }
 
 	private readonly _onProcessData = this._register(new Emitter<string>());
 	readonly onProcessData = this._onProcessData.event;
@@ -145,8 +145,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 		 */
 		private readonly _executableEnv: IProcessEnvironment,
 		private readonly _options: ITerminalProcessOptions,
-		@ILogService private readonly _logService: ILogService,
-		@IProductService private readonly _productService: IProductService
+		@ILogService private readonly _logService: ILogService
 	) {
 		super();
 		let name: string;
@@ -202,7 +201,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 
 		let injection: IShellIntegrationConfigInjection | undefined;
 		if (this._options.shellIntegration.enabled) {
-			injection = getShellIntegrationInjection(this.shellLaunchConfig, { shellIntegration: this._options.shellIntegration, windowsEnableConpty: this._options.windowsEnableConpty }, this._ptyOptions.env, this._logService, this._productService);
+			injection = getShellIntegrationInjection(this.shellLaunchConfig, this._options.shellIntegration, this._logService);
 			if (injection) {
 				this._onDidChangeProperty.fire({ type: ProcessPropertyType.UsedShellIntegrationInjection, value: true });
 				if (injection.envMixin) {
@@ -214,19 +213,23 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 				if (injection.filesToCopy) {
 					for (const f of injection.filesToCopy) {
 						await fs.mkdir(path.dirname(f.dest), { recursive: true });
-						try {
-							await fs.copyFile(f.source, f.dest);
-						} catch {
-							// Swallow error, this should only happen when multiple users are on the same
-							// machine. Since the shell integration scripts rarely change, plus the other user
-							// should be using the same version of the server in this case, assume the script is
-							// fine if copy fails and swallow the error.
-						}
+						await fs.copyFile(f.source, f.dest);
 					}
 				}
 			} else {
 				this._onDidChangeProperty.fire({ type: ProcessPropertyType.FailedShellIntegrationActivation, value: true });
 			}
+		}
+
+		// Handle zsh shell integration - Set $ZDOTDIR to a temp dir and create $ZDOTDIR/.zshrc
+		if (this.shellLaunchConfig.env?.['_ZDOTDIR'] === '1') {
+			const zdotdir = path.join(tmpdir(), 'vscode-zsh');
+			await fs.mkdir(zdotdir, { recursive: true });
+			const source = path.join(path.dirname(FileAccess.asFileUri('', require).fsPath), 'out/vs/workbench/contrib/terminal/browser/media/shellIntegration-rc.zsh');
+			await fs.copyFile(source, path.join(zdotdir, '.zshrc'));
+			this._ptyOptions.env = this._ptyOptions.env || {};
+			this._ptyOptions.env['ZDOTDIR'] = zdotdir;
+			delete this._ptyOptions.env['_ZDOTDIR'];
 		}
 
 		try {
@@ -258,27 +261,23 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 		if (!slc.executable) {
 			throw new Error('IShellLaunchConfig.executable not set');
 		}
-
-		const cwd = slc.cwd instanceof URI ? slc.cwd.path : slc.cwd;
-		const envPaths: string[] | undefined = (slc.env && slc.env.PATH) ? slc.env.PATH.split(path.delimiter) : undefined;
-		const executable = await findExecutable(slc.executable!, cwd, envPaths, this._executableEnv);
-		if (!executable) {
-			return { message: localize('launchFail.executableDoesNotExist', "Path to shell executable \"{0}\" does not exist", slc.executable) };
-		}
-
 		try {
-			const result = await Promises.stat(executable);
+			const result = await Promises.stat(slc.executable);
 			if (!result.isFile() && !result.isSymbolicLink()) {
 				return { message: localize('launchFail.executableIsNotFileOrSymlink', "Path to shell executable \"{0}\" is not a file or a symlink", slc.executable) };
 			}
-			// Set the executable explicitly here so that node-pty doesn't need to search the
-			// $PATH too.
-			slc.executable = executable;
 		} catch (err) {
-			if (err?.code === 'EACCES') {
-				// Swallow
-			} else {
-				throw err;
+			if (err?.code === 'ENOENT') {
+				// The executable isn't an absolute path, try find it on the PATH or CWD
+				const cwd = slc.cwd instanceof URI ? slc.cwd.path : slc.cwd!;
+				const envPaths: string[] | undefined = (slc.env && slc.env.PATH) ? slc.env.PATH.split(path.delimiter) : undefined;
+				const executable = await findExecutable(slc.executable!, cwd, envPaths, this._executableEnv);
+				if (!executable) {
+					return { message: localize('launchFail.executableDoesNotExist', "Path to shell executable \"{0}\" does not exist", slc.executable) };
+				}
+				// Set the executable explicitly here so that node-pty doesn't need to search the
+				// $PATH too.
+				slc.executable = executable;
 			}
 		}
 		return undefined;
@@ -404,9 +403,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 		}
 		this._currentTitle = ptyProcess.process;
 		this._onDidChangeProperty.fire({ type: ProcessPropertyType.Title, value: this._currentTitle });
-		// If fig is installed it may change the title of the process
-		const sanitizedTitle = this.currentTitle.replace(/ \(figterm\)$/g, '');
-		this._onDidChangeProperty.fire({ type: ProcessPropertyType.ShellType, value: posixShellTypeMap.get(sanitizedTitle) });
+		this._onDidChangeProperty.fire({ type: ProcessPropertyType.ShellType, value: posixShellTypeMap.get(this.currentTitle) });
 	}
 
 	shutdown(immediate: boolean): void {
@@ -584,7 +581,7 @@ export class TerminalProcess extends Disposable implements ITerminalChildProcess
 					return;
 				}
 				this._logService.trace('IPty#pid');
-				exec('lsof -OPln -p ' + this._ptyProcess.pid + ' | grep cwd', { env: { ...process.env, LANG: 'en_US.UTF-8' } }, (error, stdout, stderr) => {
+				exec('lsof -OPln -p ' + this._ptyProcess.pid + ' | grep cwd', (error, stdout, stderr) => {
 					if (!error && stdout !== '') {
 						resolve(stdout.substring(stdout.indexOf('/'), stdout.length - 1));
 					} else {

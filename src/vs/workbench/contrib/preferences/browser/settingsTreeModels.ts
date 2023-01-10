@@ -5,7 +5,7 @@
 
 import * as arrays from 'vs/base/common/arrays';
 import { escapeRegExpCharacters, isFalsyOrWhitespace } from 'vs/base/common/strings';
-import { withUndefinedAsNull, isUndefinedOrNull } from 'vs/base/common/types';
+import { isArray, withUndefinedAsNull, isUndefinedOrNull } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { ConfigurationTarget, IConfigurationValue } from 'vs/platform/configuration/common/configuration';
 import { SettingsTarget } from 'vs/workbench/contrib/preferences/browser/preferencesWidgets';
@@ -26,7 +26,6 @@ export const ONLINE_SERVICES_SETTING_TAG = 'usesOnlineServices';
 
 export interface ISettingsEditorViewState {
 	settingsTarget: SettingsTarget;
-	query?: string; // used to keep track of loading from setInput vs loading from cache
 	tagFilters?: Set<string>;
 	extensionFilters?: Set<string>;
 	featureFilters?: Set<string>;
@@ -322,7 +321,7 @@ export class SettingsTreeSettingElement extends SettingsTreeElement {
 		} else if (this.setting.type === 'array' && this.setting.arrayItemType &&
 			['string', 'enum', 'number', 'integer'].includes(this.setting.arrayItemType)) {
 			this.valueType = SettingValueType.Array;
-		} else if (Array.isArray(this.setting.type) && this.setting.type.includes(SettingValueType.Null) && this.setting.type.length === 2) {
+		} else if (isArray(this.setting.type) && this.setting.type.includes(SettingValueType.Null) && this.setting.type.length === 2) {
 			if (this.setting.type.includes(SettingValueType.Integer)) {
 				this.valueType = SettingValueType.NullableInteger;
 			} else if (this.setting.type.includes(SettingValueType.Number)) {
@@ -529,7 +528,7 @@ export class SettingsTreeModel {
 	}
 
 	private updateRequireTrustedTargetElements(): void {
-		this.updateSettings([...this._treeElementsBySettingName.values()].flat().filter(s => s.isUntrusted));
+		this.updateSettings(arrays.flatten([...this._treeElementsBySettingName.values()]).filter(s => s.isUntrusted));
 	}
 
 	private getTargetToInspect(settingScope: ConfigurationScope | undefined): SettingsTarget {
@@ -541,11 +540,11 @@ export class SettingsTreeModel {
 	}
 
 	private updateSettings(settings: SettingsTreeSettingElement[]): void {
-		for (const element of settings) {
+		settings.forEach(element => {
 			const target = this.getTargetToInspect(element.setting.scope);
 			const inspectResult = inspectSetting(element.setting.key, target, this._viewState.languageFilter, this._configurationService);
 			element.update(inspectResult, this._isWorkspaceTrusted);
-		}
+		});
 	}
 
 	private createSettingsTreeGroupElement(tocEntry: ITOCEntry<ISetting>, parent?: SettingsTreeGroupElement): SettingsTreeGroupElement {
@@ -612,6 +611,19 @@ export function inspectSetting(key: string, target: SettingsTarget, languageFilt
 				target === ConfigurationTarget.WORKSPACE ? 'workspace' :
 					'workspaceFolder';
 	let isConfigured = typeof inspected[targetSelector] !== 'undefined';
+	if (!isConfigured) {
+		if (target === ConfigurationTarget.APPLICATION) {
+			isConfigured = !!configurationService.restrictedSettings.application?.includes(key);
+		} else if (target === ConfigurationTarget.USER_LOCAL) {
+			isConfigured = !!configurationService.restrictedSettings.userLocal?.includes(key);
+		} else if (target === ConfigurationTarget.USER_REMOTE) {
+			isConfigured = !!configurationService.restrictedSettings.userRemote?.includes(key);
+		} else if (target === ConfigurationTarget.WORKSPACE) {
+			isConfigured = !!configurationService.restrictedSettings.workspace?.includes(key);
+		} else if (target instanceof URI) {
+			isConfigured = !!configurationService.restrictedSettings.workspaceFolder?.get(target)?.includes(key);
+		}
+	}
 
 	const overrideIdentifiers = inspected.overrideIdentifiers;
 	const inspectedLanguageOverrides = new Map<string, IConfigurationValue<unknown>>();
@@ -739,7 +751,6 @@ export function isExcludeSetting(setting: ISetting): boolean {
 	return setting.key === 'files.exclude' ||
 		setting.key === 'search.exclude' ||
 		setting.key === 'workbench.localHistory.exclude' ||
-		setting.key === 'explorer.autoRevealExclude' ||
 		setting.key === 'files.watcherExclude';
 }
 
@@ -794,7 +805,7 @@ function isObjectSetting({
 
 function settingTypeEnumRenderable(_type: string | string[]) {
 	const enumRenderableSettingTypes = ['string', 'boolean', 'null', 'integer', 'number'];
-	const type = Array.isArray(_type) ? _type : [_type];
+	const type = isArray(_type) ? _type : [_type];
 	return type.every(type => enumRenderableSettingTypes.includes(type));
 }
 
@@ -884,18 +895,15 @@ export class SearchResultModel extends SettingsTreeModel {
 		this.root.children = this.root.children
 			.filter(child => child instanceof SettingsTreeSettingElement && child.matchesAllTags(this._viewState.tagFilters) && child.matchesScope(this._viewState.settingsTarget, isRemote) && child.matchesAnyExtension(this._viewState.extensionFilters) && child.matchesAnyId(this._viewState.idFilters) && child.matchesAnyFeature(this._viewState.featureFilters) && child.matchesAllLanguages(this._viewState.languageFilter));
 
-		if (this.newExtensionSearchResults?.filterMatches.length) {
-			let resultExtensionIds = this.newExtensionSearchResults.filterMatches
+		if (this.newExtensionSearchResults && this.newExtensionSearchResults.filterMatches.length) {
+			const resultExtensionIds = this.newExtensionSearchResults.filterMatches
 				.map(result => (<IExtensionSetting>result.setting))
 				.filter(setting => setting.extensionName && setting.extensionPublisher)
 				.map(setting => `${setting.extensionPublisher}.${setting.extensionName}`);
-			resultExtensionIds = arrays.distinct(resultExtensionIds);
 
-			if (resultExtensionIds.length) {
-				const newExtElement = new SettingsTreeNewExtensionsElement('newExtensions', resultExtensionIds);
-				newExtElement.parent = this._root;
-				this._root.children.push(newExtElement);
-			}
+			const newExtElement = new SettingsTreeNewExtensionsElement('newExtensions', arrays.distinct(resultExtensionIds));
+			newExtElement.parent = this._root;
+			this._root.children.push(newExtElement);
 		}
 	}
 

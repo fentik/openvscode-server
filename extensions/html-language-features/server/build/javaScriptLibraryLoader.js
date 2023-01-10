@@ -61,7 +61,7 @@ module.exports = function () {
 		output: `"${escapeText(lines.join('\n'))}"`
 	});
 
-	let strResult = `\nconst libs : { [name:string]: string; } = {\n`
+	strResult = `\nconst libs : { [name:string]: string; } = {\n`
 	for (let i = result.length - 1; i >= 0; i--) {
 		strResult += `"${result[i].name}": ${result[i].output},\n`;
 	}

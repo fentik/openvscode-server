@@ -106,9 +106,8 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 	let hierarchicalDocumentSymbolSupport = false;
 
 	let foldingRangeLimitDefault = Number.MAX_VALUE;
+	let foldingRangeLimit = Number.MAX_VALUE;
 	let resultLimit = Number.MAX_VALUE;
-	let jsonFoldingRangeLimit = Number.MAX_VALUE;
-	let jsoncFoldingRangeLimit = Number.MAX_VALUE;
 	let formatterMaxNumberOfEdits = Number.MAX_VALUE;
 
 	let diagnosticsSupport: DiagnosticsSupport | undefined;
@@ -188,8 +187,6 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 			keepLines?: { enable?: boolean };
 			validate?: { enable?: boolean };
 			resultLimit?: number;
-			jsonFoldingLimit?: number;
-			jsoncFoldingLimit?: number;
 		};
 		http?: {
 			proxy?: string;
@@ -220,10 +217,8 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 		keepLinesEnabled = settings.json?.keepLines?.enable || false;
 		updateConfiguration();
 
-		const sanitizeLimitSetting = (settingValue: any) => Math.trunc(Math.max(settingValue, 0));
-		resultLimit = sanitizeLimitSetting(settings.json?.resultLimit || Number.MAX_VALUE);
-		jsonFoldingRangeLimit = sanitizeLimitSetting(settings.json?.jsonFoldingLimit || foldingRangeLimitDefault);
-		jsoncFoldingRangeLimit = sanitizeLimitSetting(settings.json?.jsoncFoldingLimit || foldingRangeLimitDefault);
+		foldingRangeLimit = Math.trunc(Math.max(settings.json?.resultLimit || foldingRangeLimitDefault, 0));
+		resultLimit = Math.trunc(Math.max(settings.json?.resultLimit || Number.MAX_VALUE, 0));
 
 		// dynamically enable & disable the formatter
 		if (dynamicFormatterRegistration) {
@@ -442,8 +437,7 @@ export function startServer(connection: Connection, runtime: RuntimeEnvironment)
 		return runSafe(runtime, () => {
 			const document = documents.get(params.textDocument.uri);
 			if (document) {
-				const rangeLimit = document.languageId === 'jsonc' ? jsoncFoldingRangeLimit : jsonFoldingRangeLimit;
-				return languageService.getFoldingRanges(document, { rangeLimit });
+				return languageService.getFoldingRanges(document, { rangeLimit: foldingRangeLimit });
 			}
 			return null;
 		}, null, `Error while computing folding ranges for ${params.textDocument.uri}`, token);

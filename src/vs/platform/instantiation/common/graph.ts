@@ -5,14 +5,13 @@
 
 export class Node<T> {
 
-
+	readonly data: T;
 	readonly incoming = new Map<string, Node<T>>();
 	readonly outgoing = new Map<string, Node<T>>();
 
-	constructor(
-		readonly key: string,
-		readonly data: T
-	) { }
+	constructor(data: T) {
+		this.data = data;
+	}
 }
 
 export class Graph<T> {
@@ -37,8 +36,8 @@ export class Graph<T> {
 		const fromNode = this.lookupOrInsertNode(from);
 		const toNode = this.lookupOrInsertNode(to);
 
-		fromNode.outgoing.set(toNode.key, toNode);
-		toNode.incoming.set(fromNode.key, fromNode);
+		fromNode.outgoing.set(this._hashFn(to), toNode);
+		toNode.incoming.set(this._hashFn(from), fromNode);
 	}
 
 	removeNode(data: T): void {
@@ -55,7 +54,7 @@ export class Graph<T> {
 		let node = this._nodes.get(key);
 
 		if (!node) {
-			node = new Node(key, data);
+			node = new Node(data);
 			this._nodes.set(key, node);
 		}
 
@@ -73,7 +72,7 @@ export class Graph<T> {
 	toString(): string {
 		const data: string[] = [];
 		for (const [key, value] of this._nodes) {
-			data.push(`${key}\n\t(-> incoming)[${[...value.incoming.keys()].join(', ')}]\n\t(outgoing ->)[${[...value.outgoing.keys()].join(',')}]\n`);
+			data.push(`${key}, (incoming)[${[...value.incoming.keys()].join(', ')}], (outgoing)[${[...value.outgoing.keys()].join(',')}]`);
 
 		}
 		return data.join('\n');

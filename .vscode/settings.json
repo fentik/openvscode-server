@@ -6,19 +6,16 @@
 		".build": true,
 		".profile-oss": true,
 		"**/.DS_Store": true,
-		"cli/target": true,
 		"build/**/*.js": {
 			"when": "$(basename).ts"
 		}
 	},
 	"files.associations": {
-		"cglicenses.json": "jsonc",
-		"*.tst": "typescript"
+		"cglicenses.json": "jsonc"
 	},
 	"search.exclude": {
 		"**/node_modules": true,
 		"**/bower_components": true,
-		"cli/target/**": true,
 		".build/**": true,
 		"out/**": true,
 		"out-build/**": true,
@@ -29,8 +26,7 @@
 		"test/automation/out/**": true,
 		"test/integration/browser/out/**": true,
 		"src/vs/base/test/node/uri.test.data.txt": true,
-		"src/vs/workbench/api/test/browser/extHostDocumentData.test.perf-data.ts": true,
-		"src/vs/editor/test/node/diffing/fixtures/**": true,
+		"src/vs/workbench/api/test/browser/extHostDocumentData.test.perf-data.ts": true
 	},
 	"lcov.path": [
 		"./.build/coverage/lcov.info",
@@ -45,6 +41,11 @@
 			}
 		}
 	],
+	"eslint.options": {
+		"rulePaths": [
+			"./build/lib/eslint"
+		]
+	},
 	"typescript.tsdk": "node_modules/typescript/lib",
 	"npm.exclude": "**/extensions/**",
 	"npm.packageManager": "yarn",
@@ -56,7 +57,7 @@
 			"fileMatch": [
 				"cgmanifest.json"
 			],
-			"url": "https://json.schemastore.org/component-detection-manifest.json",
+			"url": "./.vscode/cgmanifest.schema.json"
 		},
 		{
 			"fileMatch": [
@@ -68,12 +69,10 @@
 	"git.ignoreLimitWarning": true,
 	"git.branchProtection": [
 		"main",
-		"distro",
 		"release/*"
 	],
 	"git.branchProtectionPrompt": "alwaysCommitToNewBranch",
 	"git.branchRandomName.enable": true,
-	"git.pullBeforeCheckout": true,
 	"git.mergeEditor": true,
 	"remote.extensionKind": {
 		"msjsdiag.debugger-for-chrome": "workspace"
@@ -91,13 +90,6 @@
 		"editor.defaultFormatter": "vscode.typescript-language-features",
 		"editor.formatOnSave": true
 	},
-	"[rust]": {
-		"editor.defaultFormatter": "rust-lang.rust-analyzer",
-		"editor.formatOnSave": true,
-	},
-	"rust-analyzer.linkedProjects": [
-		"cli/Cargo.toml"
-	],
 	"typescript.tsc.autoDetect": "off",
 	"testing.autoRun.mode": "rerun",
 	"conventionalCommits.scopes": [
@@ -110,13 +102,11 @@
 		"git",
 		"sash"
 	],
-	"debug.javascript.terminalOptions": {
-		"outFiles": [
-			"${workspaceFolder}/out/**/*.js",
-			"${workspaceFolder}/build/**/*.js"
-		]
+	"editor.quickSuggestions": {
+		"other": "inline",
+		"comments": "inline",
+		"strings": "inline"
 	},
 	"githubPullRequests.assignCreated": "${user}",
-	"githubPullRequests.defaultMergeMethod": "squash",
-	"application.experimental.rendererProfiling": true
+	"githubPullRequests.defaultMergeMethod": "squash"
 }

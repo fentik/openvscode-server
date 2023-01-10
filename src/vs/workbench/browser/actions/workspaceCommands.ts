@@ -155,8 +155,6 @@ interface IOpenFolderAPICommandOptions {
 	forceReuseWindow?: boolean;
 	noRecentEntry?: boolean;
 	forceLocalWindow?: boolean;
-	forceProfile?: string;
-	forceTempProfile?: boolean;
 }
 
 CommandsRegistry.registerCommand({
@@ -189,9 +187,7 @@ CommandsRegistry.registerCommand({
 			forceNewWindow: arg?.forceNewWindow,
 			forceReuseWindow: arg?.forceReuseWindow,
 			noRecentEntry: arg?.noRecentEntry,
-			remoteAuthority: arg?.forceLocalWindow ? null : undefined,
-			forceProfile: arg?.forceProfile,
-			forceTempProfile: arg?.forceTempProfile,
+			remoteAuthority: arg?.forceLocalWindow ? null : undefined
 		};
 
 		const uriToOpen: IWindowOpenable = (hasWorkspaceFileExtension(uri) || uri.scheme === Schemas.untitled) ? { workspaceUri: uri } : { folderUri: uri };

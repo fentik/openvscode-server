@@ -14,10 +14,9 @@ import { FoldingController } from 'vs/editor/contrib/folding/browser/folding';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ITextModel } from 'vs/editor/common/model';
 import { GhostTextController } from 'vs/editor/contrib/inlineCompletions/browser/ghostTextController';
+import { AudioCue, IAudioCueService } from 'vs/workbench/contrib/audioCues/browser/audioCueService';
 import { CursorChangeReason } from 'vs/editor/common/cursorEvents';
 import { autorun, autorunDelta, constObservable, debouncedObservable, derived, IObservable, observableFromEvent, observableFromPromise, wasEventTriggeredRecently } from 'vs/base/common/observable';
-import { AudioCue, IAudioCueService } from 'vs/platform/audioCues/browser/audioCueService';
-import { CachedFunction } from 'vs/base/common/cache';
 
 export class AudioCueLineFeatureContribution
 	extends Disposable
@@ -32,11 +31,6 @@ export class AudioCueLineFeatureContribution
 		this.instantiationService.createInstance(InlineCompletionLineFeature),
 	];
 
-	private readonly isEnabledCache = new CachedFunction<AudioCue, IObservable<boolean>>((cue) => observableFromEvent(
-		this.audioCueService.onEnabledChanged(AudioCue.onDebugBreak),
-		() => this.audioCueService.isEnabled(AudioCue.onDebugBreak)
-	));
-
 	constructor(
 		@IEditorService private readonly editorService: IEditorService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -48,7 +42,7 @@ export class AudioCueLineFeatureContribution
 			'someAudioCueFeatureIsEnabled',
 			(reader) =>
 				this.features.some((feature) =>
-					this.isEnabledCache.get(feature.audioCue).read(reader)
+					this.audioCueService.isEnabled(feature.audioCue).read(reader)
 				)
 		);
 
@@ -117,7 +111,7 @@ export class AudioCueLineFeatureContribution
 			const isFeaturePresent = derived(
 				`isPresentInLine:${feature.audioCue.name}`,
 				(reader) => {
-					if (!this.isEnabledCache.get(feature.audioCue).read(reader)) {
+					if (!this.audioCueService.isEnabled(feature.audioCue).read(reader)) {
 						return false;
 					}
 					const lineNumber = debouncedLineNumber.read(reader);

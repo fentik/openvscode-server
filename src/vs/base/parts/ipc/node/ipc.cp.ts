@@ -151,14 +151,14 @@ export class Client implements IChannelClient, IDisposable {
 
 		let listener: IDisposable;
 		const emitter = new Emitter<any>({
-			onWillAddFirstListener: () => {
+			onFirstListenerAdd: () => {
 				const channel = this.getCachedChannel(channelName);
 				const event: Event<T> = channel.listen(name, arg);
 
 				listener = event(emitter.fire, emitter);
 				this.activeRequests.add(listener);
 			},
-			onDidRemoveLastListener: () => {
+			onLastListenerRemove: () => {
 				this.activeRequests.delete(listener);
 				listener.dispose();
 
@@ -241,7 +241,9 @@ export class Client implements IChannelClient, IDisposable {
 					console.warn('IPC "' + this.options.serverName + '" crashed with exit code ' + code + ' and signal ' + signal);
 				}
 
-				this.disposeDelayer?.cancel();
+				if (this.disposeDelayer) {
+					this.disposeDelayer.cancel();
+				}
 				this.disposeClient();
 				this._onDidProcessExit.fire({ code, signal });
 			});
@@ -274,8 +276,10 @@ export class Client implements IChannelClient, IDisposable {
 
 	dispose() {
 		this._onDidProcessExit.dispose();
-		this.disposeDelayer?.cancel();
-		this.disposeDelayer = undefined;
+		if (this.disposeDelayer) {
+			this.disposeDelayer.cancel();
+			this.disposeDelayer = undefined;
+		}
 		this.disposeClient();
 		this.activeRequests.clear();
 	}

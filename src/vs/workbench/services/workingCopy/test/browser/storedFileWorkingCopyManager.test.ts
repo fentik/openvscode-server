@@ -16,7 +16,6 @@ import { TestStoredFileWorkingCopyModel, TestStoredFileWorkingCopyModelFactory }
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { InMemoryFileSystemProvider } from 'vs/platform/files/common/inMemoryFilesystemProvider';
 import { DisposableStore } from 'vs/base/common/lifecycle';
-import { isWeb } from 'vs/base/common/platform';
 
 suite('StoredFileWorkingCopyManager', () => {
 
@@ -618,7 +617,7 @@ suite('StoredFileWorkingCopyManager', () => {
 		assert.strictEqual(canDispose2, true);
 	});
 
-	(isWeb ? test.skip : test)('pending saves join on shutdown', async () => {
+	test('pending saves join on shutdown', async () => {
 		const resource1 = URI.file('/path/index_something1.txt');
 		const resource2 = URI.file('/path/index_something2.txt');
 

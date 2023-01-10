@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { KeyCode, KeyCodeUtils, IMMUTABLE_CODE_TO_KEY_CODE, ScanCode } from 'vs/base/common/keyCodes';
-import { SingleModifierChord, Chord, KeyCodeChord, Keybinding } from 'vs/base/common/keybindings';
+import { ChordKeybinding, Keybinding, KeybindingModifier, SimpleKeybinding, ScanCodeBinding } from 'vs/base/common/keybindings';
 import { OperatingSystem } from 'vs/base/common/platform';
 import { BaseResolvedKeybinding } from 'vs/platform/keybinding/common/baseResolvedKeybinding';
-import { toEmptyArrayIfContainsNull } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
+import { removeElementsAfterNulls } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 
 /**
  * Do not instantiate. Use KeybindingService to get a ResolvedKeybinding seeded with information about the current kb layout.
  */
-export class USLayoutResolvedKeybinding extends BaseResolvedKeybinding<KeyCodeChord> {
+export class USLayoutResolvedKeybinding extends BaseResolvedKeybinding<SimpleKeybinding> {
 
-	constructor(chords: KeyCodeChord[], os: OperatingSystem) {
-		super(os, chords);
+	constructor(actual: Keybinding, os: OperatingSystem) {
+		super(os, actual.parts);
 	}
 
 	private _keyCodeToUILabel(keyCode: KeyCode): string {
@@ -34,29 +34,29 @@ export class USLayoutResolvedKeybinding extends BaseResolvedKeybinding<KeyCodeCh
 		return KeyCodeUtils.toString(keyCode);
 	}
 
-	protected _getLabel(chord: KeyCodeChord): string | null {
-		if (chord.isDuplicateModifierCase()) {
+	protected _getLabel(keybinding: SimpleKeybinding): string | null {
+		if (keybinding.isDuplicateModifierCase()) {
 			return '';
 		}
-		return this._keyCodeToUILabel(chord.keyCode);
+		return this._keyCodeToUILabel(keybinding.keyCode);
 	}
 
-	protected _getAriaLabel(chord: KeyCodeChord): string | null {
-		if (chord.isDuplicateModifierCase()) {
+	protected _getAriaLabel(keybinding: SimpleKeybinding): string | null {
+		if (keybinding.isDuplicateModifierCase()) {
 			return '';
 		}
-		return KeyCodeUtils.toString(chord.keyCode);
+		return KeyCodeUtils.toString(keybinding.keyCode);
 	}
 
-	protected _getElectronAccelerator(chord: KeyCodeChord): string | null {
-		return KeyCodeUtils.toElectronAccelerator(chord.keyCode);
+	protected _getElectronAccelerator(keybinding: SimpleKeybinding): string | null {
+		return KeyCodeUtils.toElectronAccelerator(keybinding.keyCode);
 	}
 
-	protected _getUserSettingsLabel(chord: KeyCodeChord): string | null {
-		if (chord.isDuplicateModifierCase()) {
+	protected _getUserSettingsLabel(keybinding: SimpleKeybinding): string | null {
+		if (keybinding.isDuplicateModifierCase()) {
 			return '';
 		}
-		const result = KeyCodeUtils.toUserSettingsUS(chord.keyCode);
+		const result = KeyCodeUtils.toUserSettingsUS(keybinding.keyCode);
 		return (result ? result.toLowerCase() : result);
 	}
 
@@ -64,34 +64,34 @@ export class USLayoutResolvedKeybinding extends BaseResolvedKeybinding<KeyCodeCh
 		return true;
 	}
 
-	protected _getChordDispatch(chord: KeyCodeChord): string | null {
-		return USLayoutResolvedKeybinding.getDispatchStr(chord);
+	protected _getDispatchPart(keybinding: SimpleKeybinding): string | null {
+		return USLayoutResolvedKeybinding.getDispatchStr(keybinding);
 	}
 
-	public static getDispatchStr(chord: KeyCodeChord): string | null {
-		if (chord.isModifierKey()) {
+	public static getDispatchStr(keybinding: SimpleKeybinding): string | null {
+		if (keybinding.isModifierKey()) {
 			return null;
 		}
 		let result = '';
 
-		if (chord.ctrlKey) {
+		if (keybinding.ctrlKey) {
 			result += 'ctrl+';
 		}
-		if (chord.shiftKey) {
+		if (keybinding.shiftKey) {
 			result += 'shift+';
 		}
-		if (chord.altKey) {
+		if (keybinding.altKey) {
 			result += 'alt+';
 		}
-		if (chord.metaKey) {
+		if (keybinding.metaKey) {
 			result += 'meta+';
 		}
-		result += KeyCodeUtils.toString(chord.keyCode);
+		result += KeyCodeUtils.toString(keybinding.keyCode);
 
 		return result;
 	}
 
-	protected _getSingleModifierChordDispatch(keybinding: KeyCodeChord): SingleModifierChord | null {
+	protected _getSingleModifierDispatchPart(keybinding: SimpleKeybinding): KeybindingModifier | null {
 		if (keybinding.keyCode === KeyCode.Ctrl && !keybinding.shiftKey && !keybinding.altKey && !keybinding.metaKey) {
 			return 'ctrl';
 		}
@@ -170,24 +170,24 @@ export class USLayoutResolvedKeybinding extends BaseResolvedKeybinding<KeyCodeCh
 		return KeyCode.Unknown;
 	}
 
-	private static _toKeyCodeChord(chord: Chord | null): KeyCodeChord | null {
-		if (!chord) {
+	private static _resolveSimpleUserBinding(binding: SimpleKeybinding | ScanCodeBinding | null): SimpleKeybinding | null {
+		if (!binding) {
 			return null;
 		}
-		if (chord instanceof KeyCodeChord) {
-			return chord;
+		if (binding instanceof SimpleKeybinding) {
+			return binding;
 		}
-		const keyCode = this._scanCodeToKeyCode(chord.scanCode);
+		const keyCode = this._scanCodeToKeyCode(binding.scanCode);
 		if (keyCode === KeyCode.Unknown) {
 			return null;
 		}
-		return new KeyCodeChord(chord.ctrlKey, chord.shiftKey, chord.altKey, chord.metaKey, keyCode);
+		return new SimpleKeybinding(binding.ctrlKey, binding.shiftKey, binding.altKey, binding.metaKey, keyCode);
 	}
 
-	public static resolveKeybinding(keybinding: Keybinding, os: OperatingSystem): USLayoutResolvedKeybinding[] {
-		const chords: KeyCodeChord[] = toEmptyArrayIfContainsNull(keybinding.chords.map(chord => this._toKeyCodeChord(chord)));
-		if (chords.length > 0) {
-			return [new USLayoutResolvedKeybinding(chords, os)];
+	public static resolveUserBinding(input: (SimpleKeybinding | ScanCodeBinding)[], os: OperatingSystem): USLayoutResolvedKeybinding[] {
+		const parts: SimpleKeybinding[] = removeElementsAfterNulls(input.map(keybinding => this._resolveSimpleUserBinding(keybinding)));
+		if (parts.length > 0) {
+			return [new USLayoutResolvedKeybinding(new ChordKeybinding(parts), os)];
 		}
 		return [];
 	}

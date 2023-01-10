@@ -34,6 +34,7 @@ import { LanguageService } from 'vs/editor/common/services/languageService';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { LanguageFeatureDebounceService } from 'vs/editor/common/services/languageFeatureDebounce';
 import { LanguageFeaturesService } from 'vs/editor/common/services/languageFeaturesService';
+import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 
 suite('MainThreadDocumentsAndEditors', () => {
 
@@ -120,7 +121,7 @@ suite('MainThreadDocumentsAndEditors', () => {
 				}
 			},
 			new TestPathService(),
-			new TestConfigurationService(),
+			new TestInstantiationService(),
 		);
 	});
 
@@ -145,10 +146,10 @@ suite('MainThreadDocumentsAndEditors', () => {
 
 	test('ignore huge model', function () {
 
-		const oldLimit = TextModel._MODEL_SYNC_LIMIT;
+		const oldLimit = (<any>TextModel).MODEL_SYNC_LIMIT;
 		try {
 			const largeModelString = 'abc'.repeat(1024);
-			TextModel._MODEL_SYNC_LIMIT = largeModelString.length / 2;
+			(<any>TextModel).MODEL_SYNC_LIMIT = largeModelString.length / 2;
 
 			const model = modelService.createModel(largeModelString, null);
 			assert.ok(model.isTooLargeForSyncing());
@@ -162,16 +163,16 @@ suite('MainThreadDocumentsAndEditors', () => {
 			assert.strictEqual(delta.removedEditors, undefined);
 
 		} finally {
-			TextModel._MODEL_SYNC_LIMIT = oldLimit;
+			(<any>TextModel).MODEL_SYNC_LIMIT = oldLimit;
 		}
 	});
 
 	test('ignore huge model from editor', function () {
 
-		const oldLimit = TextModel._MODEL_SYNC_LIMIT;
+		const oldLimit = (<any>TextModel).MODEL_SYNC_LIMIT;
 		try {
 			const largeModelString = 'abc'.repeat(1024);
-			TextModel._MODEL_SYNC_LIMIT = largeModelString.length / 2;
+			(<any>TextModel).MODEL_SYNC_LIMIT = largeModelString.length / 2;
 
 			const model = modelService.createModel(largeModelString, null);
 			const editor = myCreateTestCodeEditor(model);
@@ -182,7 +183,7 @@ suite('MainThreadDocumentsAndEditors', () => {
 			editor.dispose();
 
 		} finally {
-			TextModel._MODEL_SYNC_LIMIT = oldLimit;
+			(<any>TextModel).MODEL_SYNC_LIMIT = oldLimit;
 		}
 	});
 

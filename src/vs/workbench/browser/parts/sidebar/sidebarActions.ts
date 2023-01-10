@@ -10,7 +10,7 @@ import { IWorkbenchLayoutService, Parts } from 'vs/workbench/services/layout/bro
 import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES } from 'vs/workbench/common/actions';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
 
@@ -20,7 +20,7 @@ export class FocusSideBarAction extends Action2 {
 		super({
 			id: 'workbench.action.focusSideBar',
 			title: { value: localize('focusSideBar', "Focus into Primary Side Bar"), original: 'Focus into Primary Side Bar' },
-			category: Categories.View,
+			category: CATEGORIES.View,
 			f1: true,
 			keybinding: {
 				weight: KeybindingWeight.WorkbenchContrib,
@@ -42,7 +42,9 @@ export class FocusSideBarAction extends Action2 {
 
 		// Focus into active viewlet
 		const viewlet = paneCompositeService.getActivePaneComposite(ViewContainerLocation.Sidebar);
-		viewlet?.focus();
+		if (viewlet) {
+			viewlet.focus();
+		}
 	}
 }
 

@@ -6,7 +6,7 @@
 import { DocumentContext } from 'vscode-css-languageservice';
 import { endsWith, startsWith } from '../utils/strings';
 import { WorkspaceFolder } from 'vscode-languageserver';
-import { URI, Utils } from 'vscode-uri';
+import { resolvePath } from '../requests';
 
 export function getDocumentContext(documentUri: string, workspaceFolders: WorkspaceFolder[]): DocumentContext {
 	function getRootFolder(): string | undefined {
@@ -34,9 +34,8 @@ export function getDocumentContext(documentUri: string, workspaceFolders: Worksp
 					return folderUri + ref.substr(1);
 				}
 			}
-			const baseUri = URI.parse(base);
-			const baseUriDir = baseUri.path.endsWith('/') ? baseUri : Utils.dirname(baseUri);
-			return Utils.resolvePath(baseUriDir, ref).toString(true);
+			base = base.substr(0, base.lastIndexOf('/') + 1);
+			return resolvePath(base, ref);
 		},
 	};
 }

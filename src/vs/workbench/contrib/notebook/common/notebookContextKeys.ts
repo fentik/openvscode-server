@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ContextKeyExpr, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
-import { INTERACTIVE_WINDOW_EDITOR_ID, NOTEBOOK_EDITOR_ID } from 'vs/workbench/contrib/notebook/common/notebookCommon';
-
+import { NOTEBOOK_EDITOR_ID } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 
 
 //#region Context Keys
@@ -14,7 +13,6 @@ export const KEYBINDING_CONTEXT_NOTEBOOK_FIND_WIDGET_FOCUSED = new RawContextKey
 
 // Is Notebook
 export const NOTEBOOK_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', NOTEBOOK_EDITOR_ID);
-export const INTERACTIVE_WINDOW_IS_ACTIVE_EDITOR = ContextKeyExpr.equals('activeEditor', INTERACTIVE_WINDOW_EDITOR_ID);
 
 // Editor keys
 export const NOTEBOOK_EDITOR_FOCUSED = new RawContextKey<boolean>('notebookEditorFocused', false);

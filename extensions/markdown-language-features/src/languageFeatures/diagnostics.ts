@@ -4,8 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import * as nls from 'vscode-nls';
 import { CommandManager } from '../commandManager';
 
+const localize = nls.loadMessageBundle();
 
 // Copied from markdown language service
 export enum DiagnosticCode {
@@ -20,18 +22,18 @@ class AddToIgnoreLinksQuickFixProvider implements vscode.CodeActionProvider {
 
 	private static readonly _addToIgnoreLinksCommandId = '_markdown.addToIgnoreLinks';
 
-	private static readonly _metadata: vscode.CodeActionProviderMetadata = {
+	private static readonly metadata: vscode.CodeActionProviderMetadata = {
 		providedCodeActionKinds: [
 			vscode.CodeActionKind.QuickFix
 		],
 	};
 
 	public static register(selector: vscode.DocumentSelector, commandManager: CommandManager): vscode.Disposable {
-		const reg = vscode.languages.registerCodeActionsProvider(selector, new AddToIgnoreLinksQuickFixProvider(), AddToIgnoreLinksQuickFixProvider._metadata);
+		const reg = vscode.languages.registerCodeActionsProvider(selector, new AddToIgnoreLinksQuickFixProvider(), AddToIgnoreLinksQuickFixProvider.metadata);
 		const commandReg = commandManager.register({
 			id: AddToIgnoreLinksQuickFixProvider._addToIgnoreLinksCommandId,
 			execute(resource: vscode.Uri, path: string) {
-				const settingId = 'validate.ignoredLinks';
+				const settingId = 'experimental.validate.ignoreLinks';
 				const config = vscode.workspace.getConfiguration('markdown', resource);
 				const paths = new Set(config.get<string[]>(settingId, []));
 				paths.add(path);
@@ -53,7 +55,7 @@ class AddToIgnoreLinksQuickFixProvider implements vscode.CodeActionProvider {
 					const hrefText = (diagnostic as any).data?.hrefText;
 					if (hrefText) {
 						const fix = new vscode.CodeAction(
-							vscode.l10n.t("Exclude '{0}' from link validation.", hrefText),
+							localize('ignoreLinksQuickFix.title', "Exclude '{0}' from link validation.", hrefText),
 							vscode.CodeActionKind.QuickFix);
 
 						fix.command = {

@@ -102,7 +102,7 @@ export function righttest(node: TreeNode): TreeNode {
 	return node;
 }
 
-function calculateSize(node: TreeNode): number {
+export function calculateSize(node: TreeNode): number {
 	if (node === SENTINEL) {
 		return 0;
 	}
@@ -110,7 +110,7 @@ function calculateSize(node: TreeNode): number {
 	return node.size_left + node.piece.length + calculateSize(node.right);
 }
 
-function calculateLF(node: TreeNode): number {
+export function calculateLF(node: TreeNode): number {
 	if (node === SENTINEL) {
 		return 0;
 	}
@@ -118,7 +118,7 @@ function calculateLF(node: TreeNode): number {
 	return node.lf_left + node.piece.lineFeedCnt + calculateLF(node.right);
 }
 
-function resetSentinel(): void {
+export function resetSentinel(): void {
 	SENTINEL.parent = SENTINEL;
 }
 

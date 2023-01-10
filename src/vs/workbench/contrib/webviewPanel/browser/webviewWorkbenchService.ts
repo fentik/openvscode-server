@@ -10,58 +10,38 @@ import { isCancellationError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Iterable } from 'vs/base/common/iterator';
 import { combinedDisposable, Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { EditorActivation } from 'vs/platform/editor/common/editor';
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { GroupIdentifier } from 'vs/workbench/common/editor';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { IOverlayWebview, IWebviewService, WebviewInitInfo } from 'vs/workbench/contrib/webview/browser/webview';
-import { CONTEXT_ACTIVE_WEBVIEW_PANEL_ID } from 'vs/workbench/contrib/webviewPanel/browser/webviewEditor';
+import { IOverlayWebview, IWebviewService } from 'vs/workbench/contrib/webview/browser/webview';
+import { WebviewInitInfo } from 'vs/workbench/contrib/webview/browser/webviewElement';
 import { WebviewIconManager, WebviewIcons } from 'vs/workbench/contrib/webviewPanel/browser/webviewIconManager';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { ACTIVE_GROUP_TYPE, IEditorService, SIDE_GROUP_TYPE } from 'vs/workbench/services/editor/common/editorService';
 import { WebviewInput, WebviewInputInitInfo } from './webviewEditorInput';
 
-export interface IWebViewShowOptions {
+export const IWebviewWorkbenchService = createDecorator<IWebviewWorkbenchService>('webviewEditorService');
+
+export interface ICreateWebViewShowOptions {
 	readonly group?: IEditorGroup | GroupIdentifier | ACTIVE_GROUP_TYPE | SIDE_GROUP_TYPE;
 	readonly preserveFocus?: boolean;
 }
 
-export const IWebviewWorkbenchService = createDecorator<IWebviewWorkbenchService>('webviewEditorService');
-
-/**
- * Service responsible for showing and managing webview editors in the workbench.
- */
 export interface IWebviewWorkbenchService {
 	readonly _serviceBrand: undefined;
 
-	/**
-	 * Manages setting the icons show for a given webview.
-	 */
 	readonly iconManager: WebviewIconManager;
 
-	/**
-	 * Event fired when focus switches to a different webview editor.
-	 *
-	 * Fires `undefined` if focus switches to a non-webview editor.
-	 */
-	readonly onDidChangeActiveWebviewEditor: Event<WebviewInput | undefined>;
-
-	/**
-	 * Create a new webview editor and open it in the workbench.
-	 */
-	openWebview(
+	createWebview(
 		webviewInitInfo: WebviewInitInfo,
 		viewType: string,
 		title: string,
-		showOptions: IWebViewShowOptions,
+		showOptions: ICreateWebViewShowOptions,
 	): WebviewInput;
 
-	/**
-	 * Open a webview that is being restored from serialization.
-	 */
-	openRevivedWebview(options: {
+	reviveWebview(options: {
 		webviewInitInfo: WebviewInitInfo;
 		viewType: string;
 		title: string;
@@ -70,56 +50,48 @@ export interface IWebviewWorkbenchService {
 		group: number | undefined;
 	}): WebviewInput;
 
-	/**
-	 * Reveal an already opened webview editor in the workbench.
-	 */
 	revealWebview(
 		webview: WebviewInput,
 		group: IEditorGroup | GroupIdentifier | ACTIVE_GROUP_TYPE | SIDE_GROUP_TYPE,
 		preserveFocus: boolean
 	): void;
 
-	/**
-	 * Register a new {@link WebviewResolver}.
-	 *
-	 * If there are any webviews awaiting revival that this resolver can handle, they will be resolved by it.
-	 */
-	registerResolver(resolver: WebviewResolver): IDisposable;
+	registerResolver(
+		resolver: WebviewResolver
+	): IDisposable;
 
-	/**
-	 * Check if a webview should be serialized across window reloads.
-	 */
-	shouldPersist(input: WebviewInput): boolean;
+	shouldPersist(
+		input: WebviewInput
+	): boolean;
 
-	/**
-	 * Try to resolve a webview. This will block until a resolver is registered for the webview.
-	 */
-	resolveWebview(webview: WebviewInput, token: CancellationToken): Promise<void>;
+	resolveWebview(
+		webview: WebviewInput,
+	): CancelablePromise<void>;
+
+	readonly onDidChangeActiveWebviewEditor: Event<WebviewInput | undefined>;
 }
 
-/**
- * Handles filling in the content of webview before it can be shown to the user.
- */
-interface WebviewResolver {
-	/**
-	 * Returns true if the resolver can resolve the given webview.
-	 */
-	canResolve(webview: WebviewInput): boolean;
+export interface WebviewResolver {
+	canResolve(
+		webview: WebviewInput,
+	): boolean;
 
-	/**
-	 * Resolves the webview.
-	 */
-	resolveWebview(webview: WebviewInput, token: CancellationToken): Promise<void>;
+	resolveWebview(
+		webview: WebviewInput,
+		cancellation: CancellationToken,
+	): Promise<void>;
 }
 
 function canRevive(reviver: WebviewResolver, webview: WebviewInput): boolean {
 	return reviver.canResolve(webview);
 }
 
+
 export class LazilyResolvedWebviewEditorInput extends WebviewInput {
 
 	#resolved = false;
 	#resolvePromise?: CancelablePromise<void>;
+
 
 	constructor(
 		init: WebviewInputInitInfo,
@@ -139,7 +111,7 @@ export class LazilyResolvedWebviewEditorInput extends WebviewInput {
 	public override async resolve() {
 		if (!this.#resolved) {
 			this.#resolved = true;
-			this.#resolvePromise = createCancelablePromise(token => this._webviewWorkbenchService.resolveWebview(this, token));
+			this.#resolvePromise = this._webviewWorkbenchService.resolveWebview(this);
 			try {
 				await this.#resolvePromise;
 			} catch (e) {
@@ -213,17 +185,12 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 
 	private readonly _iconManager: WebviewIconManager;
 
-	private readonly _activeWebviewPanelIdContext: IContextKey<string>;
-
 	constructor(
-		@IContextKeyService contextKeyService: IContextKeyService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IWebviewService private readonly _webviewService: IWebviewService,
 	) {
 		super();
-
-		this._activeWebviewPanelIdContext = CONTEXT_ACTIVE_WEBVIEW_PANEL_ID.bindTo(contextKeyService);
 
 		this._iconManager = this._register(this._instantiationService.createInstance(WebviewIconManager));
 
@@ -262,26 +229,20 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 			}
 		}
 
-		if (newActiveWebview) {
-			this._activeWebviewPanelIdContext.set(newActiveWebview.webview.providedViewType ?? '');
-		} else {
-			this._activeWebviewPanelIdContext.reset();
-		}
-
 		if (newActiveWebview !== this._activeWebview) {
 			this._activeWebview = newActiveWebview;
 			this._onDidChangeActiveWebviewEditor.fire(newActiveWebview);
 		}
 	}
 
-	public openWebview(
+	public createWebview(
 		webviewInitInfo: WebviewInitInfo,
 		viewType: string,
 		title: string,
-		showOptions: IWebViewShowOptions,
+		showOptions: ICreateWebViewShowOptions,
 	): WebviewInput {
 		const webview = this._webviewService.createWebviewOverlay(webviewInitInfo);
-		const webviewInput = this._instantiationService.createInstance(WebviewInput, { viewType, name: title, providedId: webviewInitInfo.providedViewType }, webview, this.iconManager);
+		const webviewInput = this._instantiationService.createInstance(WebviewInput, { id: webviewInitInfo.id, viewType, name: title, providedId: webviewInitInfo.providedId }, webview, this.iconManager);
 		this._editorService.openEditor(webviewInput, {
 			pinned: true,
 			preserveFocus: showOptions.preserveFocus,
@@ -321,7 +282,7 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 		return webview;
 	}
 
-	public openRevivedWebview(options: {
+	public reviveWebview(options: {
 		webviewInitInfo: WebviewInitInfo;
 		viewType: string;
 		title: string;
@@ -332,7 +293,7 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 		const webview = this._webviewService.createWebviewOverlay(options.webviewInitInfo);
 		webview.state = options.state;
 
-		const webviewInput = this._instantiationService.createInstance(LazilyResolvedWebviewEditorInput, { viewType: options.viewType, providedId: options.webviewInitInfo.providedViewType, name: options.title }, webview);
+		const webviewInput = this._instantiationService.createInstance(LazilyResolvedWebviewEditorInput, { id: options.webviewInitInfo.id, viewType: options.viewType, providedId: options.webviewInitInfo.providedId, name: options.title }, webview);
 		webviewInput.iconPath = options.iconPath;
 
 		if (typeof options.group === 'number') {
@@ -341,7 +302,9 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 		return webviewInput;
 	}
 
-	public registerResolver(reviver: WebviewResolver): IDisposable {
+	public registerResolver(
+		reviver: WebviewResolver
+	): IDisposable {
 		this._revivers.add(reviver);
 
 		const cts = new CancellationTokenSource();
@@ -353,8 +316,10 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 		});
 	}
 
-	public shouldPersist(webview: WebviewInput): boolean {
-		// Revived webviews may not have an actively registered reviver but we still want to persist them
+	public shouldPersist(
+		webview: WebviewInput
+	): boolean {
+		// Revived webviews may not have an actively registered reviver but we still want to presist them
 		// since a reviver should exist when it is actually needed.
 		if (webview instanceof LazilyResolvedWebviewEditorInput) {
 			return true;
@@ -363,22 +328,27 @@ export class WebviewEditorService extends Disposable implements IWebviewWorkbenc
 		return Iterable.some(this._revivers.values(), reviver => canRevive(reviver, webview));
 	}
 
-	private async tryRevive(webview: WebviewInput, token: CancellationToken): Promise<boolean> {
+	private async tryRevive(
+		webview: WebviewInput,
+		cancellation: CancellationToken,
+	): Promise<boolean> {
 		for (const reviver of this._revivers.values()) {
 			if (canRevive(reviver, webview)) {
-				await reviver.resolveWebview(webview, token);
+				await reviver.resolveWebview(webview, cancellation);
 				return true;
 			}
 		}
 		return false;
 	}
 
-	public async resolveWebview(webview: WebviewInput, token: CancellationToken): Promise<void> {
-		const didRevive = await this.tryRevive(webview, token);
-		if (!didRevive && !token.isCancellationRequested) {
-			// A reviver may not be registered yet. Put into pool and resolve promise when we can revive
-			return this._revivalPool.enqueueForRestoration(webview, token);
-		}
+	public resolveWebview(webview: WebviewInput): CancelablePromise<void> {
+		return createCancelablePromise(async (cancellation) => {
+			const didRevive = await this.tryRevive(webview, cancellation);
+			if (!didRevive) {
+				// A reviver may not be registered yet. Put into pool and resolve promise when we can revive
+				return this._revivalPool.enqueueForRestoration(webview, cancellation);
+			}
+		});
 	}
 
 	public setIcons(id: string, iconPath: WebviewIcons | undefined): void {

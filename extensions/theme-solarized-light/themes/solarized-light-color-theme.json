@@ -9,8 +9,7 @@
 		{
 			"scope": [
 				"meta.embedded",
-				"source.groovy.embedded",
-				"string meta.image.inline.markdown"
+				"source.groovy.embedded"
 			],
 			"settings": {
 				"foreground": "#657B83"
@@ -327,7 +326,7 @@
 	"colors": {
 		// Base
 		// "foreground": "",
-		"focusBorder": "#b49471",
+		"focusBorder": "#D3AF86",
 		// "contrastActiveBorder": "",
 		// "contrastBorder": "",
 		// "widget.shadow": "",

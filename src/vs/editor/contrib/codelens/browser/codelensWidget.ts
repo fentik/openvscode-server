@@ -72,6 +72,7 @@ class CodeLensContentWidget implements IContentWidget {
 
 	constructor(
 		editor: IActiveCodeEditor,
+		className: string,
 		line: number,
 	) {
 		this._editor = editor;
@@ -80,7 +81,7 @@ class CodeLensContentWidget implements IContentWidget {
 		this.updatePosition(line);
 
 		this._domNode = document.createElement('span');
-		this._domNode.className = `codelens-decoration`;
+		this._domNode.className = `codelens-decoration ${className}`;
 	}
 
 	withCommands(lenses: Array<CodeLens | undefined | null>, animate: boolean): void {
@@ -182,14 +183,10 @@ export class CodeLensHelper {
 	}
 }
 
-const codeLensDecorationOptions = ModelDecorationOptions.register({
-	collapseOnReplaceEdit: true,
-	description: 'codelens'
-});
-
 export class CodeLensWidget {
 
 	private readonly _editor: IActiveCodeEditor;
+	private readonly _className: string;
 	private readonly _viewZone: CodeLensViewZone;
 	private readonly _viewZoneId: string;
 
@@ -201,12 +198,14 @@ export class CodeLensWidget {
 	constructor(
 		data: CodeLensItem[],
 		editor: IActiveCodeEditor,
+		className: string,
 		helper: CodeLensHelper,
 		viewZoneChangeAccessor: IViewZoneChangeAccessor,
 		heightInPx: number,
 		updateCallback: () => void
 	) {
 		this._editor = editor;
+		this._className = className;
 		this._data = data;
 
 		// create combined range, track all ranges with decorations,
@@ -223,7 +222,7 @@ export class CodeLensWidget {
 
 			helper.addDecoration({
 				range: codeLensData.symbol.range,
-				options: codeLensDecorationOptions
+				options: ModelDecorationOptions.EMPTY
 			}, id => this._decorationIds[i] = id);
 
 			// the range contains all lenses on this line
@@ -245,7 +244,7 @@ export class CodeLensWidget {
 
 	private _createContentWidgetIfNecessary(): void {
 		if (!this._contentWidget) {
-			this._contentWidget = new CodeLensContentWidget(this._editor, this._viewZone.afterLineNumber + 1);
+			this._contentWidget = new CodeLensContentWidget(this._editor, this._className, this._viewZone.afterLineNumber + 1);
 			this._editor.addContentWidget(this._contentWidget);
 		} else {
 			this._editor.layoutContentWidget(this._contentWidget);
@@ -282,7 +281,7 @@ export class CodeLensWidget {
 		this._data.forEach((codeLensData, i) => {
 			helper.addDecoration({
 				range: codeLensData.symbol.range,
-				options: codeLensDecorationOptions
+				options: ModelDecorationOptions.EMPTY
 			}, id => this._decorationIds[i] = id);
 		});
 	}

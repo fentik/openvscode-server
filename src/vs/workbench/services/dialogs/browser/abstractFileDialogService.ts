@@ -12,7 +12,7 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { URI } from 'vs/base/common/uri';
 import * as resources from 'vs/base/common/resources';
 import { IInstantiationService, } from 'vs/platform/instantiation/common/instantiation';
-import { ISimpleFileDialog, SimpleFileDialog } from 'vs/workbench/services/dialogs/browser/simpleFileDialog';
+import { SimpleFileDialog } from 'vs/workbench/services/dialogs/browser/simpleFileDialog';
 import { IWorkspacesService } from 'vs/platform/workspaces/common/workspaces';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -167,7 +167,7 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 	}
 
 	protected async pickFileFolderAndOpenSimplified(schema: string, options: IPickAndOpenOptions, preferNewWindow: boolean): Promise<void> {
-		const title = nls.localize('openFileOrFolder.title', 'Open File or Folder');
+		const title = nls.localize('openFileOrFolder.title', 'Open File Or Folder');
 		const availableFileSystems = this.addFileSchemaIfNeeded(schema);
 
 		const uri = await this.pickResource({ canSelectFiles: true, canSelectFolders: true, canSelectMany: false, defaultUri: options.defaultUri, title, availableFileSystems });
@@ -205,7 +205,13 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 	}
 
 	protected addFileToRecentlyOpened(uri: URI): void {
-		this.workspacesService.addRecentlyOpened([{ fileUri: uri, label: this.labelService.getUriLabel(uri) }]);
+
+		// add the picked file into the list of recently opened
+		// only if it is outside the currently opened workspace
+
+		if (!this.contextService.isInsideWorkspace(uri)) {
+			this.workspacesService.addRecentlyOpened([{ fileUri: uri, label: this.labelService.getUriLabel(uri) }]);
+		}
 	}
 
 	protected async pickFolderAndOpenSimplified(schema: string, options: IPickAndOpenOptions): Promise<void> {
@@ -235,13 +241,7 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 		}
 
 		options.title = nls.localize('saveFileAs.title', 'Save As');
-		const uri = await this.saveRemoteResource(options);
-
-		if (uri) {
-			this.addFileToRecentlyOpened(uri);
-		}
-
-		return uri;
+		return this.saveRemoteResource(options);
 	}
 
 	protected async showSaveDialogSimplified(schema: string, options: ISaveDialogOptions): Promise<URI | undefined> {
@@ -262,7 +262,7 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 		return uri ? [uri] : undefined;
 	}
 
-	protected getSimpleFileDialog(): ISimpleFileDialog {
+	protected getSimpleFileDialog(): SimpleFileDialog {
 		return this.instantiationService.createInstance(SimpleFileDialog);
 	}
 
@@ -323,16 +323,12 @@ export abstract class AbstractFileDialogService implements IFileDialogService {
 
 			const filter: IFilter = { name: languageName, extensions: distinct(extensions).slice(0, 10).map(e => trim(e, '.')) };
 
-			// https://github.com/microsoft/vscode/issues/115860
-			const extOrPlaintext = ext || PLAINTEXT_EXTENSION;
-			if (!matchingFilter && extensions.includes(extOrPlaintext)) {
+			if (!matchingFilter && extensions.includes(ext || PLAINTEXT_EXTENSION /* https://github.com/microsoft/vscode/issues/115860 */)) {
 				matchingFilter = filter;
 
-				// The selected extension must be in the set of extensions that are in the filter list that is sent to the save dialog.
-				// If it isn't, add it manually. https://github.com/microsoft/vscode/issues/147657
-				const trimmedExt = trim(extOrPlaintext, '.');
+				const trimmedExt = trim(ext || PLAINTEXT_EXTENSION, '.');
 				if (!filter.extensions.includes(trimmedExt)) {
-					filter.extensions.unshift(trimmedExt);
+					filter.extensions.push(trimmedExt);
 				}
 
 				return null; // first matching filter will be added to the top

@@ -7,14 +7,15 @@ import { localize } from 'vs/nls';
 import { ExtensionInstallLocation, IExtensionManagementServer, IExtensionManagementServerService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { IRemoteAgentService } from 'vs/workbench/services/remote/common/remoteAgentService';
 import { Schemas } from 'vs/base/common/network';
+import { Event } from 'vs/base/common/event';
 import { IChannel } from 'vs/base/parts/ipc/common/ipc';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { isWeb } from 'vs/base/common/platform';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WebExtensionManagementService } from 'vs/workbench/services/extensionManagement/common/webExtensionManagementService';
 import { IExtension } from 'vs/platform/extensions/common/extensions';
-import { RemoteExtensionManagementService } from 'vs/workbench/services/extensionManagement/common/remoteExtensionManagementService';
+import { ExtensionManagementChannelClient } from 'vs/platform/extensionManagement/common/extensionManagementIpc';
 
 export class ExtensionManagementServerService implements IExtensionManagementServerService {
 
@@ -31,7 +32,9 @@ export class ExtensionManagementServerService implements IExtensionManagementSer
 	) {
 		const remoteAgentConnection = remoteAgentService.getConnection();
 		if (remoteAgentConnection) {
-			const extensionManagementService = instantiationService.createInstance(RemoteExtensionManagementService, remoteAgentConnection.getChannel<IChannel>('extensions'));
+			const extensionManagementService = new class extends ExtensionManagementChannelClient {
+				readonly onDidChangeProfileExtensions = Event.None;
+			}(remoteAgentConnection.getChannel<IChannel>('extensions'));
 			this.remoteExtensionManagementServer = {
 				id: 'remote',
 				extensionManagementService,
@@ -64,4 +67,4 @@ export class ExtensionManagementServerService implements IExtensionManagementSer
 	}
 }
 
-registerSingleton(IExtensionManagementServerService, ExtensionManagementServerService, InstantiationType.Delayed);
+registerSingleton(IExtensionManagementServerService, ExtensionManagementServerService);

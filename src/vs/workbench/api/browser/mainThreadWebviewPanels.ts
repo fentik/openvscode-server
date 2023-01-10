@@ -4,21 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { onUnexpectedError } from 'vs/base/common/errors';
-import { Event } from 'vs/base/common/event';
-import { Disposable, DisposableMap } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
-import { generateUuid } from 'vs/base/common/uuid';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { MainThreadWebviews, reviveWebviewContentOptions, reviveWebviewExtension } from 'vs/workbench/api/browser/mainThreadWebviews';
 import * as extHostProtocol from 'vs/workbench/api/common/extHost.protocol';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { ExtensionKeyedWebviewOriginStore, WebviewOptions } from 'vs/workbench/contrib/webview/browser/webview';
+import { WebviewOptions } from 'vs/workbench/contrib/webview/browser/webview';
 import { WebviewInput } from 'vs/workbench/contrib/webviewPanel/browser/webviewEditorInput';
 import { WebviewIcons } from 'vs/workbench/contrib/webviewPanel/browser/webviewIconManager';
-import { IWebViewShowOptions, IWebviewWorkbenchService } from 'vs/workbench/contrib/webviewPanel/browser/webviewWorkbenchService';
+import { ICreateWebViewShowOptions, IWebviewWorkbenchService } from 'vs/workbench/contrib/webviewPanel/browser/webviewWorkbenchService';
 import { editorGroupToColumn } from 'vs/workbench/services/editor/common/editorGroupColumn';
 import { GroupLocation, GroupsOrder, IEditorGroup, IEditorGroupsService, preferredSideBySideGroupDirection } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { ACTIVE_GROUP, IEditorService, PreferredGroup, SIDE_GROUP } from 'vs/workbench/services/editor/common/editorService';
@@ -86,9 +83,9 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 
 	private readonly _webviewInputs = new WebviewInputStore();
 
-	private readonly _revivers = this._register(new DisposableMap<string>());
+	private readonly _editorProviders = new Map<string, IDisposable>();
 
-	private readonly webviewOriginStore: ExtensionKeyedWebviewOriginStore;
+	private readonly _revivers = new Map<string, IDisposable>();
 
 	constructor(
 		context: IExtHostContext,
@@ -97,23 +94,18 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 		@IEditorGroupsService private readonly _editorGroupService: IEditorGroupsService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IExtensionService extensionService: IExtensionService,
-		@IStorageService storageService: IStorageService,
 		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IWebviewWorkbenchService private readonly _webviewWorkbenchService: IWebviewWorkbenchService,
 	) {
 		super();
 
-		this.webviewOriginStore = new ExtensionKeyedWebviewOriginStore('mainThreadWebviewPanel.origins', storageService);
-
 		this._proxy = context.getProxy(extHostProtocol.ExtHostContext.ExtHostWebviewPanels);
 
-		this._register(Event.any(
-			_editorService.onDidActiveEditorChange,
-			_editorService.onDidVisibleEditorsChange,
-			_editorGroupService.onDidAddGroup,
-			_editorGroupService.onDidRemoveGroup,
-			_editorGroupService.onDidMoveGroup,
-		)(() => {
+		this._register(_editorService.onDidActiveEditorChange(() => {
+			this.updateWebviewViewStates(this._editorService.activeEditor);
+		}));
+
+		this._register(_editorService.onDidVisibleEditorsChange(() => {
 			this.updateWebviewViewStates(this._editorService.activeEditor);
 		}));
 
@@ -133,6 +125,16 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 			},
 			resolveWebview: () => { throw new Error('not implemented'); }
 		}));
+	}
+
+	override dispose() {
+		super.dispose();
+
+		dispose(this._editorProviders.values());
+		this._editorProviders.clear();
+
+		dispose(this._revivers.values());
+		this._revivers.clear();
 	}
 
 	public get webviewInputs(): Iterable<WebviewInput> { return this._webviewInputs; }
@@ -156,17 +158,16 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 		showOptions: extHostProtocol.WebviewPanelShowOptions,
 	): void {
 		const targetGroup = this.getTargetGroupFromShowOptions(showOptions);
-		const mainThreadShowOptions: IWebViewShowOptions = showOptions ? {
+		const mainThreadShowOptions: ICreateWebViewShowOptions = showOptions ? {
 			preserveFocus: !!showOptions.preserveFocus,
 			group: targetGroup
 		} : {};
 
 		const extension = reviveWebviewExtension(extensionData);
-		const origin = this.webviewOriginStore.getOrigin(viewType, extension.id);
 
-		const webview = this._webviewWorkbenchService.openWebview({
-			origin,
-			providedViewType: viewType,
+		const webview = this._webviewWorkbenchService.createWebview({
+			id: handle,
+			providedId: viewType,
 			options: reviveWebviewOptions(initData.panelOptions),
 			contentOptions: reviveWebviewContentOptions(initData.webviewOptions),
 			extension
@@ -264,7 +265,7 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 					return;
 				}
 
-				const handle = generateUuid();
+				const handle = webviewInput.id;
 
 				this.addWebviewInput(handle, webviewInput, options);
 
@@ -294,11 +295,13 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 	}
 
 	public $unregisterSerializer(viewType: string): void {
-		if (!this._revivers.has(viewType)) {
+		const reviver = this._revivers.get(viewType);
+		if (!reviver) {
 			throw new Error(`No reviver for ${viewType} registered`);
 		}
 
-		this._revivers.deleteAndDispose(viewType);
+		reviver.dispose();
+		this._revivers.delete(viewType);
 	}
 
 	private updateWebviewViewStates(activeEditorInput: EditorInput | undefined) {

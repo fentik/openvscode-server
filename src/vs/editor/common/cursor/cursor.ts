@@ -24,6 +24,8 @@ import { CursorStateChangedEvent, ViewModelEventsCollector } from 'vs/editor/com
 
 export class CursorsController extends Disposable {
 
+	public static readonly MAX_CURSOR_COUNT = 10000;
+
 	private readonly _model: ITextModel;
 	private _knownModelVersionId: number;
 	private readonly _viewModel: ICursorSimpleModel;
@@ -115,9 +117,8 @@ export class CursorsController extends Disposable {
 
 	public setStates(eventsCollector: ViewModelEventsCollector, source: string | null | undefined, reason: CursorChangeReason, states: PartialCursorState[] | null): boolean {
 		let reachedMaxCursorCount = false;
-		const multiCursorLimit = this.context.cursorConfig.multiCursorLimit;
-		if (states !== null && states.length > multiCursorLimit) {
-			states = states.slice(0, multiCursorLimit);
+		if (states !== null && states.length > CursorsController.MAX_CURSOR_COUNT) {
+			states = states.slice(0, CursorsController.MAX_CURSOR_COUNT);
 			reachedMaxCursorCount = true;
 		}
 
@@ -402,7 +403,7 @@ export class CursorsController extends Disposable {
 		const viewSelections = this._cursors.getViewSelections();
 
 		// Let the view get the event first.
-		eventsCollector.emitViewEvent(new ViewCursorStateChangedEvent(viewSelections, selections, reason));
+		eventsCollector.emitViewEvent(new ViewCursorStateChangedEvent(viewSelections, selections));
 
 		// Only after the view has been notified, let the rest of the world know...
 		if (!oldState

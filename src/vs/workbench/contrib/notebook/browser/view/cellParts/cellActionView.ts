@@ -9,7 +9,7 @@ import { MenuEntryActionViewItem } from 'vs/platform/actions/browser/menuEntryAc
 
 export class CodiconActionViewItem extends MenuEntryActionViewItem {
 
-	protected override updateLabel(): void {
+	override updateLabel(): void {
 		if (this.options.label && this.label) {
 			DOM.reset(this.label, ...renderLabelWithIcons(this._commandAction.label ?? ''));
 		}
@@ -27,7 +27,7 @@ export class ActionViewWithLabel extends MenuEntryActionViewItem {
 		this.updateLabel();
 	}
 
-	protected override updateLabel() {
+	override updateLabel() {
 		if (this._actionLabel) {
 			this._actionLabel.classList.add('notebook-label');
 			this._actionLabel.innerText = this._action.label;

@@ -15,7 +15,7 @@ steps:
     displayName: "Azure Key Vault: Get Secrets"
     inputs:
       azureSubscription: "vscode-builds-subscription"
-      KeyVaultName: vscode-build-secrets
+      KeyVaultName: vscode
       SecretsFilter: "github-distro-mixin-password"
 
   - script: |

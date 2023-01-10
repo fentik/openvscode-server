@@ -98,8 +98,6 @@ export function listProcesses(rootPid: number): Promise<ProcessItem> {
 					if (UTILITY_EXTENSION_HOST_HINT.exec(cmd)) {
 						return 'extension-host';
 					}
-				} else if (matches[1] === 'extensionHost') {
-					return 'extension-host'; // normalize remote extension host type
 				}
 				return matches[1];
 			}
@@ -200,7 +198,7 @@ export function listProcesses(rootPid: number): Promise<ProcessItem> {
 				// The cpu usage value reported on Linux is the average over the process lifetime,
 				// recalculate the usage over a one second interval
 				// JSON.stringify is needed to escape spaces, https://github.com/nodejs/node/issues/6803
-				let cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/cpuUsage.sh').fsPath);
+				let cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/cpuUsage.sh', require).fsPath);
 				cmd += ' ' + pids.join(' ');
 
 				exec(cmd, {}, (err, stdout, stderr) => {
@@ -228,7 +226,7 @@ export function listProcesses(rootPid: number): Promise<ProcessItem> {
 					if (process.platform !== 'linux') {
 						reject(err || new Error(stderr.toString()));
 					} else {
-						const cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/ps.sh').fsPath);
+						const cmd = JSON.stringify(FileAccess.asFileUri('vs/base/node/ps.sh', require).fsPath);
 						exec(cmd, {}, (err, stdout, stderr) => {
 							if (err || stderr) {
 								reject(err || new Error(stderr.toString()));

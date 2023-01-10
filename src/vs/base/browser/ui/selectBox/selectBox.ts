@@ -14,7 +14,6 @@ import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { deepClone } from 'vs/base/common/objects';
 import { isMacintosh } from 'vs/base/common/platform';
-import { IThemable } from 'vs/base/common/styler';
 import 'vs/css!./selectBox';
 
 
@@ -78,7 +77,7 @@ export interface ISelectData {
 	index: number;
 }
 
-export class SelectBox extends Widget implements ISelectBoxDelegate, IThemable {
+export class SelectBox extends Widget implements ISelectBoxDelegate {
 	private selectBoxDelegate: ISelectBoxDelegate;
 
 	constructor(options: ISelectOptionItem[], selected: number, contextViewProvider: IContextViewProvider, styles: ISelectBoxStyles = deepClone(defaultStyles), selectBoxOptions?: ISelectBoxOptions) {

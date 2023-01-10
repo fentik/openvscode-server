@@ -22,7 +22,7 @@ export interface IModelService {
 
 	updateModel(model: ITextModel, value: string | ITextBufferFactory): void;
 
-	setMode(model: ITextModel, languageSelection: ILanguageSelection, source?: string): void;
+	setMode(model: ITextModel, languageSelection: ILanguageSelection): void;
 
 	destroyModel(resource: URI): void;
 

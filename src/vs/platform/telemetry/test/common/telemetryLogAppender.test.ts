@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
-import { Event } from 'vs/base/common/event';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 import { AbstractLogger, DEFAULT_LOG_LEVEL, ILogger, ILoggerService, LogLevel } from 'vs/platform/log/common/log';
@@ -19,31 +18,37 @@ class TestTelemetryLogger extends AbstractLogger implements ILogger {
 	}
 
 	trace(message: string, ...args: any[]): void {
-		if (this.checkLogLevel(LogLevel.Trace)) {
+		if (this.getLevel() <= LogLevel.Trace) {
 			this.logs.push(message + JSON.stringify(args));
 		}
 	}
 
 	debug(message: string, ...args: any[]): void {
-		if (this.checkLogLevel(LogLevel.Debug)) {
+		if (this.getLevel() <= LogLevel.Debug) {
 			this.logs.push(message);
 		}
 	}
 
 	info(message: string, ...args: any[]): void {
-		if (this.checkLogLevel(LogLevel.Info)) {
+		if (this.getLevel() <= LogLevel.Info) {
 			this.logs.push(message);
 		}
 	}
 
 	warn(message: string | Error, ...args: any[]): void {
-		if (this.checkLogLevel(LogLevel.Warning)) {
+		if (this.getLevel() <= LogLevel.Warning) {
 			this.logs.push(message.toString());
 		}
 	}
 
 	error(message: string, ...args: any[]): void {
-		if (this.checkLogLevel(LogLevel.Error)) {
+		if (this.getLevel() <= LogLevel.Error) {
+			this.logs.push(message);
+		}
+	}
+
+	critical(message: string, ...args: any[]): void {
+		if (this.getLevel() <= LogLevel.Critical) {
 			this.logs.push(message);
 		}
 	}
@@ -52,7 +57,7 @@ class TestTelemetryLogger extends AbstractLogger implements ILogger {
 	flush(): void { }
 }
 
-export class TestTelemetryLoggerService implements ILoggerService {
+class TestTelemetryLoggerService implements ILoggerService {
 	_serviceBrand: undefined;
 
 	logger?: TestTelemetryLogger;
@@ -70,11 +75,6 @@ export class TestTelemetryLoggerService implements ILoggerService {
 
 		return this.logger;
 	}
-
-	onDidChangeLogLevel = Event.None;
-	setLevel(): void { }
-	getLogLevel() { return undefined; }
-	getDefaultLogLevel() { return this.logLevel; }
 }
 
 suite('TelemetryLogAdapter', () => {

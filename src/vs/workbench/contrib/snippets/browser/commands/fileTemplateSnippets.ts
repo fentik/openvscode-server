@@ -62,7 +62,7 @@ export class ApplyFileSnippetAction extends SnippetsAction {
 			}]);
 
 			// set language if possible
-			modelService.setMode(editor.getModel(), langService.createById(selection.langId), ApplyFileSnippetAction.Id);
+			modelService.setMode(editor.getModel(), langService.createById(selection.langId));
 		}
 	}
 

@@ -102,7 +102,7 @@ suite('CompletionModel', function () {
 
 	test('complete/incomplete', () => {
 
-		assert.strictEqual(model.getIncompleteProvider().size, 0);
+		assert.strictEqual(model.incomplete.size, 0);
 
 		const incompleteModel = new CompletionModel([
 			createSuggestItem('foo', 3, undefined, true),
@@ -111,7 +111,25 @@ suite('CompletionModel', function () {
 			leadingLineContent: 'foo',
 			characterCountDelta: 0
 		}, WordDistance.None, EditorOptions.suggest.defaultValue, EditorOptions.snippetSuggestions.defaultValue, undefined);
-		assert.strictEqual(incompleteModel.getIncompleteProvider().size, 1);
+		assert.strictEqual(incompleteModel.incomplete.size, 1);
+	});
+
+	test('replaceIncomplete', () => {
+
+		const completeItem = createSuggestItem('foobar', 1, undefined, false, { lineNumber: 1, column: 2 });
+		const incompleteItem = createSuggestItem('foofoo', 1, undefined, true, { lineNumber: 1, column: 2 });
+
+		const model = new CompletionModel([completeItem, incompleteItem], 2, { leadingLineContent: 'f', characterCountDelta: 0 }, WordDistance.None, EditorOptions.suggest.defaultValue, EditorOptions.snippetSuggestions.defaultValue, undefined);
+		assert.strictEqual(model.incomplete.size, 1);
+		assert.strictEqual(model.items.length, 2);
+
+		const { incomplete } = model;
+		const complete = model.adopt(incomplete);
+
+		assert.strictEqual(incomplete.size, 1);
+		assert.ok(incomplete.has(incompleteItem.provider));
+		assert.strictEqual(complete.length, 1);
+		assert.ok(complete[0] === completeItem);
 	});
 
 	test('Fuzzy matching of snippets stopped working with inline snippet suggestions #49895', function () {
@@ -132,8 +150,15 @@ suite('CompletionModel', function () {
 				incompleteItem1,
 			], 2, { leadingLineContent: 'f', characterCountDelta: 0 }, WordDistance.None, EditorOptions.suggest.defaultValue, EditorOptions.snippetSuggestions.defaultValue, undefined
 		);
-		assert.strictEqual(model.getIncompleteProvider().size, 1);
+		assert.strictEqual(model.incomplete.size, 1);
 		assert.strictEqual(model.items.length, 6);
+
+		const { incomplete } = model;
+		const complete = model.adopt(incomplete);
+
+		assert.strictEqual(incomplete.size, 1);
+		assert.ok(incomplete.has(incompleteItem1.provider));
+		assert.strictEqual(complete.length, 5);
 	});
 
 	test('proper current word when length=0, #16380', function () {

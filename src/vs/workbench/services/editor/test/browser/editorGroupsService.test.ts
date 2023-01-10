@@ -229,7 +229,7 @@ suite('EditorGroupsService', () => {
 
 		assert.strictEqual(part.groups.length, 3);
 
-		part.testSaveState();
+		part.saveState();
 		part.dispose();
 
 		const [restoredPart] = await createPart(instantiationService);

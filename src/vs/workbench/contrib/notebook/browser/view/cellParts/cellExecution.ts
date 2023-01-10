@@ -8,13 +8,13 @@ import { disposableTimeout } from 'vs/base/common/async';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { ICellViewModel, INotebookEditorDelegate } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { CellViewModelStateChangeEvent } from 'vs/workbench/contrib/notebook/browser/notebookViewEvents';
-import { CellContentPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
+import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
 import { NotebookCellInternalMetadata } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { INotebookExecutionStateService } from 'vs/workbench/contrib/notebook/common/notebookExecutionStateService';
 
 const UPDATE_EXECUTION_ORDER_GRACE_PERIOD = 200;
 
-export class CellExecutionPart extends CellContentPart {
+export class CellExecutionPart extends CellPart {
 	private kernelDisposables = this._register(new DisposableStore());
 
 	constructor(
@@ -41,12 +41,12 @@ export class CellExecutionPart extends CellContentPart {
 		}));
 	}
 
-	override didRenderCell(element: ICellViewModel): void {
+	protected override didRenderCell(element: ICellViewModel): void {
 		this.updateExecutionOrder(element.internalMetadata, true);
 	}
 
 	private updateExecutionOrder(internalMetadata: NotebookCellInternalMetadata, forceClear = false): void {
-		if (this._notebookEditor.activeKernel?.implementsExecutionOrder || (!this._notebookEditor.activeKernel && typeof internalMetadata.executionOrder === 'number')) {
+		if (this._notebookEditor.activeKernel?.implementsExecutionOrder) {
 			// If the executionOrder was just cleared, and the cell is executing, wait just a bit before clearing the view to avoid flashing
 			if (typeof internalMetadata.executionOrder !== 'number' && !forceClear && !!this._notebookExecutionStateService.getCellExecution(this.currentCell!.uri)) {
 				const renderingCell = this.currentCell;

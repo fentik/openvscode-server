@@ -12,11 +12,8 @@ export class LogLevelChannel implements IServerChannel {
 
 	onDidChangeLogLevel: Event<LogLevel>;
 
-	constructor(
-		private readonly logService: ILogService,
-		private readonly loggerService: ILoggerService
-	) {
-		this.onDidChangeLogLevel = Event.buffer(logService.onDidChangeLogLevel, true);
+	constructor(private service: ILogService) {
+		this.onDidChangeLogLevel = Event.buffer(service.onDidChangeLogLevel, true);
 	}
 
 	listen(_: unknown, event: string): Event<any> {
@@ -29,7 +26,7 @@ export class LogLevelChannel implements IServerChannel {
 
 	async call(_: unknown, command: string, arg?: any): Promise<any> {
 		switch (command) {
-			case 'setLevel': return arg[1] ? this.loggerService.setLevel(URI.revive(arg[1]), arg[0]) : this.logService.setLevel(arg[0]);
+			case 'setLevel': return this.service.setLevel(arg);
 		}
 
 		throw new Error(`Call not found: ${command}`);
@@ -45,12 +42,12 @@ export class LogLevelChannelClient {
 		return this.channel.listen('onDidChangeLogLevel');
 	}
 
-	setLevel(level: LogLevel, resource?: URI): void {
-		LogLevelChannelClient.setLevel(this.channel, level, resource);
+	setLevel(level: LogLevel): void {
+		LogLevelChannelClient.setLevel(this.channel, level);
 	}
 
-	public static setLevel(channel: IChannel, level: LogLevel, resource?: URI): Promise<void> {
-		return channel.call('setLevel', [level, resource]);
+	public static setLevel(channel: IChannel, level: LogLevel): Promise<void> {
+		return channel.call('setLevel', level);
 	}
 
 }

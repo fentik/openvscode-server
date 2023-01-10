@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { BugIndicatingError } from 'vs/base/common/errors';
 import { CursorColumns } from 'vs/editor/common/core/cursorColumns';
 import { BracketKind } from 'vs/editor/common/languages/supports/languageBracketsConfiguration';
 import { ITextModel } from 'vs/editor/common/model';
@@ -126,7 +125,7 @@ export class PairAstNode extends BaseAstNode {
 	 * Avoid using this property, it allocates an array!
 	*/
 	public get children() {
-		const result: AstNode[] = [];
+		const result = new Array<AstNode>();
 		result.push(this.openingBracket);
 		if (this.child) {
 			result.push(this.child);
@@ -296,19 +295,10 @@ export abstract class ListAstNode extends BaseAstNode {
 			return false;
 		}
 
-		if (this.childrenLength === 0) {
-			// Don't reuse empty lists.
-			return false;
-		}
-
 		let lastChild: ListAstNode = this;
-		while (lastChild.kind === AstNodeKind.List) {
-			const lastLength = lastChild.childrenLength;
-			if (lastLength === 0) {
-				// Empty lists should never be contained in other lists.
-				throw new BugIndicatingError();
-			}
-			lastChild = lastChild.getChild(lastLength - 1) as ListAstNode;
+		let lastLength: number;
+		while (lastChild.kind === AstNodeKind.List && (lastLength = lastChild.childrenLength) > 0) {
+			lastChild = lastChild.getChild(lastLength! - 1) as ListAstNode;
 		}
 
 		return lastChild.canBeReused(openBracketIds);
@@ -334,7 +324,7 @@ export abstract class ListAstNode extends BaseAstNode {
 	}
 
 	public flattenLists(): ListAstNode {
-		const items: AstNode[] = [];
+		const items = new Array<AstNode>();
 		for (const c of this.children) {
 			const normalized = c.flattenLists();
 			if (normalized.kind === AstNodeKind.List) {

@@ -8,6 +8,8 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { ProgressBar } from 'vs/base/browser/ui/progressbar/progressbar';
 import { IProgressRunner, IProgressIndicator, emptyProgressRunner } from 'vs/platform/progress/common/progress';
 import { IEditorGroupView } from 'vs/workbench/browser/parts/editor/editor';
+import { IViewsService } from 'vs/workbench/common/views';
+import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { GroupModelChangeKind } from 'vs/workbench/common/editor';
 
 export class EditorProgressIndicator extends Disposable implements IProgressIndicator {
@@ -151,7 +153,7 @@ namespace ProgressIndicatorState {
 		| Work;
 }
 
-export interface IProgressScope {
+interface IProgressScope {
 
 	/**
 	 * Fired whenever `isActive` value changed.
@@ -164,7 +166,7 @@ export interface IProgressScope {
 	readonly isActive: boolean;
 }
 
-export class ScopedProgressIndicator extends Disposable implements IProgressIndicator {
+class ScopedProgressIndicator extends Disposable implements IProgressIndicator {
 
 	private progressState: ProgressIndicatorState.State = ProgressIndicatorState.None;
 
@@ -334,7 +336,7 @@ export class ScopedProgressIndicator extends Disposable implements IProgressIndi
 	}
 }
 
-export abstract class AbstractProgressScope extends Disposable implements IProgressScope {
+export class CompositeProgressScope extends Disposable implements IProgressScope {
 
 	private readonly _onDidChangeActive = this._register(new Emitter<void>());
 	readonly onDidChangeActive = this._onDidChangeActive.event;
@@ -342,13 +344,24 @@ export abstract class AbstractProgressScope extends Disposable implements IProgr
 	get isActive() { return this._isActive; }
 
 	constructor(
+		private paneCompositeService: IPaneCompositePartService,
+		private viewsService: IViewsService,
 		private scopeId: string,
 		private _isActive: boolean
 	) {
 		super();
+
+		this.registerListeners();
 	}
 
-	protected onScopeOpened(scopeId: string) {
+	registerListeners(): void {
+		this._register(this.viewsService.onDidChangeViewVisibility(e => e.visible ? this.onScopeOpened(e.id) : this.onScopeClosed(e.id)));
+
+		this._register(this.paneCompositeService.onDidPaneCompositeOpen(e => this.onScopeOpened(e.composite.getId())));
+		this._register(this.paneCompositeService.onDidPaneCompositeClose(e => this.onScopeClosed(e.composite.getId())));
+	}
+
+	private onScopeOpened(scopeId: string) {
 		if (scopeId === this.scopeId) {
 			if (!this._isActive) {
 				this._isActive = true;
@@ -358,7 +371,7 @@ export abstract class AbstractProgressScope extends Disposable implements IProgr
 		}
 	}
 
-	protected onScopeClosed(scopeId: string) {
+	private onScopeClosed(scopeId: string) {
 		if (scopeId === this.scopeId) {
 			if (this._isActive) {
 				this._isActive = false;
@@ -366,5 +379,17 @@ export abstract class AbstractProgressScope extends Disposable implements IProgr
 				this._onDidChangeActive.fire();
 			}
 		}
+	}
+}
+
+export class CompositeProgressIndicator extends ScopedProgressIndicator {
+	constructor(
+		progressbar: ProgressBar,
+		scopeId: string,
+		isActive: boolean,
+		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
+		@IViewsService viewsService: IViewsService
+	) {
+		super(progressbar, new CompositeProgressScope(paneCompositeService, viewsService, scopeId, isActive));
 	}
 }

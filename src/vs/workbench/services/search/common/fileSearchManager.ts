@@ -13,7 +13,7 @@ import { URI } from 'vs/base/common/uri';
 import { IFileMatch, IFileSearchProviderStats, IFolderQuery, ISearchCompleteStats, IFileQuery, QueryGlobTester, resolvePatternsForProvider, hasSiblingFn } from 'vs/workbench/services/search/common/search';
 import { FileSearchProvider, FileSearchOptions } from 'vs/workbench/services/search/common/searchExtTypes';
 
-interface IInternalFileMatch {
+export interface IInternalFileMatch {
 	base: URI;
 	original?: URI;
 	relativePath?: string; // Not present for extraFiles or absolute path matches
@@ -21,13 +21,13 @@ interface IInternalFileMatch {
 	size?: number;
 }
 
-interface IDirectoryEntry {
+export interface IDirectoryEntry {
 	base: URI;
 	relativePath: string;
 	basename: string;
 }
 
-interface IDirectoryTree {
+export interface IDirectoryTree {
 	rootEntries: IDirectoryEntry[];
 	pathToEntries: { [relativePath: string]: IDirectoryEntry[] };
 }
@@ -300,7 +300,9 @@ export class FileSearchManager {
 
 	clearCache(cacheKey: string): void {
 		const sessionTokenSource = this.getSessionTokenSource(cacheKey);
-		sessionTokenSource?.cancel();
+		if (sessionTokenSource) {
+			sessionTokenSource.cancel();
+		}
 	}
 
 	private getSessionTokenSource(cacheKey: string | undefined): CancellationTokenSource | undefined {

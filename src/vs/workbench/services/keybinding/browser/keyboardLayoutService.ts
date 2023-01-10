@@ -7,12 +7,12 @@ import * as nls from 'vs/nls';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { KeymapInfo, IRawMixedKeyboardMapping, IKeymapInfo } from 'vs/workbench/services/keybinding/common/keymapInfo';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { DispatchConfig, readKeyboardConfig } from 'vs/platform/keyboardLayout/common/keyboardConfig';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { DispatchConfig } from 'vs/platform/keyboardLayout/common/dispatchConfig';
 import { IKeyboardMapper, CachedKeyboardMapper } from 'vs/platform/keyboardLayout/common/keyboardMapper';
 import { OS, OperatingSystem, isMacintosh, isWindows } from 'vs/base/common/platform';
 import { WindowsKeyboardMapper } from 'vs/workbench/services/keybinding/common/windowsKeyboardMapper';
-import { FallbackKeyboardMapper } from 'vs/workbench/services/keybinding/common/fallbackKeyboardMapper';
+import { MacLinuxFallbackKeyboardMapper } from 'vs/workbench/services/keybinding/common/macLinuxFallbackKeyboardMapper';
 import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
 import { MacLinuxKeyboardMapper } from 'vs/workbench/services/keybinding/common/macLinuxKeyboardMapper';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
@@ -31,7 +31,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { getKeyboardLayoutId, IKeyboardLayoutInfo, IKeyboardLayoutService, IKeyboardMapping, IMacLinuxKeyboardMapping, IWindowsKeyboardMapping } from 'vs/platform/keyboardLayout/common/keyboardLayout';
 
-export class BrowserKeyboardMapperFactoryBase extends Disposable {
+export class BrowserKeyboardMapperFactoryBase {
 	// keyboard mapper
 	protected _initialized: boolean;
 	protected _keyboardMapper: IKeyboardMapper | null;
@@ -56,7 +56,7 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 			return null;
 		}
 
-		return this._activeKeymapInfo?.layout ?? null;
+		return this._activeKeymapInfo && this._activeKeymapInfo.layout;
 	}
 
 	get activeKeyMapping(): IKeyboardMapping | null {
@@ -64,7 +64,7 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 			return null;
 		}
 
-		return this._activeKeymapInfo?.mapping ?? null;
+		return this._activeKeymapInfo && this._activeKeymapInfo.mapping;
 	}
 
 	get keyboardLayouts(): IKeyboardLayoutInfo[] {
@@ -72,12 +72,10 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 	}
 
 	protected constructor(
-		private readonly _configurationService: IConfigurationService,
 		// private _notificationService: INotificationService,
 		// private _storageService: IStorageService,
 		// private _commandService: ICommandService
 	) {
-		super();
 		this._keyboardMapper = null;
 		this._initialized = false;
 		this._keymapInfos = [];
@@ -96,13 +94,6 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 				});
 			});
 		}
-
-		this._register(this._configurationService.onDidChangeConfiguration((e) => {
-			if (e.affectsConfiguration('keyboard')) {
-				this._keyboardMapper = null;
-				this._onDidChangeKeyboardMapper.fire();
-			}
-		}));
 	}
 
 	registerKeyboardLayout(layout: KeymapInfo) {
@@ -279,16 +270,15 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 		});
 	}
 
-	public getKeyboardMapper(): IKeyboardMapper {
-		const config = readKeyboardConfig(this._configurationService);
-		if (config.dispatch === DispatchConfig.KeyCode || !this._initialized || !this._activeKeymapInfo) {
+	public getKeyboardMapper(dispatchConfig: DispatchConfig): IKeyboardMapper {
+		if (!this._initialized) {
+			return new MacLinuxFallbackKeyboardMapper(OS);
+		}
+		if (dispatchConfig === DispatchConfig.KeyCode) {
 			// Forcefully set to use keyCode
-			return new FallbackKeyboardMapper(config.mapAltGrToCtrlAlt, OS);
+			return new MacLinuxFallbackKeyboardMapper(OS);
 		}
-		if (!this._keyboardMapper) {
-			this._keyboardMapper = new CachedKeyboardMapper(BrowserKeyboardMapperFactory._createKeyboardMapper(this._activeKeymapInfo, config.mapAltGrToCtrlAlt));
-		}
-		return this._keyboardMapper;
+		return this._keyboardMapper!;
 	}
 
 	public validateCurrentKeyboardMapping(keyboardEvent: IKeyboardEvent): void {
@@ -316,22 +306,22 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 	private _setKeyboardData(keymapInfo: KeymapInfo): void {
 		this._initialized = true;
 
-		this._keyboardMapper = null;
+		this._keyboardMapper = new CachedKeyboardMapper(BrowserKeyboardMapperFactory._createKeyboardMapper(keymapInfo));
 		this._onDidChangeKeyboardMapper.fire();
 	}
 
-	private static _createKeyboardMapper(keymapInfo: KeymapInfo, mapAltGrToCtrlAlt: boolean): IKeyboardMapper {
+	private static _createKeyboardMapper(keymapInfo: KeymapInfo): IKeyboardMapper {
 		const rawMapping = keymapInfo.mapping;
 		const isUSStandard = !!keymapInfo.layout.isUSStandard;
 		if (OS === OperatingSystem.Windows) {
-			return new WindowsKeyboardMapper(isUSStandard, <IWindowsKeyboardMapping>rawMapping, mapAltGrToCtrlAlt);
+			return new WindowsKeyboardMapper(isUSStandard, <IWindowsKeyboardMapping>rawMapping);
 		}
 		if (Object.keys(rawMapping).length === 0) {
 			// Looks like reading the mappings failed (most likely Mac + Japanese/Chinese keyboard layouts)
-			return new FallbackKeyboardMapper(mapAltGrToCtrlAlt, OS);
+			return new MacLinuxFallbackKeyboardMapper(OS);
 		}
 
-		return new MacLinuxKeyboardMapper(isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, mapAltGrToCtrlAlt, OS);
+		return new MacLinuxKeyboardMapper(isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, OS);
 	}
 
 	//#region Browser API
@@ -446,9 +436,9 @@ export class BrowserKeyboardMapperFactoryBase extends Disposable {
 }
 
 export class BrowserKeyboardMapperFactory extends BrowserKeyboardMapperFactoryBase {
-	constructor(configurationService: IConfigurationService, notificationService: INotificationService, storageService: IStorageService, commandService: ICommandService) {
+	constructor(notificationService: INotificationService, storageService: IStorageService, commandService: ICommandService) {
 		// super(notificationService, storageService, commandService);
-		super(configurationService);
+		super();
 
 		const platform = isWindows ? 'win' : isMacintosh ? 'darwin' : 'linux';
 
@@ -536,7 +526,7 @@ export class BrowserKeyboardLayoutService extends Disposable implements IKeyboar
 		const keyboardConfig = configurationService.getValue<{ layout: string }>('keyboard');
 		const layout = keyboardConfig.layout;
 		this._keyboardLayoutMode = layout ?? 'autodetect';
-		this._factory = new BrowserKeyboardMapperFactory(configurationService, notificationService, storageService, commandService);
+		this._factory = new BrowserKeyboardMapperFactory(notificationService, storageService, commandService);
 
 		this._register(this._factory.onDidChangeKeyboardMapper(() => {
 			this._onDidChangeKeyboardLayout.fire();
@@ -548,7 +538,7 @@ export class BrowserKeyboardLayoutService extends Disposable implements IKeyboar
 		}
 
 		this._register(configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration('keyboard.layout')) {
+			if (e.affectedKeys.indexOf('keyboard.layout') >= 0) {
 				const keyboardConfig = configurationService.getValue<{ layout: string }>('keyboard');
 				const layout = keyboardConfig.layout;
 				this._keyboardLayoutMode = layout;
@@ -603,8 +593,8 @@ export class BrowserKeyboardLayoutService extends Disposable implements IKeyboar
 		}
 	}
 
-	getKeyboardMapper(): IKeyboardMapper {
-		return this._factory.getKeyboardMapper();
+	getKeyboardMapper(dispatchConfig: DispatchConfig): IKeyboardMapper {
+		return this._factory.getKeyboardMapper(dispatchConfig);
 	}
 
 	public getCurrentKeyboardLayout(): IKeyboardLayoutInfo | null {
@@ -628,7 +618,7 @@ export class BrowserKeyboardLayoutService extends Disposable implements IKeyboar
 	}
 }
 
-registerSingleton(IKeyboardLayoutService, BrowserKeyboardLayoutService, InstantiationType.Delayed);
+registerSingleton(IKeyboardLayoutService, BrowserKeyboardLayoutService, true);
 
 // Configuration
 const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigExtensions.Configuration);

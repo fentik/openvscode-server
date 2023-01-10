@@ -6,15 +6,14 @@
 import { VSBuffer } from 'vs/base/common/buffer';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Schemas } from 'vs/base/common/network';
-import * as objects from 'vs/base/common/objects';
 import { URI } from 'vs/base/common/uri';
 import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { normalizeVersion, parseVersion } from 'vs/platform/extensions/common/extensionValidator';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IExtHostApiDeprecationService } from 'vs/workbench/api/common/extHostApiDeprecationService';
-import { deserializeWebviewMessage, serializeWebviewMessage } from 'vs/workbench/api/common/extHostWebviewMessaging';
+import { serializeWebviewMessage, deserializeWebviewMessage } from 'vs/workbench/api/common/extHostWebviewMessaging';
 import { IExtHostWorkspace } from 'vs/workbench/api/common/extHostWorkspace';
-import { asWebviewUri, webviewGenericCspSource, WebviewRemoteInfo } from 'vs/workbench/contrib/webview/common/webview';
+import { asWebviewUri, webviewGenericCspSource, WebviewRemoteInfo } from 'vs/workbench/common/webview';
 import { SerializableObjectWithBuffers } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 import type * as vscode from 'vscode';
 import * as extHostProtocol from './extHost.protocol';
@@ -34,8 +33,7 @@ export class ExtHostWebview implements vscode.Webview {
 	#isDisposed: boolean = false;
 	#hasCalledAsWebviewUri = false;
 
-	#serializeBuffersForPostMessage: boolean;
-	#shouldRewriteOldResourceUris: boolean;
+	#serializeBuffersForPostMessage = false;
 
 	constructor(
 		handle: extHostProtocol.WebviewHandle,
@@ -53,7 +51,6 @@ export class ExtHostWebview implements vscode.Webview {
 		this.#workspace = workspace;
 		this.#extension = extension;
 		this.#serializeBuffersForPostMessage = shouldSerializeBuffersForPostMessage(extension);
-		this.#shouldRewriteOldResourceUris = shouldTryRewritingOldResourceUris(extension);
 		this.#deprecationService = deprecationService;
 	}
 
@@ -101,12 +98,12 @@ export class ExtHostWebview implements vscode.Webview {
 		this.assertNotDisposed();
 		if (this.#html !== value) {
 			this.#html = value;
-			if (this.#shouldRewriteOldResourceUris && !this.#hasCalledAsWebviewUri && /(["'])vscode-resource:([^\s'"]+?)(["'])/i.test(value)) {
+			if (!this.#hasCalledAsWebviewUri && /(["'])vscode-resource:([^\s'"]+?)(["'])/i.test(value)) {
 				this.#hasCalledAsWebviewUri = true;
 				this.#deprecationService.report('Webview vscode-resource: uris', this.#extension,
 					`Please migrate to use the 'webview.asWebviewUri' api instead: https://aka.ms/vscode-webview-use-aswebviewuri`);
 			}
-			this.#proxy.$setHtml(this.#handle, this.rewriteOldResourceUrlsIfNeeded(value));
+			this.#proxy.$setHtml(this.#handle, value);
 		}
 	}
 
@@ -117,11 +114,7 @@ export class ExtHostWebview implements vscode.Webview {
 
 	public set options(newOptions: vscode.WebviewOptions) {
 		this.assertNotDisposed();
-
-		if (!objects.equals(this.#options, newOptions)) {
-			this.#proxy.$setOptions(this.#handle, serializeWebviewOptions(this.#extension, this.#workspace, newOptions));
-		}
-
+		this.#proxy.$setOptions(this.#handle, serializeWebviewOptions(this.#extension, this.#workspace, newOptions));
 		this.#options = newOptions;
 	}
 
@@ -138,51 +131,12 @@ export class ExtHostWebview implements vscode.Webview {
 			throw new Error('Webview is disposed');
 		}
 	}
-
-	private rewriteOldResourceUrlsIfNeeded(value: string): string {
-		if (!this.#shouldRewriteOldResourceUris) {
-			return value;
-		}
-
-		const isRemote = this.#extension.extensionLocation?.scheme === Schemas.vscodeRemote;
-		const remoteAuthority = this.#extension.extensionLocation.scheme === Schemas.vscodeRemote ? this.#extension.extensionLocation.authority : undefined;
-		return value
-			.replace(/(["'])(?:vscode-resource):(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_match, startQuote, _1, scheme, path, endQuote) => {
-				const uri = URI.from({
-					scheme: scheme || 'file',
-					path: decodeURIComponent(path),
-				});
-				const webviewUri = asWebviewUri(uri, { isRemote, authority: remoteAuthority }).toString();
-				return `${startQuote}${webviewUri}${endQuote}`;
-			})
-			.replace(/(["'])(?:vscode-webview-resource):(\/\/[^\s\/'"]+\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_match, startQuote, _1, scheme, path, endQuote) => {
-				const uri = URI.from({
-					scheme: scheme || 'file',
-					path: decodeURIComponent(path),
-				});
-				const webviewUri = asWebviewUri(uri, { isRemote, authority: remoteAuthority }).toString();
-				return `${startQuote}${webviewUri}${endQuote}`;
-			});
-	}
 }
 
 export function shouldSerializeBuffersForPostMessage(extension: IExtensionDescription): boolean {
 	try {
 		const version = normalizeVersion(parseVersion(extension.engines.vscode));
 		return !!version && version.majorBase >= 1 && version.minorBase >= 57;
-	} catch {
-		return false;
-	}
-}
-
-function shouldTryRewritingOldResourceUris(extension: IExtensionDescription): boolean {
-	try {
-		const version = normalizeVersion(parseVersion(extension.engines.vscode));
-		if (!version) {
-			return false;
-		}
-
-		return version.majorBase < 1 || (version.majorBase === 1 && version.minorBase < 60);
 	} catch {
 		return false;
 	}
@@ -259,7 +213,7 @@ export function serializeWebviewOptions(
 	};
 }
 
-function reviveOptions(options: extHostProtocol.IWebviewContentOptions): vscode.WebviewOptions {
+export function reviveOptions(options: extHostProtocol.IWebviewContentOptions): vscode.WebviewOptions {
 	return {
 		enableCommandUris: options.enableCommandUris,
 		enableScripts: options.enableScripts,

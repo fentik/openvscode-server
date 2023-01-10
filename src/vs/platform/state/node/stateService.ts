@@ -104,12 +104,12 @@ export class FileStorage {
 		}
 	}
 
-	private async save(): Promise<void> {
+	private async save(delay?: number): Promise<void> {
 		if (this.closing) {
 			return; // already about to close
 		}
 
-		return this.flushDelayer.trigger(() => this.doSave());
+		return this.flushDelayer.trigger(() => this.doSave(), delay);
 	}
 
 	private async doSave(): Promise<void> {
@@ -167,4 +167,5 @@ export class StateService implements IStateService {
 	getItem<T>(key: string, defaultValue?: T): T | undefined {
 		return this.fileStorage.getItem(key, defaultValue);
 	}
+
 }

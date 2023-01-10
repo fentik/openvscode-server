@@ -19,8 +19,10 @@ import { ExtensionTipsService as BaseExtensionTipsService } from 'vs/platform/ex
 import { IExtensionRecommendationNotificationService, RecommendationsNotificationResult, RecommendationSource } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
 import { ExtensionType } from 'vs/platform/extensions/common/extensions';
 import { IFileService } from 'vs/platform/files/common/files';
+import { ILogService } from 'vs/platform/log/common/log';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { IProductService } from 'vs/platform/product/common/productService';
+import { IRequestService } from 'vs/platform/request/common/request';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
@@ -42,6 +44,8 @@ const lastPromptedMediumImpExeTimeStorageKey = 'extensionTips/lastPromptedMedium
 
 export class ExtensionTipsService extends BaseExtensionTipsService {
 
+	override _serviceBrand: any;
+
 	private readonly highImportanceExecutableTips: Map<string, IExeBasedExtensionTips> = new Map<string, IExeBasedExtensionTips>();
 	private readonly mediumImportanceExecutableTips: Map<string, IExeBasedExtensionTips> = new Map<string, IExeBasedExtensionTips>();
 	private readonly allOtherExecutableTips: Map<string, IExeBasedExtensionTips> = new Map<string, IExeBasedExtensionTips>();
@@ -58,8 +62,10 @@ export class ExtensionTipsService extends BaseExtensionTipsService {
 		@IExtensionRecommendationNotificationService private readonly extensionRecommendationNotificationService: IExtensionRecommendationNotificationService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
+		@IRequestService requestService: IRequestService,
+		@ILogService logService: ILogService,
 	) {
-		super(fileService, productService);
+		super(fileService, productService, requestService, logService);
 		if (productService.exeBasedExtensionTips) {
 			Object.entries(productService.exeBasedExtensionTips).forEach(([key, exeBasedExtensionTip]) => {
 				const highImportanceRecommendations: { extensionId: string; extensionName: string; isExtensionPack: boolean }[] = [];
@@ -298,11 +304,11 @@ export class ExtensionTipsService extends BaseExtensionTipsService {
 			const exePaths: string[] = [];
 			if (isWindows) {
 				if (extensionTip.windowsPath) {
-					exePaths.push(extensionTip.windowsPath.replace('%USERPROFILE%', () => env['USERPROFILE']!)
-						.replace('%ProgramFiles(x86)%', () => env['ProgramFiles(x86)']!)
-						.replace('%ProgramFiles%', () => env['ProgramFiles']!)
-						.replace('%APPDATA%', () => env['APPDATA']!)
-						.replace('%WINDIR%', () => env['WINDIR']!));
+					exePaths.push(extensionTip.windowsPath.replace('%USERPROFILE%', env['USERPROFILE']!)
+						.replace('%ProgramFiles(x86)%', env['ProgramFiles(x86)']!)
+						.replace('%ProgramFiles%', env['ProgramFiles']!)
+						.replace('%APPDATA%', env['APPDATA']!)
+						.replace('%WINDIR%', env['WINDIR']!));
 				}
 			} else {
 				exePaths.push(join('/usr/local/bin', exeName));

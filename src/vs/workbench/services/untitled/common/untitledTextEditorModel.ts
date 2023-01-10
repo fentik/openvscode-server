@@ -190,14 +190,14 @@ export class UntitledTextEditorModel extends BaseTextEditorModel implements IUnt
 
 	//#region Language
 
-	override setLanguageId(languageId: string, source?: string): void {
+	override setLanguageId(languageId: string): void {
 		const actualLanguage: string | undefined = languageId === UntitledTextEditorModel.ACTIVE_EDITOR_LANGUAGE_ID
 			? this.editorService.activeTextEditorLanguageId
 			: languageId;
 		this.preferredLanguageId = actualLanguage;
 
 		if (actualLanguage) {
-			super.setLanguageId(actualLanguage, source);
+			super.setLanguageId(actualLanguage);
 		}
 	}
 
@@ -333,7 +333,8 @@ export class UntitledTextEditorModel extends BaseTextEditorModel implements IUnt
 
 		// Listen to text model events
 		const textEditorModel = assertIsDefined(this.textEditorModel);
-		this.installModelListeners(textEditorModel);
+		this._register(textEditorModel.onDidChangeContent(e => this.onModelContentChanged(textEditorModel, e)));
+		this._register(textEditorModel.onDidChangeLanguage(() => this.onConfigurationChange(true))); // language change can have impact on config
 
 		// Only adjust name and dirty state etc. if we
 		// actually created the untitled model
@@ -355,13 +356,6 @@ export class UntitledTextEditorModel extends BaseTextEditorModel implements IUnt
 		}
 
 		return super.resolve();
-	}
-
-	protected override installModelListeners(model: ITextModel): void {
-		this._register(model.onDidChangeContent(e => this.onModelContentChanged(model, e)));
-		this._register(model.onDidChangeLanguage(() => this.onConfigurationChange(true))); // language change can have impact on config
-
-		super.installModelListeners(model);
 	}
 
 	private onModelContentChanged(textEditorModel: ITextModel, e: IModelContentChangedEvent): void {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Emitter, Event } from 'vs/base/common/event';
-import { IDisposable, toDisposable, DisposableStore, DisposableMap } from 'vs/base/common/lifecycle';
+import { IDisposable, dispose, toDisposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { IFileWriteOptions, FileSystemProviderCapabilities, IFileChange, IFileService, IStat, IWatchOptions, FileType, IFileOverwriteOptions, IFileDeleteOptions, IFileOpenOptions, FileOperationError, FileOperationResult, FileSystemProviderErrorCode, IFileSystemProviderWithOpenReadWriteCloseCapability, IFileSystemProviderWithFileReadWriteCapability, IFileSystemProviderWithFileFolderCopyCapability, FilePermission, toFileSystemProviderErrorCode, IFilesConfiguration, IFileStatWithPartialMetadata, IFileStat } from 'vs/platform/files/common/files';
 import { extHostNamedCustomer, IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
@@ -22,9 +22,9 @@ import { rtrim } from 'vs/base/common/strings';
 export class MainThreadFileSystem implements MainThreadFileSystemShape {
 
 	private readonly _proxy: ExtHostFileSystemShape;
-	private readonly _fileProvider = new DisposableMap<number, RemoteFileSystemProvider>();
+	private readonly _fileProvider = new Map<number, RemoteFileSystemProvider>();
 	private readonly _disposables = new DisposableStore();
-	private readonly _watches = new DisposableMap<number>();
+	private readonly _watches = new Map<number, IDisposable>();
 
 	constructor(
 		extHostContext: IExtHostContext,
@@ -46,8 +46,9 @@ export class MainThreadFileSystem implements MainThreadFileSystemShape {
 
 	dispose(): void {
 		this._disposables.dispose();
-		this._fileProvider.dispose();
-		this._watches.dispose();
+		dispose(this._fileProvider.values());
+		dispose(this._watches.values());
+		this._fileProvider.clear();
 	}
 
 	async $registerFileSystemProvider(handle: number, scheme: string, capabilities: FileSystemProviderCapabilities): Promise<void> {
@@ -55,7 +56,8 @@ export class MainThreadFileSystem implements MainThreadFileSystemShape {
 	}
 
 	$unregisterProvider(handle: number): void {
-		this._fileProvider.deleteAndDispose(handle);
+		this._fileProvider.get(handle)?.dispose();
+		this._fileProvider.delete(handle);
 	}
 
 	$onFileSystemChange(handle: number, changes: IFileChangeDto[]): void {
@@ -252,9 +254,12 @@ export class MainThreadFileSystem implements MainThreadFileSystemShape {
 	}
 
 	$unwatch(session: number): void {
-		if (this._watches.has(session)) {
+		const subscription = this._watches.get(session);
+		if (subscription) {
 			this._logService.trace(`MainThreadFileSystem#$unwatch(): request to stop watching (session: ${session})`);
-			this._watches.deleteAndDispose(session);
+
+			subscription.dispose();
+			this._watches.delete(session);
 		}
 	}
 }

@@ -55,7 +55,7 @@ declare module vsda {
 	}
 }
 
-class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
+export class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 
 	private readonly _extHostConnections: { [reconnectionToken: string]: ExtensionHostConnection };
 	private readonly _managementConnections: { [reconnectionToken: string]: ManagementConnection };
@@ -89,11 +89,9 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 				: null
 		);
 		this._logService.info(`Extension host agent started.`);
-
-		this._waitThenShutdown(true);
 	}
 
-	public async handleRequest(req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+	public async handleRequest(req: http.IncomingMessage, res: http.ServerResponse) {
 		// Only serve GET requests
 		if (req.method !== 'GET') {
 			return serveError(req, res, 405, `Unsupported method ${req.method}`);
@@ -118,14 +116,14 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 		// Version
 		if (pathname === '/version') {
 			res.writeHead(200, { 'Content-Type': 'text/plain' });
-			return void res.end(this._productService.commit || '');
+			return res.end(this._productService.commit || '');
 		}
 
 		// Delay shutdown
 		if (pathname === '/delay-shutdown') {
 			this._delayShutdown();
 			res.writeHead(200);
-			return void res.end('OK');
+			return res.end('OK');
 		}
 
 		if (!httpRequestHasValidConnectionToken(this._connectionToken, req, parsedUrl)) {
@@ -173,7 +171,7 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 		}
 
 		res.writeHead(404, { 'Content-Type': 'text/plain' });
-		return void res.end('Not found');
+		return res.end('Not found');
 	}
 
 	public handleUpgrade(req: http.IncomingMessage, socket: net.Socket) {
@@ -282,12 +280,12 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 	/**
 	 * NOTE: Avoid using await in this method!
 	 * The problem is that await introduces a process.nextTick due to the implicit Promise.then
-	 * This can lead to some bytes being received and interpreted and a control message being emitted before the next listener has a chance to be registered.
+	 * This can lead to some bytes being interpreted and a control message being emitted before the next listener has a chance to be registered.
 	 */
 	private _handleWebSocketConnection(socket: NodeSocket | WebSocketNodeSocket, isReconnection: boolean, reconnectionToken: string): void {
 		const remoteAddress = this._getRemoteAddress(socket);
 		const logPrefix = `[${remoteAddress}][${reconnectionToken.substr(0, 8)}]`;
-		const protocol = new PersistentProtocol({ socket });
+		const protocol = new PersistentProtocol(socket);
 
 		const validator = this._vsdaMod ? new this._vsdaMod.validator() : null;
 		const signer = this._vsdaMod ? new this._vsdaMod.signer() : null;
@@ -589,12 +587,12 @@ class RemoteExtensionHostAgentServer extends Disposable implements IServerAPI {
 		}
 	}
 
-	private _waitThenShutdown(initial = false): void {
+	private _waitThenShutdown(): void {
 		if (!this._environmentService.args['enable-remote-auto-shutdown']) {
 			return;
 		}
 
-		if (this._environmentService.args['remote-auto-shutdown-without-delay'] && !initial) {
+		if (this._environmentService.args['remote-auto-shutdown-without-delay']) {
 			this._shutdown();
 		} else {
 			this.shutdownTimer = setTimeout(() => {
@@ -726,10 +724,10 @@ export async function createServer(address: string | net.AddressInfo | null, arg
 
 	const vsdaMod = instantiationService.invokeFunction((accessor) => {
 		const logService = accessor.get(ILogService);
-		const hasVSDA = fs.existsSync(join(FileAccess.asFileUri('').fsPath, '../node_modules/vsda'));
+		const hasVSDA = fs.existsSync(join(FileAccess.asFileUri('', require).fsPath, '../node_modules/vsda'));
 		if (hasVSDA) {
 			try {
-				return <typeof vsda>globalThis._VSCODE_NODE_MODULES['vsda'];
+				return <typeof vsda>require.__$__nodeRequire('vsda');
 			} catch (err) {
 				logService.error(err);
 			}
@@ -737,7 +735,7 @@ export async function createServer(address: string | net.AddressInfo | null, arg
 		return null;
 	});
 
-	const hasWebClient = fs.existsSync(FileAccess.asFileUri('vs/code/browser/workbench/workbench.html').fsPath);
+	const hasWebClient = fs.existsSync(FileAccess.asFileUri('vs/code/browser/workbench/workbench.html', require).fsPath);
 
 	if (hasWebClient && address && typeof address !== 'string') {
 		// ships the web ui!

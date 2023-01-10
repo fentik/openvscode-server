@@ -26,11 +26,7 @@ export interface ISandboxConfiguration {
 	windowId: number;
 
 	/**
-	 * Root path of the JavaScript sources.
-	 *
-	 * Note: This is NOT the installation root
-	 * directory itself but contained in it at
-	 * a level that is platform dependent.
+	 * Absolute installation path.
 	 */
 	appRoot: string;
 

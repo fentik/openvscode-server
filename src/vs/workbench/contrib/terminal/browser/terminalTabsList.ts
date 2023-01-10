@@ -37,6 +37,7 @@ import { IEditableData } from 'vs/workbench/common/views';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { InputBox, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
 import { once } from 'vs/base/common/functional';
+import { attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { IKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { CodeDataTransfers, containsDragType } from 'vs/platform/dnd/browser/dnd';
@@ -46,7 +47,6 @@ import { IProcessDetails } from 'vs/platform/terminal/common/terminalProcess';
 import { TerminalContextKeys } from 'vs/workbench/contrib/terminal/common/terminalContextKey';
 import { getTerminalResourcesFromDragEvent, parseTerminalUri } from 'vs/workbench/contrib/terminal/browser/terminalUri';
 import { getShellIntegrationTooltip } from 'vs/workbench/contrib/terminal/browser/terminalTooltip';
-import { defaultInputBoxStyles } from 'vs/platform/theme/browser/defaultStyles';
 
 const $ = DOM.$;
 
@@ -138,11 +138,6 @@ export class TerminalTabList extends WorkbenchList<ITerminalInstance> {
 				this._terminalGroupService.setActiveInstance(instance);
 				await instance.focusWhenReady();
 			}
-
-			if (this._terminalService.getEditingTerminal()?.instanceId === e.element?.instanceId) {
-				return;
-			}
-
 			if (this._getFocusMode() === 'doubleClick' && this.getFocus().length === 1) {
 				e.element?.focus(true);
 			}
@@ -151,10 +146,6 @@ export class TerminalTabList extends WorkbenchList<ITerminalInstance> {
 		// on left click, if focus mode = single click, focus the element
 		// unless multi-selection is in progress
 		this.onMouseClick(async e => {
-			if (this._terminalService.getEditingTerminal()?.instanceId === e.element?.instanceId) {
-				return;
-			}
-
 			if (e.browserEvent.altKey && e.element) {
 				await this._terminalService.createTerminal({ location: { parentTerminal: e.element } });
 			} else if (this._getFocusMode() === 'singleClick') {
@@ -270,8 +261,7 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 			element,
 			label,
 			actionBar,
-			context,
-			elementDisposables: new DisposableStore(),
+			context
 		};
 	}
 
@@ -343,6 +333,10 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 			template.actionBar.clear();
 		}
 
+		if (!template.elementDisposables) {
+			template.elementDisposables = new DisposableStore();
+		}
+
 		// Kill terminal on middle click
 		template.elementDisposables.add(DOM.addDisposableListener(template.element, DOM.EventType.AUXCLICK, e => {
 			e.stopImmediatePropagation();
@@ -403,9 +397,9 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 					};
 				}
 			},
-			ariaLabel: localize('terminalInputAriaLabel', "Type terminal name. Press Enter to confirm or Escape to cancel."),
-			inputBoxStyles: defaultInputBoxStyles
+			ariaLabel: localize('terminalInputAriaLabel', "Type terminal name. Press Enter to confirm or Escape to cancel.")
 		});
+		const styler = attachInputBoxStyler(inputBox, this._themeService);
 		inputBox.element.style.height = '22px';
 		inputBox.value = value;
 		inputBox.focus();
@@ -452,7 +446,8 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 			}),
 			DOM.addDisposableListener(inputBox.inputElement, DOM.EventType.BLUR, () => {
 				done(inputBox.isInputValid(), true);
-			})
+			}),
+			styler
 		];
 
 		return toDisposable(() => {
@@ -461,14 +456,16 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 	}
 
 	disposeElement(instance: ITerminalInstance, index: number, templateData: ITerminalTabEntryTemplate): void {
-		templateData.elementDisposables.clear();
+		templateData.elementDisposables?.dispose();
+		templateData.elementDisposables = undefined;
 		templateData.actionBar.clear();
 	}
 
 	disposeTemplate(templateData: ITerminalTabEntryTemplate): void {
-		templateData.elementDisposables.dispose();
+		templateData.elementDisposables?.dispose();
+		templateData.elementDisposables = undefined;
 		templateData.label.dispose();
-		templateData.actionBar.dispose();
+		templateData.actionBar.clear();
 	}
 
 	fillActionBar(instance: ITerminalInstance, template: ITerminalTabEntryTemplate): void {
@@ -507,13 +504,13 @@ class TerminalTabsRenderer implements IListRenderer<ITerminalInstance, ITerminal
 }
 
 interface ITerminalTabEntryTemplate {
-	readonly element: HTMLElement;
-	readonly label: IResourceLabel;
-	readonly actionBar: ActionBar;
+	element: HTMLElement;
+	label: IResourceLabel;
+	actionBar: ActionBar;
 	context: {
 		hoverActions?: IHoverAction[];
 	};
-	readonly elementDisposables: DisposableStore;
+	elementDisposables?: DisposableStore;
 }
 
 
@@ -565,10 +562,6 @@ class TerminalTabsDragAndDrop implements IListDragAndDrop<ITerminalInstance> {
 	}
 
 	getDragURI(instance: ITerminalInstance): string | null {
-		if (this._terminalService.getEditingTerminal()?.instanceId === instance.instanceId) {
-			return null;
-		}
-
 		return instance.resource.toString();
 	}
 
@@ -684,7 +677,6 @@ class TerminalTabsDragAndDrop implements IListDragAndDrop<ITerminalInstance> {
 
 		if (!targetInstance) {
 			this._terminalGroupService.moveGroupToEnd(sourceInstances[0]);
-			this._terminalService.setActiveInstance(sourceInstances[0]);
 			return;
 		}
 
@@ -704,29 +696,29 @@ class TerminalTabsDragAndDrop implements IListDragAndDrop<ITerminalInstance> {
 		}
 
 		// Check if files were dragged from the tree explorer
-		let resource: URI | undefined;
+		let path: string | undefined;
 		const rawResources = e.dataTransfer.getData(DataTransfers.RESOURCES);
 		if (rawResources) {
-			resource = URI.parse(JSON.parse(rawResources)[0]);
+			path = URI.parse(JSON.parse(rawResources)[0]).fsPath;
 		}
 
 		const rawCodeFiles = e.dataTransfer.getData(CodeDataTransfers.FILES);
-		if (!resource && rawCodeFiles) {
-			resource = URI.file(JSON.parse(rawCodeFiles)[0]);
+		if (!path && rawCodeFiles) {
+			path = URI.file(JSON.parse(rawCodeFiles)[0]).fsPath;
 		}
 
-		if (!resource && e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].path /* Electron only */) {
+		if (!path && e.dataTransfer.files.length > 0 && e.dataTransfer.files[0].path /* Electron only */) {
 			// Check if the file was dragged from the filesystem
-			resource = URI.file(e.dataTransfer.files[0].path);
+			path = URI.file(e.dataTransfer.files[0].path).fsPath;
 		}
 
-		if (!resource) {
+		if (!path) {
 			return;
 		}
 
 		this._terminalService.setActiveInstance(instance);
 
 		instance.focus();
-		await instance.sendPath(resource, false);
+		await instance.sendPath(path, false);
 	}
 }

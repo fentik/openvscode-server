@@ -14,16 +14,16 @@ export class WindowIgnoreMenuShortcutsManager {
 
 	private readonly _isUsingNativeTitleBars: boolean;
 
-	private readonly _webviewMainService: IWebviewManagerService;
+	private readonly webviewMainService: IWebviewManagerService;
 
 	constructor(
 		configurationService: IConfigurationService,
 		mainProcessService: IMainProcessService,
-		private readonly _nativeHostService: INativeHostService
+		private readonly nativeHostService: INativeHostService
 	) {
 		this._isUsingNativeTitleBars = configurationService.getValue<string>('window.titleBarStyle') === 'native';
 
-		this._webviewMainService = ProxyChannel.toService<IWebviewManagerService>(mainProcessService.getChannel('webview'));
+		this.webviewMainService = ProxyChannel.toService<IWebviewManagerService>(mainProcessService.getChannel('webview'));
 	}
 
 	public didFocus(): void {
@@ -34,13 +34,13 @@ export class WindowIgnoreMenuShortcutsManager {
 		this.setIgnoreMenuShortcuts(false);
 	}
 
-	private get _shouldToggleMenuShortcutsEnablement() {
+	private get shouldToggleMenuShortcutsEnablement() {
 		return isMacintosh || this._isUsingNativeTitleBars;
 	}
 
 	protected setIgnoreMenuShortcuts(value: boolean) {
-		if (this._shouldToggleMenuShortcutsEnablement) {
-			this._webviewMainService.setIgnoreMenuShortcuts({ windowId: this._nativeHostService.windowId }, value);
+		if (this.shouldToggleMenuShortcutsEnablement) {
+			this.webviewMainService.setIgnoreMenuShortcuts({ windowId: this.nativeHostService.windowId }, value);
 		}
 	}
 }

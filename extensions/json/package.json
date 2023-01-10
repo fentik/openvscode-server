@@ -61,8 +61,7 @@
         "filenames": [
           "babel.config.json",
           ".babelrc.json",
-          ".ember-cli",
-          "typedoc.json"
+          ".ember-cli"
         ],
         "configuration": "./language-configuration.json"
       }

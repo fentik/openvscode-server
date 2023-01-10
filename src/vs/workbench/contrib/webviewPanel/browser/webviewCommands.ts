@@ -10,7 +10,7 @@ import { Action2, MenuId } from 'vs/platform/actions/common/actions';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES } from 'vs/workbench/common/actions';
 import { IWebviewService, KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_ENABLED, KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_FOCUSED, KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_VISIBLE, IWebview } from 'vs/workbench/contrib/webview/browser/webview';
 import { WebviewEditor } from 'vs/workbench/contrib/webviewPanel/browser/webviewEditor';
 import { WebviewInput } from 'vs/workbench/contrib/webviewPanel/browser/webviewEditorInput';
@@ -110,7 +110,7 @@ export class ReloadWebviewAction extends Action2 {
 		super({
 			id: ReloadWebviewAction.ID,
 			title: { value: ReloadWebviewAction.LABEL, original: 'Reload Webviews' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			menu: [{
 				id: MenuId.CommandPalette
 			}]
@@ -125,7 +125,7 @@ export class ReloadWebviewAction extends Action2 {
 	}
 }
 
-function getActiveWebviewEditor(accessor: ServicesAccessor): IWebview | undefined {
+export function getActiveWebviewEditor(accessor: ServicesAccessor): IWebview | undefined {
 	const editorService = accessor.get(IEditorService);
 	const activeEditor = editorService.activeEditor;
 	return activeEditor instanceof WebviewInput ? activeEditor.webview : undefined;

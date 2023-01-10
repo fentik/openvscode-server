@@ -9,8 +9,7 @@
 		{
 			"scope": [
 				"meta.embedded",
-				"source.groovy.embedded",
-				"string meta.image.inline.markdown"
+				"source.groovy.embedded"
 			],
 			"settings": {
 				"foreground": "#333333"
@@ -476,7 +475,7 @@
       	}
 	],
 	"colors": {
-		"focusBorder": "#9769dc",
+		"focusBorder": "#A6B39B",
 		"pickerGroup.foreground": "#A6B39B",
 		"pickerGroup.border": "#749351",
 		"list.activeSelectionForeground": "#6c6c6c",

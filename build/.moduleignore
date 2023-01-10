@@ -48,11 +48,6 @@ native-watchdog/build/**
 native-watchdog/src/**
 !native-watchdog/build/Release/*.node
 
-node-vsce-sign/**
-!node-vsce-sign/src/main.js
-!node-vsce-sign/package.json
-!node-vsce-sign/bin/**
-
 spdlog/binding.gyp
 spdlog/build/**
 spdlog/deps/**
@@ -145,13 +140,7 @@ prebuild-install/**/*
 **/CONTRIBUTING.md
 
 **/*.ts
-
-# Exclude TS files that aren't needed by TS extension
-typescript/lib/tsc.js
-typescript/lib/typescriptServices.js
-typescript/lib/tsserverlibrary.js
-# We still need to include stdlib d.ts
-!typescript/lib/lib*.d.ts
+!typescript/**/*.d.ts
 
 jschardet/index.js
 jschardet/src/**
@@ -173,3 +162,5 @@ xterm-addon-*/src/**
 xterm-addon-*/fixtures/**
 xterm-addon-*/out/**
 xterm-addon-*/out-test/**
+
+

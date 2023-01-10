@@ -133,7 +133,9 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		primary: KeyCode.RightArrow,
 		handler: (accessor, args?) => {
 			const notification = getNotificationFromContext(accessor.get(IListService), args);
-			notification?.expand();
+			if (notification) {
+				notification.expand();
+			}
 		}
 	});
 
@@ -145,7 +147,9 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		primary: KeyCode.LeftArrow,
 		handler: (accessor, args?) => {
 			const notification = getNotificationFromContext(accessor.get(IListService), args);
-			notification?.collapse();
+			if (notification) {
+				notification.collapse();
+			}
 		}
 	});
 
@@ -158,7 +162,9 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		secondary: [KeyCode.Enter],
 		handler: accessor => {
 			const notification = getNotificationFromContext(accessor.get(IListService));
-			notification?.toggle();
+			if (notification) {
+				notification.toggle();
+			}
 		}
 	});
 
@@ -196,7 +202,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		weight: KeybindingWeight.WorkbenchContrib,
 		when: ContextKeyExpr.and(NotificationFocusedContext, NotificationsToastsVisibleContext),
 		primary: KeyCode.DownArrow,
-		handler: () => {
+		handler: (accessor) => {
 			toasts.focusNext();
 		}
 	});
@@ -207,7 +213,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		weight: KeybindingWeight.WorkbenchContrib,
 		when: ContextKeyExpr.and(NotificationFocusedContext, NotificationsToastsVisibleContext),
 		primary: KeyCode.UpArrow,
-		handler: () => {
+		handler: (accessor) => {
 			toasts.focusPrevious();
 		}
 	});
@@ -219,7 +225,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		when: ContextKeyExpr.and(NotificationFocusedContext, NotificationsToastsVisibleContext),
 		primary: KeyCode.PageUp,
 		secondary: [KeyCode.Home],
-		handler: () => {
+		handler: (accessor) => {
 			toasts.focusFirst();
 		}
 	});
@@ -231,7 +237,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		when: ContextKeyExpr.and(NotificationFocusedContext, NotificationsToastsVisibleContext),
 		primary: KeyCode.PageDown,
 		secondary: [KeyCode.End],
-		handler: () => {
+		handler: (accessor) => {
 			toasts.focusLast();
 		}
 	});

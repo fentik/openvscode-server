@@ -7,7 +7,11 @@
 (function () {
 	'use strict';
 
+	const bootstrap = bootstrapLib();
 	const bootstrapWindow = bootstrapWindowLib();
+
+	// Avoid Monkey Patches from Application Insights
+	bootstrap.avoidMonkeyPatchFromAppInsights();
 
 	// Load shared process into window
 	bootstrapWindow.load(['vs/code/electron-browser/sharedProcess/sharedProcessMain'], function (sharedProcess, configuration) {
@@ -21,6 +25,14 @@
 			}
 		}
 	);
+
+	/**
+	 * @returns {{ avoidMonkeyPatchFromAppInsights: () => void; }}
+	 */
+	function bootstrapLib() {
+		// @ts-ignore (defined in bootstrap.js)
+		return window.MonacoBootstrap;
+	}
 
 	/**
 	 * @typedef {import('../../../base/parts/sandbox/common/sandboxTypes').ISandboxConfiguration} ISandboxConfiguration

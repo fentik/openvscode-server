@@ -9,7 +9,7 @@ import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { asCssValue } from 'vs/platform/theme/common/colorRegistry';
+import { asCssVariableName } from 'vs/platform/theme/common/colorRegistry';
 import { ThemeColor } from 'vs/platform/theme/common/themeService';
 
 /**
@@ -24,7 +24,7 @@ export class PageCoordinates {
 	) { }
 
 	public toClientCoordinates(): ClientCoordinates {
-		return new ClientCoordinates(this.x - window.scrollX, this.y - window.scrollY);
+		return new ClientCoordinates(this.x - dom.StandardWindow.scrollX, this.y - dom.StandardWindow.scrollY);
 	}
 }
 
@@ -44,7 +44,7 @@ export class ClientCoordinates {
 	) { }
 
 	public toPageCoordinates(): PageCoordinates {
-		return new PageCoordinates(this.clientX + window.scrollX, this.clientY + window.scrollY);
+		return new PageCoordinates(this.clientX + dom.StandardWindow.scrollX, this.clientY + dom.StandardWindow.scrollY);
 	}
 }
 
@@ -242,8 +242,8 @@ export class GlobalEditorPointerMoveMonitor extends Disposable {
 		// Add a <<capture>> keydown event listener that will cancel the monitoring
 		// if something other than a modifier key is pressed
 		this._keydownListener = dom.addStandardDisposableListener(<any>document, 'keydown', (e) => {
-			const chord = e.toKeyCodeChord();
-			if (chord.isModifierKey()) {
+			const kb = e.toKeybinding();
+			if (kb.isModifierKey()) {
 				// Allow modifier keys
 				return;
 			}
@@ -378,7 +378,7 @@ class RefCountedCssRule {
 			const value = (properties as any)[prop] as string | ThemeColor;
 			let cssValue;
 			if (typeof value === 'object') {
-				cssValue = asCssValue(value.id);
+				cssValue = `var(${asCssVariableName(value.id)})`;
 			} else {
 				cssValue = value;
 			}

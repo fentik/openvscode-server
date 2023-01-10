@@ -5,7 +5,7 @@
 
 import { Emitter, Event } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
-import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
+import { IEditorOptions, LineNumbersType } from 'vs/editor/common/config/editorOptions';
 import { localize } from 'vs/nls';
 import { Action2, MenuId, registerAction2 } from 'vs/platform/actions/common/actions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -17,12 +17,12 @@ import { ActiveEditorContext } from 'vs/workbench/common/contextkeys';
 import { INotebookCellToolbarActionContext, INotebookCommandContext, NotebookMultiCellAction, NOTEBOOK_ACTIONS_CATEGORY } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
 import { IBaseCellEditorOptions, ICellViewModel } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { NOTEBOOK_CELL_LINE_NUMBERS, NOTEBOOK_EDITOR_FOCUSED } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
-import { CellContentPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
+import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
 import { NotebookCellInternalMetadata, NOTEBOOK_EDITOR_ID } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 import { NotebookOptions } from 'vs/workbench/contrib/notebook/common/notebookOptions';
 import { CellViewModelStateChangeEvent } from 'vs/workbench/contrib/notebook/browser/notebookViewEvents';
 
-export class CellEditorOptions extends CellContentPart {
+export class CellEditorOptions extends CellPart {
 	private _lineNumbers: 'on' | 'off' | 'inherit' = 'inherit';
 	private readonly _onDidChange = this._register(new Emitter<void>());
 	readonly onDidChange: Event<void> = this._onDidChange.event;
@@ -50,35 +50,15 @@ export class CellEditorOptions extends CellContentPart {
 	}
 
 	private _computeEditorOptions() {
+		const renderLineNumbers = this.configurationService.getValue<'on' | 'off'>('notebook.lineNumbers') === 'on';
+		const lineNumbers: LineNumbersType = renderLineNumbers ? 'on' : 'off';
+
 		const value = this.base.value;
-		let cellRenderLineNumber = value.lineNumbers;
 
-		switch (this._lineNumbers) {
-			case 'inherit':
-				// inherit from the notebook setting
-				if (this.configurationService.getValue<'on' | 'off'>('notebook.lineNumbers') === 'on') {
-					if (value.lineNumbers === 'off') {
-						cellRenderLineNumber = 'on';
-					} // otherwise just use the editor setting
-				} else {
-					cellRenderLineNumber = 'off';
-				}
-				break;
-			case 'on':
-				// should turn on, ignore the editor line numbers off options
-				if (value.lineNumbers === 'off') {
-					cellRenderLineNumber = 'on';
-				} // otherwise just use the editor setting
-				break;
-			case 'off':
-				cellRenderLineNumber = 'off';
-				break;
-		}
-
-		if (value.lineNumbers !== cellRenderLineNumber) {
+		if (value.lineNumbers !== lineNumbers) {
 			return {
 				...value,
-				...{ lineNumbers: cellRenderLineNumber }
+				...{ lineNumbers }
 			};
 		} else {
 			return Object.assign({}, value);
@@ -112,7 +92,14 @@ export class CellEditorOptions extends CellContentPart {
 
 	setLineNumbers(lineNumbers: 'on' | 'off' | 'inherit'): void {
 		this._lineNumbers = lineNumbers;
-		this._recomputeOptions();
+		if (this._lineNumbers === 'inherit') {
+			const renderLiNumbers = this.configurationService.getValue<'on' | 'off'>('notebook.lineNumbers') === 'on';
+			const lineNumbers: LineNumbersType = renderLiNumbers ? 'on' : 'off';
+			this._value.lineNumbers = lineNumbers;
+		} else {
+			this._value.lineNumbers = lineNumbers as LineNumbersType;
+		}
+		this._onDidChange.fire();
 	}
 }
 
@@ -147,7 +134,7 @@ registerAction2(class ToggleLineNumberAction extends Action2 {
 			f1: true,
 			toggled: {
 				condition: ContextKeyExpr.notEquals('config.notebook.lineNumbers', 'off'),
-				title: localize('notebook.showLineNumbers', "Notebook Line Numbers"),
+				title: { value: localize('notebook.showLineNumbers', "Show Notebook Line Numbers"), original: 'Show Notebook Line Numbers' },
 			}
 		});
 	}

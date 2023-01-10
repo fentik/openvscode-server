@@ -10,8 +10,6 @@
 //                 Sarun Intaralawan <https://github.com/sarunint>
 //                 Tony Brix <https://github.com/UziTech>
 //                 Anatolii Titov <https://github.com/Toliak>
-//                 Jean-Francois Cere <https://github.com/jfcere>
-//                 Mykhaylo Stolyarchuk <https://github.com/MykSto>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
 /**
@@ -77,7 +75,11 @@ export namespace marked {
 	 * @param callback Function called when the markdownString has been fully parsed when using async highlighting
 	 * @return String of compiled HTML
 	 */
-	function parse(src: string, options?: MarkedOptions, callback?: (error: any, parseResult: string) => void): string;
+	function parse(
+		src: string,
+		options?: MarkedOptions,
+		callback?: (error: any, parseResult: string) => void,
+	): string;
 
 	/**
 	 * @param src Tokenized source as array of tokens
@@ -124,39 +126,34 @@ export namespace marked {
 	class Tokenizer<T = never> {
 		constructor(options?: MarkedOptions);
 		options: MarkedOptions;
-		space(this: Tokenizer & TokenizerThis, src: string): Tokens.Space | T;
-		code(this: Tokenizer & TokenizerThis, src: string): Tokens.Code | T;
-		fences(this: Tokenizer & TokenizerThis, src: string): Tokens.Code | T;
-		heading(this: Tokenizer & TokenizerThis, src: string): Tokens.Heading | T;
-		hr(this: Tokenizer & TokenizerThis, src: string): Tokens.Hr | T;
-		blockquote(this: Tokenizer & TokenizerThis, src: string): Tokens.Blockquote | T;
-		list(this: Tokenizer & TokenizerThis, src: string): Tokens.List | T;
-		html(this: Tokenizer & TokenizerThis, src: string): Tokens.HTML | T;
-		def(this: Tokenizer & TokenizerThis, src: string): Tokens.Def | T;
-		table(this: Tokenizer & TokenizerThis, src: string): Tokens.Table | T;
-		lheading(this: Tokenizer & TokenizerThis, src: string): Tokens.Heading | T;
-		paragraph(this: Tokenizer & TokenizerThis, src: string): Tokens.Paragraph | T;
-		text(this: Tokenizer & TokenizerThis, src: string): Tokens.Text | T;
-		escape(this: Tokenizer & TokenizerThis, src: string): Tokens.Escape | T;
-		tag(this: Tokenizer & TokenizerThis, src: string): Tokens.Tag | T;
-		link(this: Tokenizer & TokenizerThis, src: string): Tokens.Image | Tokens.Link | T;
+		space(this: TokenizerThis, src: string): Tokens.Space | T;
+		code(this: TokenizerThis, src: string): Tokens.Code | T;
+		fences(this: TokenizerThis, src: string): Tokens.Code | T;
+		heading(this: TokenizerThis, src: string): Tokens.Heading | T;
+		hr(this: TokenizerThis, src: string): Tokens.Hr | T;
+		blockquote(this: TokenizerThis, src: string): Tokens.Blockquote | T;
+		list(this: TokenizerThis, src: string): Tokens.List | T;
+		html(this: TokenizerThis, src: string): Tokens.HTML | T;
+		def(this: TokenizerThis, src: string): Tokens.Def | T;
+		table(this: TokenizerThis, src: string): Tokens.Table | T;
+		lheading(this: TokenizerThis, src: string): Tokens.Heading | T;
+		paragraph(this: TokenizerThis, src: string): Tokens.Paragraph | T;
+		text(this: TokenizerThis, src: string): Tokens.Text | T;
+		escape(this: TokenizerThis, src: string): Tokens.Escape | T;
+		tag(this: TokenizerThis, src: string): Tokens.Tag | T;
+		link(this: TokenizerThis, src: string): Tokens.Image | Tokens.Link | T;
 		reflink(
-			this: Tokenizer & TokenizerThis,
+			this: TokenizerThis,
 			src: string,
 			links: Tokens.Link[] | Tokens.Image[],
 		): Tokens.Link | Tokens.Image | Tokens.Text | T;
-		emStrong(
-			this: Tokenizer & TokenizerThis,
-			src: string,
-			maskedSrc: string,
-			prevChar: string,
-		): Tokens.Em | Tokens.Strong | T;
-		codespan(this: Tokenizer & TokenizerThis, src: string): Tokens.Codespan | T;
-		br(this: Tokenizer & TokenizerThis, src: string): Tokens.Br | T;
-		del(this: Tokenizer & TokenizerThis, src: string): Tokens.Del | T;
-		autolink(this: Tokenizer & TokenizerThis, src: string, mangle: (cap: string) => string): Tokens.Link | T;
-		url(this: Tokenizer & TokenizerThis, src: string, mangle: (cap: string) => string): Tokens.Link | T;
-		inlineText(this: Tokenizer & TokenizerThis, src: string, smartypants: (cap: string) => string): Tokens.Text | T;
+		emStrong(this: TokenizerThis, src: string, maskedSrc: string, prevChar: string): Tokens.Em | Tokens.Strong | T;
+		codespan(this: TokenizerThis, src: string): Tokens.Codespan | T;
+		br(this: TokenizerThis, src: string): Tokens.Br | T;
+		del(this: TokenizerThis, src: string): Tokens.Del | T;
+		autolink(this: TokenizerThis, src: string, mangle: (cap: string) => string): Tokens.Link | T;
+		url(this: TokenizerThis, src: string, mangle: (cap: string) => string): Tokens.Link | T;
+		inlineText(this: TokenizerThis, src: string, smartypants: (cap: string) => string): Tokens.Text | T;
 	}
 
 	type TokenizerObject = Partial<Omit<Tokenizer<false>, 'constructor' | 'options'>>;
@@ -164,39 +161,39 @@ export namespace marked {
 	class Renderer<T = never> {
 		constructor(options?: MarkedOptions);
 		options: MarkedOptions;
-		code(this: Renderer | RendererThis, code: string, language: string | undefined, isEscaped: boolean): string | T;
-		blockquote(this: Renderer | RendererThis, quote: string): string | T;
-		html(this: Renderer | RendererThis, html: string): string | T;
+		code(this: RendererThis, code: string, language: string | undefined, isEscaped: boolean): string | T;
+		blockquote(this: RendererThis, quote: string): string | T;
+		html(this: RendererThis, html: string): string | T;
 		heading(
-			this: Renderer | RendererThis,
+			this: RendererThis,
 			text: string,
 			level: 1 | 2 | 3 | 4 | 5 | 6,
 			raw: string,
 			slugger: Slugger,
 		): string | T;
-		hr(this: Renderer | RendererThis): string | T;
-		list(this: Renderer | RendererThis, body: string, ordered: boolean, start: number): string | T;
-		listitem(this: Renderer | RendererThis, text: string, task: boolean, checked: boolean): string | T;
-		checkbox(this: Renderer | RendererThis, checked: boolean): string | T;
-		paragraph(this: Renderer | RendererThis, text: string): string | T;
-		table(this: Renderer | RendererThis, header: string, body: string): string | T;
-		tablerow(this: Renderer | RendererThis, content: string): string | T;
+		hr(this: RendererThis): string | T;
+		list(this: RendererThis, body: string, ordered: boolean, start: number): string | T;
+		listitem(this: RendererThis, text: string, task: boolean, checked: boolean): string | T;
+		checkbox(this: RendererThis, checked: boolean): string | T;
+		paragraph(this: RendererThis, text: string): string | T;
+		table(this: RendererThis, header: string, body: string): string | T;
+		tablerow(this: RendererThis, content: string): string | T;
 		tablecell(
-			this: Renderer | RendererThis,
+			this: RendererThis,
 			content: string,
 			flags: {
 				header: boolean;
 				align: 'center' | 'left' | 'right' | null;
 			},
 		): string | T;
-		strong(this: Renderer | RendererThis, text: string): string | T;
-		em(this: Renderer | RendererThis, text: string): string | T;
-		codespan(this: Renderer | RendererThis, code: string): string | T;
-		br(this: Renderer | RendererThis): string | T;
-		del(this: Renderer | RendererThis, text: string): string | T;
-		link(this: Renderer | RendererThis, href: string | null, title: string | null, text: string): string | T;
-		image(this: Renderer | RendererThis, href: string | null, title: string | null, text: string): string | T;
-		text(this: Renderer | RendererThis, text: string): string | T;
+		strong(this: RendererThis, text: string): string | T;
+		em(this: RendererThis, text: string): string | T;
+		codespan(this: RendererThis, code: string): string | T;
+		br(this: RendererThis): string | T;
+		del(this: RendererThis, text: string): string | T;
+		link(this: RendererThis, href: string | null, title: string | null, text: string): string | T;
+		image(this: RendererThis, href: string | null, title: string | null, text: string): string | T;
+		text(this: RendererThis, text: string): string | T;
 	}
 
 	type RendererObject = Partial<Omit<Renderer<false>, 'constructor' | 'options'>>;
@@ -224,7 +221,7 @@ export namespace marked {
 		static parse(src: Token[] | TokensList, options?: MarkedOptions): string;
 		static parseInline(src: Token[], options?: MarkedOptions): string;
 		parse(src: Token[] | TokensList): string;
-		parseInline(src: Token[], renderer?: Renderer): string;
+		parseInline(src: Token[], renderer: Renderer): string;
 		next(): Token;
 	}
 
@@ -239,8 +236,8 @@ export namespace marked {
 		lex(src: string): TokensList;
 		blockTokens(src: string, tokens: Token[]): Token[];
 		blockTokens(src: string, tokens: TokensList): TokensList;
-		inline(src: string, tokens?: Token[]): Token[];
-		inlineTokens(src: string, tokens?: Token[]): Token[];
+		inline(src: string, tokens: Token[]): void;
+		inlineTokens(src: string, tokens: Token[]): Token[];
 		state: {
 			inLink: boolean;
 			inRawBlock: boolean;
@@ -464,7 +461,7 @@ export namespace marked {
 	interface TokenizerExtension {
 		name: string;
 		level: 'block' | 'inline';
-		start?: ((this: TokenizerThis, src: string) => number | void) | undefined;
+		start?: ((this: TokenizerThis, src: string) => number) | undefined;
 		tokenizer: (this: TokenizerThis, src: string, tokens: Token[] | TokensList) => Tokens.Generic | void;
 		childTokens?: string[] | undefined;
 	}
@@ -517,7 +514,11 @@ export namespace marked {
 		 * with an error if any occurred during highlighting and a string
 		 * if highlighting was successful)
 		 */
-		highlight?(code: string, lang: string, callback?: (error: any, code?: string) => void): string | void;
+		highlight?(
+			code: string,
+			lang: string,
+			callback?: (error: any, code?: string) => void,
+		): string | void;
 
 		/**
 		 * Set the prefix for code block classes.

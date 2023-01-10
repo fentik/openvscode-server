@@ -114,10 +114,6 @@ export class GhostTextModel extends DelegatingModel implements GhostTextWidgetMo
 		this.activeInlineCompletionsModel?.commitCurrentSuggestion();
 	}
 
-	public commitInlineCompletionPartially(): void {
-		this.activeInlineCompletionsModel?.commitCurrentSuggestionPartially();
-	}
-
 	public hideInlineCompletion(): void {
 		this.activeInlineCompletionsModel?.hide();
 	}

@@ -4,13 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { LanguageClient, ServerOptions, TransportKind } from 'vscode-languageclient/node';
-import { MdLanguageClient, startClient } from './client/client';
+import { BaseLanguageClient, LanguageClient, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import { startClient } from './client';
 import { activateShared } from './extension.shared';
 import { VsCodeOutputLogger } from './logging';
 import { IMdParser, MarkdownItEngine } from './markdownEngine';
 import { getMarkdownExtensionContributions } from './markdownExtensions';
 import { githubSlugifier } from './slugify';
+import { IMdWorkspace, VsCodeMdWorkspace } from './workspace';
 
 export async function activate(context: vscode.ExtensionContext) {
 	const contributions = getMarkdownExtensionContributions(context);
@@ -21,12 +22,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const engine = new MarkdownItEngine(contributions, githubSlugifier, logger);
 
-	const client = await startServer(context, engine);
-	context.subscriptions.push(client);
-	activateShared(context, client, engine, logger, contributions);
+	const workspace = new VsCodeMdWorkspace();
+	context.subscriptions.push(workspace);
+
+	const client = await startServer(context, workspace, engine);
+	context.subscriptions.push({
+		dispose: () => client.stop()
+	});
+	activateShared(context, client, workspace, engine, logger, contributions);
 }
 
-function startServer(context: vscode.ExtensionContext, parser: IMdParser): Promise<MdLanguageClient> {
+function startServer(context: vscode.ExtensionContext, workspace: IMdWorkspace, parser: IMdParser): Promise<BaseLanguageClient> {
 	const clientMain = vscode.extensions.getExtension('vscode.markdown-language-features')?.packageJSON?.main || '';
 
 	const serverMain = `./server/${clientMain.indexOf('/dist/') !== -1 ? 'dist' : 'out'}/node/main`;
@@ -43,5 +49,5 @@ function startServer(context: vscode.ExtensionContext, parser: IMdParser): Promi
 	};
 	return startClient((id, name, clientOptions) => {
 		return new LanguageClient(id, name, serverOptions, clientOptions);
-	}, parser);
+	}, workspace, parser);
 }

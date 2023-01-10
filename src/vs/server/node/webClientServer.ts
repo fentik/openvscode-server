@@ -60,7 +60,7 @@ export const enum CacheControl {
 /**
  * Serve a file at a given path or 404 if the file is missing.
  */
-export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void> {
+export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void | http.ServerResponse> {
 	const getFirstHeader = (headerName: string) => {
 		const val = req.headers[headerName];
 		return Array.isArray(val) ? val[0] : val;
@@ -74,7 +74,7 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 			const etag = `W/"${[stat.ino, stat.size, stat.mtime.getTime()].join('-')}"`; // weak validator (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag)
 			if (req.headers['if-none-match'] === etag) {
 				res.writeHead(304);
-				return void res.end();
+				return res.end();
 			}
 
 			responseHeaders['Etag'] = etag;
@@ -104,11 +104,11 @@ export async function serveFile(filePath: string, cacheControl: CacheControl, lo
 		}
 
 		res.writeHead(404, { 'Content-Type': 'text/plain' });
-		return void res.end('Not found');
+		return res.end('Not found');
 	}
 }
 
-const APP_ROOT = dirname(FileAccess.asFileUri('').fsPath);
+const APP_ROOT = dirname(FileAccess.asFileUri('', require).fsPath);
 
 export class WebClientServer {
 
@@ -137,7 +137,7 @@ export class WebClientServer {
 	 * **NOTE**: This method is only invoked when the server has web bits.
 	 * **NOTE**: This method is only invoked after the connection token has been validated.
 	 */
-	async handle(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
+	async handle(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
 		try {
 			const pathname = parsedUrl.pathname!;
 
@@ -167,7 +167,7 @@ export class WebClientServer {
 	/**
 	 * Handle HTTP requests for /static/*
 	 */
-	private async _handleStatic(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
+	private async _handleStatic(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
 		const headers: Record<string, string> = Object.create(null);
 
 		// Strip the this._staticRoute from the path
@@ -190,7 +190,7 @@ export class WebClientServer {
 	/**
 	 * Handle extension resources
 	 */
-	private async _handleWebExtensionResource(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
+	private async _handleWebExtensionResource(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
 		if (!this._webExtensionResourceUrlTemplate) {
 			return serveError(req, res, 500, 'No extension gallery service configured.');
 		}
@@ -250,13 +250,13 @@ export class WebClientServer {
 		setResponseHeader('Content-Type');
 		res.writeHead(200, responseHeaders);
 		const buffer = await streamToBuffer(context.stream);
-		return void res.end(buffer.buffer);
+		return res.end(buffer.buffer);
 	}
 
 	/**
 	 * Handle HTTP requests for /
 	 */
-	private async _handleRoot(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
+	private async _handleRoot(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
 
 		const queryConnectionToken = parsedUrl.query[connectionTokenQueryName];
 		if (typeof queryConnectionToken === 'string') {
@@ -282,7 +282,7 @@ export class WebClientServer {
 			responseHeaders['Location'] = newLocation;
 
 			res.writeHead(302, responseHeaders);
-			return void res.end();
+			return res.end();
 		}
 
 		const getFirstHeader = (headerName: string) => {
@@ -308,7 +308,7 @@ export class WebClientServer {
 
 		const resolveWorkspaceURI = (defaultLocation?: string) => defaultLocation && URI.file(path.resolve(defaultLocation)).with({ scheme: Schemas.vscodeRemote, authority: remoteAuthority });
 
-		const filePath = FileAccess.asFileUri(this._environmentService.isBuilt ? 'vs/code/browser/workbench/workbench.html' : 'vs/code/browser/workbench/workbench-dev.html').fsPath;
+		const filePath = FileAccess.asFileUri(this._environmentService.isBuilt ? 'vs/code/browser/workbench/workbench.html' : 'vs/code/browser/workbench/workbench-dev.html', require).fsPath;
 		const authSessionInfo = !this._environmentService.isBuilt && this._environmentService.args['github-auth'] ? {
 			id: generateUuid(),
 			providerId: 'github',
@@ -320,7 +320,7 @@ export class WebClientServer {
 		const workbenchWebConfiguration = {
 			remoteAuthority,
 			_wrapWebWorkerExtHostInIframe,
-			developmentOptions: { enableSmokeTestDriver: this._environmentService.args['enable-smoke-test-driver'] ? true : undefined, logLevel: this._logService.getLevel() },
+			developmentOptions: { enableSmokeTestDriver: this._environmentService.args['enable-smoke-test-driver'] ? true : undefined },
 			settingsSyncOptions: !this._environmentService.isBuilt && this._environmentService.args['enable-sync'] ? { enabled: true } : undefined,
 			enableWorkspaceTrust: !this._environmentService.args['disable-workspace-trust'],
 			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
@@ -356,7 +356,7 @@ export class WebClientServer {
 			data = workbenchTemplate.replace(/\{\{([^}]+)\}\}/g, (_, key) => values[key] ?? 'undefined');
 		} catch (e) {
 			res.writeHead(404, { 'Content-Type': 'text/plain' });
-			return void res.end('Not found');
+			return res.end('Not found');
 		}
 
 		const cspDirectives = [
@@ -393,7 +393,7 @@ export class WebClientServer {
 		}
 
 		res.writeHead(200, headers);
-		return void res.end(data);
+		return res.end(data);
 	}
 
 	private _getScriptCspHashes(content: string): string[] {
@@ -418,8 +418,8 @@ export class WebClientServer {
 	/**
 	 * Handle HTTP requests for /callback
 	 */
-	private async _handleCallback(res: http.ServerResponse): Promise<void> {
-		const filePath = FileAccess.asFileUri('vs/code/browser/workbench/callback.html').fsPath;
+	private async _handleCallback(res: http.ServerResponse): Promise<void | http.ServerResponse> {
+		const filePath = FileAccess.asFileUri('vs/code/browser/workbench/callback.html', require).fsPath;
 		const data = (await fsp.readFile(filePath)).toString();
 		const cspDirectives = [
 			'default-src \'self\';',
@@ -434,6 +434,6 @@ export class WebClientServer {
 			'Content-Type': 'text/html',
 			'Content-Security-Policy': cspDirectives
 		});
-		return void res.end(data);
+		return res.end(data);
 	}
 }

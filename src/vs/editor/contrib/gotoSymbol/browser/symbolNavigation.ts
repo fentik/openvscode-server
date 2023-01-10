@@ -15,7 +15,7 @@ import { OneReference, ReferencesModel } from 'vs/editor/contrib/gotoSymbol/brow
 import { localize } from 'vs/nls';
 import { IContextKey, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { TextEditorSelectionRevealType } from 'vs/platform/editor/common/editor';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
@@ -149,7 +149,7 @@ class SymbolNavigationService implements ISymbolNavigationService {
 	}
 }
 
-registerSingleton(ISymbolNavigationService, SymbolNavigationService, InstantiationType.Delayed);
+registerSingleton(ISymbolNavigationService, SymbolNavigationService, true);
 
 registerEditorCommand(new class extends EditorCommand {
 

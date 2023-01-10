@@ -18,21 +18,20 @@ export class ByLocationTestItemElement extends TestItemTreeElement {
 		protected readonly addedOrRemoved: (n: TestExplorerTreeElement) => void,
 	) {
 		super({ ...test, item: { ...test.item } }, parent);
-		this.updateErrorVisibility();
+		this.updateErrorVisiblity();
 	}
 
 	public update(patch: ITestItemUpdate) {
 		applyTestItemUpdate(this.test, patch);
-		this.updateErrorVisibility(patch);
+		this.updateErrorVisiblity();
 	}
 
-	private updateErrorVisibility(patch?: ITestItemUpdate) {
-		if (this.errorChild && (!this.test.item.error || patch?.item?.error)) {
+	private updateErrorVisiblity() {
+		if (this.errorChild && !this.test.item.error) {
 			this.addedOrRemoved(this.errorChild);
 			this.children.delete(this.errorChild);
 			this.errorChild = undefined;
-		}
-		if (this.test.item.error && !this.errorChild) {
+		} else if (this.test.item.error && !this.errorChild) {
 			this.errorChild = new TestTreeErrorMessage(this.test.item.error, this);
 			this.children.add(this.errorChild);
 			this.addedOrRemoved(this.errorChild);

@@ -14,7 +14,6 @@ import { ViewController } from 'vs/editor/browser/view/viewController';
 import { ViewContext } from 'vs/editor/common/viewModel/viewContext';
 import { BrowserFeatures } from 'vs/base/browser/canIUse';
 import { TextAreaSyntethicEvents } from 'vs/editor/browser/controller/textAreaInput';
-import { NavigationCommandRevealType } from 'vs/editor/browser/coreCommands';
 
 /**
  * Currently only tested on iOS 13/ iPadOS.
@@ -67,7 +66,6 @@ export class PointerEventHandler extends MouseHandler {
 				position: target.position,
 				mouseColumn: target.position.column,
 				startedOnLineNumbers: false,
-				revealType: NavigationCommandRevealType.Minimal,
 				mouseDownCount: event.tapCount,
 				inSelectionMode: false,
 				altKey: false,
@@ -88,7 +86,7 @@ export class PointerEventHandler extends MouseHandler {
 		}
 	}
 
-	protected override _onMouseDown(e: EditorMouseEvent, pointerId: number): void {
+	public override _onMouseDown(e: EditorMouseEvent, pointerId: number): void {
 		if ((e.browserEvent as any).pointerType === 'touch') {
 			return;
 		}
@@ -122,7 +120,7 @@ class TouchHandler extends MouseHandler {
 			event.initEvent(TextAreaSyntethicEvents.Tap, false, true);
 			this.viewHelper.dispatchTextAreaEvent(event);
 
-			this.viewController.moveTo(target.position, NavigationCommandRevealType.Minimal);
+			this.viewController.moveTo(target.position);
 		}
 	}
 

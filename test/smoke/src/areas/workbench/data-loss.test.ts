@@ -8,7 +8,8 @@ import { Application, ApplicationOptions, Logger, Quality } from '../../../../au
 import { createApp, timeout, installDiagnosticsHandler, installAppAfterHandler, getRandomUserDataDir, suiteLogsPath, suiteCrashPath } from '../../utils';
 
 export function setup(ensureStableCode: () => string | undefined, logger: Logger) {
-	describe('Data Loss (insiders -> insiders)', function () {
+	describe('Data Loss (insiders -> insiders)', () => {
+
 		let app: Application | undefined = undefined;
 
 		// Shared before/after handling
@@ -71,18 +72,18 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 		});
 
 		it('verifies that "hot exit" works for dirty files (without delay)', function () {
-			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_without_delay', undefined, undefined);
+			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_without_delay', undefined);
 		});
 
 		it('verifies that "hot exit" works for dirty files (with delay)', function () {
-			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_with_delay', 2000, undefined);
+			return testHotExit.call(this, 'test_verifies_that_hot_exit_works_for_dirty_files_with_delay', 2000);
 		});
 
 		it('verifies that auto save triggers on shutdown', function () {
 			return testHotExit.call(this, 'test_verifies_that_auto_save_triggers_on_shutdown', undefined, true);
 		});
 
-		async function testHotExit(this: import('mocha').Context, title: string, restartDelay: number | undefined, autoSave: boolean | undefined) {
+		async function testHotExit(title: string, restartDelay: number | undefined, autoSave: boolean | undefined) {
 			app = createApp({
 				...this.defaultOptions,
 				logsPath: suiteLogsPath(this.defaultOptions, title),
@@ -129,7 +130,8 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 		}
 	});
 
-	describe('Data Loss (stable -> insiders)', function () {
+	describe('Data Loss (stable -> insiders)', () => {
+
 		let insidersApp: Application | undefined = undefined;
 		let stableApp: Application | undefined = undefined;
 
@@ -201,7 +203,7 @@ export function setup(ensureStableCode: () => string | undefined, logger: Logger
 			return testHotExit.call(this, `test_verifies_that_hot_exit_works_for_dirty_files_with_delay_from_stable`, 2000);
 		});
 
-		async function testHotExit(this: import('mocha').Context, title: string, restartDelay: number | undefined) {
+		async function testHotExit(title: string, restartDelay: number | undefined) {
 			const stableCodePath = ensureStableCode();
 			if (!stableCodePath) {
 				this.skip();

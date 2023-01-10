@@ -24,7 +24,7 @@ export interface IShiftCommandOpts {
 }
 
 const repeatCache: { [str: string]: string[] } = Object.create(null);
-function cachedStringRepeat(str: string, count: number): string {
+export function cachedStringRepeat(str: string, count: number): string {
 	if (count <= 0) {
 		return '';
 	}

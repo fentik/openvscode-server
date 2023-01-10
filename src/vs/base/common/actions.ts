@@ -15,7 +15,6 @@ export interface ITelemetryData {
 
 export type WorkbenchActionExecutedClassification = {
 	owner: 'bpasero';
-	comment: 'TODO @bpasero';
 	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run.' };
 	from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The name of the component the action was run from.' };
 };
@@ -25,7 +24,7 @@ export type WorkbenchActionExecutedEvent = {
 	from: string;
 };
 
-export interface IAction {
+export interface IAction extends IDisposable {
 	readonly id: string;
 	label: string;
 	tooltip: string;
@@ -37,7 +36,7 @@ export interface IAction {
 
 export interface IActionRunner extends IDisposable {
 	readonly onDidRun: Event<IRunEvent>;
-	readonly onWillRun: Event<IRunEvent>;
+	readonly onBeforeRun: Event<IRunEvent>;
 
 	run(action: IAction, context?: unknown): unknown;
 }
@@ -165,10 +164,10 @@ export interface IRunEvent {
 
 export class ActionRunner extends Disposable implements IActionRunner {
 
-	private readonly _onWillRun = this._register(new Emitter<IRunEvent>());
-	readonly onWillRun = this._onWillRun.event;
+	private _onBeforeRun = this._register(new Emitter<IRunEvent>());
+	readonly onBeforeRun = this._onBeforeRun.event;
 
-	private readonly _onDidRun = this._register(new Emitter<IRunEvent>());
+	private _onDidRun = this._register(new Emitter<IRunEvent>());
 	readonly onDidRun = this._onDidRun.event;
 
 	async run(action: IAction, context?: unknown): Promise<void> {
@@ -176,7 +175,7 @@ export class ActionRunner extends Disposable implements IActionRunner {
 			return;
 		}
 
-		this._onWillRun.fire({ action });
+		this._onBeforeRun.fire({ action });
 
 		let error: Error | undefined = undefined;
 		try {
@@ -193,7 +192,7 @@ export class ActionRunner extends Disposable implements IActionRunner {
 	}
 }
 
-export class Separator implements IAction {
+export class Separator extends Action {
 
 	/**
 	 * Joins all non-empty lists of actions with separators.
@@ -215,14 +214,12 @@ export class Separator implements IAction {
 
 	static readonly ID = 'vs.actions.separator';
 
-	readonly id: string = Separator.ID;
+	constructor(label?: string) {
+		super(Separator.ID, label, label ? 'separator text' : 'separator');
 
-	readonly label: string = '';
-	readonly tooltip: string = '';
-	readonly class: string = 'separator';
-	readonly enabled: boolean = false;
-	readonly checked: boolean = false;
-	async run() { }
+		this.checked = false;
+		this.enabled = false;
+	}
 }
 
 export class SubmenuAction implements IAction {
@@ -242,6 +239,12 @@ export class SubmenuAction implements IAction {
 		this.label = label;
 		this.class = cssClass;
 		this._actions = actions;
+	}
+
+	dispose(): void {
+		// there is NOTHING to dispose and the SubmenuAction should
+		// never have anything to dispose as it is a convenience type
+		// to bridge into the rendering world.
 	}
 
 	async run(): Promise<void> { }
@@ -264,6 +267,7 @@ export function toAction(props: { id: string; label: string; enabled?: boolean; 
 		enabled: props.enabled ?? true,
 		checked: props.checked ?? false,
 		run: async () => props.run(),
-		tooltip: props.label
+		tooltip: props.label,
+		dispose: () => { }
 	};
 }

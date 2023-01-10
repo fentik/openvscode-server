@@ -64,7 +64,6 @@ export interface IProgressNotificationOptions extends IProgressOptions {
 	readonly secondaryActions?: readonly IAction[];
 	readonly delay?: number;
 	readonly silent?: boolean;
-	readonly type?: 'syncing' | 'loading';
 }
 
 export interface IProgressDialogOptions extends IProgressOptions {

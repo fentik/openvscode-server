@@ -6,15 +6,17 @@
 import 'vs/css!./media/compositepart';
 import { localize } from 'vs/nls';
 import { defaultGenerator } from 'vs/base/common/idGenerator';
-import { IDisposable, dispose, DisposableStore, MutableDisposable, } from 'vs/base/common/lifecycle';
+import { IDisposable, dispose, DisposableStore, MutableDisposable } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { isCancellationError } from 'vs/base/common/errors';
+import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 import { ActionsOrientation, IActionViewItem, prepareActions } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ProgressBar } from 'vs/base/browser/ui/progressbar/progressbar';
 import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
 import { Part, IPartOptions } from 'vs/workbench/browser/part';
 import { Composite, CompositeRegistry } from 'vs/workbench/browser/composite';
 import { IComposite } from 'vs/workbench/common/composite';
+import { CompositeProgressIndicator } from 'vs/workbench/services/progress/browser/progressIndicator';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
@@ -24,15 +26,12 @@ import { IProgressIndicator, IEditorProgressService } from 'vs/platform/progress
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { attachProgressBarStyler } from 'vs/platform/theme/common/styler';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { Dimension, append, $, hide, show } from 'vs/base/browser/dom';
 import { AnchorAlignment } from 'vs/base/browser/ui/contextview/contextview';
 import { assertIsDefined, withNullAsUndefined } from 'vs/base/common/types';
 import { createActionViewItem } from 'vs/platform/actions/browser/menuEntryActionViewItem';
-import { AbstractProgressScope, ScopedProgressIndicator } from 'vs/workbench/services/progress/browser/progressIndicator';
-import { WorkbenchToolBar } from 'vs/platform/actions/browser/toolbar';
-import { defaultProgressBarStyles } from 'vs/platform/theme/browser/defaultStyles';
-import { IBoundarySashes } from 'vs/base/browser/ui/sash/sash';
 
 export interface ICompositeTitleLabel {
 
@@ -48,9 +47,9 @@ export interface ICompositeTitleLabel {
 }
 
 interface CompositeItem {
-	readonly composite: Composite;
-	readonly disposable: IDisposable;
-	readonly progress: IProgressIndicator;
+	composite: Composite;
+	disposable: IDisposable;
+	progress: IProgressIndicator;
 }
 
 export abstract class CompositePart<T extends Composite> extends Part {
@@ -58,7 +57,7 @@ export abstract class CompositePart<T extends Composite> extends Part {
 	protected readonly onDidCompositeOpen = this._register(new Emitter<{ composite: IComposite; focus: boolean }>());
 	protected readonly onDidCompositeClose = this._register(new Emitter<IComposite>());
 
-	protected toolBar: WorkbenchToolBar | undefined;
+	protected toolBar: ToolBar | undefined;
 	protected titleLabelElement: HTMLElement | undefined;
 
 	private readonly mapCompositeToCompositeContainer = new Map<string, HTMLElement>();
@@ -71,7 +70,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 	private contentAreaSize: Dimension | undefined;
 	private readonly telemetryActionsListener = this._register(new MutableDisposable());
 	private currentCompositeOpenToken: string | undefined;
-	private boundarySashes: IBoundarySashes | undefined;
 
 	constructor(
 		private readonly notificationService: INotificationService,
@@ -174,14 +172,7 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		// Instantiate composite from registry otherwise
 		const compositeDescriptor = this.registry.getComposite(id);
 		if (compositeDescriptor) {
-			const that = this;
-			const compositeProgressIndicator = new ScopedProgressIndicator(assertIsDefined(this.progressBar), new class extends AbstractProgressScope {
-				constructor() {
-					super(compositeDescriptor!.id, !!isActive);
-					this._register(that.onDidCompositeOpen.event(e => this.onScopeOpened(e.composite.getId())));
-					this._register(that.onDidCompositeClose.event(e => this.onScopeClosed(e.getId())));
-				}
-			}());
+			const compositeProgressIndicator = this.instantiationService.createInstance(CompositeProgressIndicator, assertIsDefined(this.progressBar), compositeDescriptor.id, !!isActive);
 			const compositeInstantiationService = this.instantiationService.createChild(new ServiceCollection(
 				[IEditorProgressService, compositeProgressIndicator] // provide the editor progress service for any editors instantiated within the composite
 			));
@@ -286,15 +277,9 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		if (this.contentAreaSize) {
 			composite.layout(this.contentAreaSize);
 		}
-
-		// Make sure boundary sashes are propagated
-		if (this.boundarySashes) {
-			composite.setBoundarySashes(this.boundarySashes);
-		}
 	}
 
 	protected onTitleAreaUpdate(compositeId: string): void {
-
 		// Title
 		const composite = this.instantiatedCompositeItems.get(compositeId);
 		if (composite) {
@@ -336,7 +321,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 	private collectCompositeActions(composite?: Composite): () => void {
 
 		// From Composite
-		const menuIds = composite?.getMenuIds();
 		const primaryActions: IAction[] = composite?.getActions().slice(0) || [];
 		const secondaryActions: IAction[] = composite?.getSecondaryActions().slice(0) || [];
 
@@ -345,7 +329,7 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		toolBar.context = this.actionsContextProvider();
 
 		// Return fn to set into toolbar
-		return () => toolBar.setActions(prepareActions(primaryActions), prepareActions(secondaryActions), menuIds);
+		return () => toolBar.setActions(prepareActions(primaryActions), prepareActions(secondaryActions));
 	}
 
 	protected getActiveComposite(): IComposite | undefined {
@@ -387,7 +371,7 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		return composite;
 	}
 
-	protected override createTitleArea(parent: HTMLElement): HTMLElement {
+	override createTitleArea(parent: HTMLElement): HTMLElement {
 
 		// Title Area Container
 		const titleArea = append(parent, $('.composite'));
@@ -400,7 +384,7 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		const titleActionsContainer = append(titleArea, $('.title-actions'));
 
 		// Toolbar
-		this.toolBar = this._register(this.instantiationService.createInstance(WorkbenchToolBar, titleActionsContainer, {
+		this.toolBar = this._register(new ToolBar(titleActionsContainer, this.contextMenuService, {
 			actionViewItemProvider: action => this.actionViewItemProvider(action),
 			orientation: ActionsOrientation.HORIZONTAL,
 			getKeyBinding: action => this.keybindingService.lookupKeybinding(action.id),
@@ -462,10 +446,11 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		return null;
 	}
 
-	protected override createContentArea(parent: HTMLElement): HTMLElement {
+	override createContentArea(parent: HTMLElement): HTMLElement {
 		const contentContainer = append(parent, $('.content'));
 
-		this.progressBar = this._register(new ProgressBar(contentContainer, defaultProgressBarStyles));
+		this.progressBar = this._register(new ProgressBar(contentContainer));
+		this._register(attachProgressBarStyler(this.progressBar, this.themeService));
 		this.progressBar.hide();
 
 		return contentContainer;
@@ -489,11 +474,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 
 		// Layout composite
 		this.activeComposite?.layout(this.contentAreaSize);
-	}
-
-	setBoundarySashes?(sashes: IBoundarySashes): void {
-		this.boundarySashes = sashes;
-		this.activeComposite?.setBoundarySashes(sashes);
 	}
 
 	protected removeComposite(compositeId: string): boolean {

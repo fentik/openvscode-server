@@ -14,13 +14,13 @@ import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/la
 import { assertIsDefined } from 'vs/base/common/types';
 
 export interface IPartOptions {
-	readonly hasTitle?: boolean;
-	readonly borderWidth?: () => number;
+	hasTitle?: boolean;
+	borderWidth?: () => number;
 }
 
 export interface ILayoutContentResult {
-	readonly titleSize: IDimension;
-	readonly contentSize: IDimension;
+	titleSize: IDimension;
+	contentSize: IDimension;
 }
 
 /**

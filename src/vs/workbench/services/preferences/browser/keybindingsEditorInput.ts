@@ -44,7 +44,7 @@ export class KeybindingsEditorInput extends EditorInput {
 	}
 
 	override matches(otherInput: EditorInput | IUntypedEditorInput): boolean {
-		return otherInput instanceof KeybindingsEditorInput;
+		return super.matches(otherInput) || otherInput instanceof KeybindingsEditorInput;
 	}
 
 	override dispose(): void {

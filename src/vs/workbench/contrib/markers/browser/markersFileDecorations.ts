@@ -66,11 +66,7 @@ class MarkersFileDecorations implements IWorkbenchContribution {
 	) {
 		//
 		this._disposables = [
-			this._configurationService.onDidChangeConfiguration(e => {
-				if (e.affectsConfiguration('problems')) {
-					this._updateEnablement();
-				}
-			}),
+			this._configurationService.onDidChangeConfiguration(this._updateEnablement, this),
 		];
 		this._updateEnablement();
 	}

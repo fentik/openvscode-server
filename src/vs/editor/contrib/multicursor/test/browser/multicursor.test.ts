@@ -98,8 +98,7 @@ suite('Multicursor selection', () => {
 		switch: () => Promise.resolve(undefined),
 		flush: () => Promise.resolve(undefined),
 		isNew: () => true,
-		keys: () => [],
-		hasScope() { return false; }
+		keys: () => []
 	} as IStorageService);
 
 	test('issue #8817: Cursor position changes when you cancel multicursor', () => {

@@ -33,12 +33,7 @@
         "scopeName": "text.pug",
         "path": "./syntaxes/pug.tmLanguage.json"
       }
-    ],
-    "configurationDefaults": {
-      "[jade]": {
-        "diffEditor.ignoreTrimWhitespace": false
-      }
-    }
+    ]
   },
   "repository": {
     "type": "git",

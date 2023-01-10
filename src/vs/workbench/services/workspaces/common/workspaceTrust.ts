@@ -10,7 +10,7 @@ import { Schemas } from 'vs/base/common/network';
 import { URI } from 'vs/base/common/uri';
 import { IPath } from 'vs/platform/window/common/window';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IRemoteAuthorityResolverService, ResolverResult } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { getRemoteAuthority } from 'vs/platform/remote/common/remoteHosts';
 import { isVirtualResource } from 'vs/platform/workspace/common/virtualWorkspace';
@@ -22,7 +22,6 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { isEqualAuthority } from 'vs/base/common/resources';
 import { isWeb } from 'vs/base/common/platform';
-import { IFileService } from 'vs/platform/files/common/files';
 
 export const WORKSPACE_TRUST_ENABLED = 'security.workspace.trust.enabled';
 export const WORKSPACE_TRUST_STARTUP_PROMPT = 'security.workspace.trust.startupPrompt';
@@ -119,8 +118,7 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
-		@IWorkspaceTrustEnablementService private readonly workspaceTrustEnablementService: IWorkspaceTrustEnablementService,
-		@IFileService private readonly fileService: IFileService
+		@IWorkspaceTrustEnablementService private readonly workspaceTrustEnablementService: IWorkspaceTrustEnablementService
 	) {
 		super();
 
@@ -166,7 +164,6 @@ export class WorkspaceTrustManagementService extends Disposable implements IWork
 			this.remoteAuthorityResolverService.resolveAuthority(this.environmentService.remoteAuthority)
 				.then(async result => {
 					this._remoteAuthority = result;
-					await this.fileService.activateProvider(Schemas.vscodeRemote);
 					await this.updateWorkspaceTrust();
 				})
 				.finally(() => {
@@ -876,7 +873,9 @@ class WorkspaceTrustMemento {
 	set acceptsOutOfWorkspaceFiles(value: boolean) {
 		this._mementoObject[this._acceptsOutOfWorkspaceFilesKey] = value;
 
-		this._memento?.saveMemento();
+		if (this._memento) {
+			this._memento.saveMemento();
+		}
 	}
 
 	get isEmptyWorkspaceTrusted(): boolean | undefined {
@@ -886,8 +885,10 @@ class WorkspaceTrustMemento {
 	set isEmptyWorkspaceTrusted(value: boolean | undefined) {
 		this._mementoObject[this._isEmptyWorkspaceTrustedKey] = value;
 
-		this._memento?.saveMemento();
+		if (this._memento) {
+			this._memento.saveMemento();
+		}
 	}
 }
 
-registerSingleton(IWorkspaceTrustRequestService, WorkspaceTrustRequestService, InstantiationType.Delayed);
+registerSingleton(IWorkspaceTrustRequestService, WorkspaceTrustRequestService);

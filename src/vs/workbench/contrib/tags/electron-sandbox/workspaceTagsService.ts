@@ -10,9 +10,10 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { ITextFileService, ITextFileContent } from 'vs/workbench/services/textfile/common/textfiles';
 import { URI } from 'vs/base/common/uri';
 import { Schemas } from 'vs/base/common/network';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkspaceTagsService, Tags } from 'vs/workbench/contrib/tags/common/workspaceTags';
 import { getHashedRemotesFromConfig } from 'vs/workbench/contrib/tags/electron-sandbox/workspaceTags';
+import { IProductService } from 'vs/platform/product/common/productService';
 import { splitLines } from 'vs/base/common/strings';
 import { MavenArtifactIdRegex, MavenDependenciesRegex, MavenDependencyRegex, GradleDependencyCompactRegex, GradleDependencyLooseRegex, MavenGroupIdRegex, JavaLibrariesToLookFor } from 'vs/workbench/contrib/tags/common/javaWorkspaceTags';
 
@@ -252,6 +253,7 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 		@IFileService private readonly fileService: IFileService,
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
 		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
+		@IProductService private readonly productService: IProductService,
 		@ITextFileService private readonly textFileService: ITextFileService
 	) { }
 
@@ -580,7 +582,7 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 		tags['workspace.roots'] = isEmpty ? 0 : workspace.folders.length;
 		tags['workspace.empty'] = isEmpty;
 
-		const folders = !isEmpty ? workspace.folders.map(folder => folder.uri) : undefined;
+		const folders = !isEmpty ? workspace.folders.map(folder => folder.uri) : this.productService.quality !== 'stable' && this.findFolders();
 		if (!folders || !folders.length) {
 			return Promise.resolve(tags);
 		}
@@ -605,7 +607,7 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 			tags['workspace.bower'] = nameSet.has('bower.json') || nameSet.has('bower_components');
 
 			tags['workspace.java.pom'] = nameSet.has('pom.xml');
-			tags['workspace.java.gradle'] = nameSet.has('build.gradle') || nameSet.has('settings.gradle') || nameSet.has('build.gradle.kts') || nameSet.has('settings.gradle.kts') || nameSet.has('gradlew') || nameSet.has('gradlew.bat');
+			tags['workspace.java.gradle'] = nameSet.has('build.gradle') || nameSet.has('settings.gradle');
 
 			tags['workspace.yeoman.code.ext'] = nameSet.has('vsc-extension-quickstart.md');
 
@@ -807,9 +809,35 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 		}
 	}
 
+	private findFolders(): URI[] | undefined {
+		const folder = this.findFolder();
+		return folder && [folder];
+	}
+
+	private findFolder(): URI | undefined {
+		const { filesToOpenOrCreate, filesToDiff, filesToMerge } = this.environmentService;
+		if (filesToOpenOrCreate && filesToOpenOrCreate.length) {
+			return this.parentURI(filesToOpenOrCreate[0].fileUri);
+		} else if (filesToDiff && filesToDiff.length) {
+			return this.parentURI(filesToDiff[0].fileUri);
+		} else if (filesToMerge && filesToMerge.length === 4) {
+			return this.parentURI(filesToMerge[3].fileUri) /* [3] is the resulting merge file */;
+		}
+		return undefined;
+	}
+
+	private parentURI(uri: URI | undefined): URI | undefined {
+		if (!uri) {
+			return undefined;
+		}
+		const path = uri.path;
+		const i = path.lastIndexOf('/');
+		return i !== -1 ? uri.with({ path: path.substr(0, i) }) : undefined;
+	}
+
 	private searchArray(arr: string[], regEx: RegExp): boolean | undefined {
 		return arr.some(v => v.search(regEx) > -1) || undefined;
 	}
 }
 
-registerSingleton(IWorkspaceTagsService, WorkspaceTagsService, InstantiationType.Delayed);
+registerSingleton(IWorkspaceTagsService, WorkspaceTagsService, true);

@@ -28,12 +28,7 @@ exports.initialize = function (loaderConfig) {
 		} catch (err) {
 			// missing source map...
 		}
-		try {
-			return instrumenter.instrumentSync(contents, source, map);
-		} catch (e) {
-			console.error(`Error instrumenting ${source}: ${e}`);
-			throw e;
-		}
+		return instrumenter.instrumentSync(contents, source, map);
 	};
 };
 

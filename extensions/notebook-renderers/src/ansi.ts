@@ -8,7 +8,7 @@ import { ansiColorIdentifiers } from './colorMap';
 import { linkify } from './linkify';
 
 
-export function handleANSIOutput(text: string, trustHtml: boolean): HTMLSpanElement {
+export function handleANSIOutput(text: string): HTMLSpanElement {
 	const workspaceFolder = undefined;
 
 	const root: HTMLSpanElement = document.createElement('span');
@@ -52,7 +52,7 @@ export function handleANSIOutput(text: string, trustHtml: boolean): HTMLSpanElem
 			if (sequenceFound) {
 
 				// Flush buffer with previous styles.
-				appendStylizedStringToContainer(root, buffer, trustHtml, styleNames, workspaceFolder, customFgColor, customBgColor, customUnderlineColor);
+				appendStylizedStringToContainer(root, buffer, styleNames, workspaceFolder, customFgColor, customBgColor, customUnderlineColor);
 
 				buffer = '';
 
@@ -98,7 +98,7 @@ export function handleANSIOutput(text: string, trustHtml: boolean): HTMLSpanElem
 
 	// Flush remaining text buffer if not empty.
 	if (buffer) {
-		appendStylizedStringToContainer(root, buffer, trustHtml, styleNames, workspaceFolder, customFgColor, customBgColor, customUnderlineColor);
+		appendStylizedStringToContainer(root, buffer, styleNames, workspaceFolder, customFgColor, customBgColor, customUnderlineColor);
 	}
 
 	return root;
@@ -379,15 +379,9 @@ export function handleANSIOutput(text: string, trustHtml: boolean): HTMLSpanElem
 	}
 }
 
-const ttPolicy = window.trustedTypes?.createPolicy('notebookRenderer', {
-	createHTML: value => value,
-	createScript: value => value,
-});
-
-function appendStylizedStringToContainer(
+export function appendStylizedStringToContainer(
 	root: HTMLElement,
 	stringContent: string,
-	trustHtml: boolean,
 	cssClasses: string[],
 	workspaceFolder: string | undefined,
 	customTextColor?: RGBA | string,
@@ -398,17 +392,7 @@ function appendStylizedStringToContainer(
 		return;
 	}
 
-	let container = document.createElement('span');
-
-	if (trustHtml) {
-		const trustedHtml = ttPolicy?.createHTML(stringContent) ?? stringContent;
-		container.innerHTML = trustedHtml as string;
-	}
-
-	if (container.childElementCount === 0) {
-		// plain text
-		container = linkify(stringContent, true, workspaceFolder);
-	}
+	const container = linkify(stringContent, true, workspaceFolder);
 
 	container.className = cssClasses.join(' ');
 	if (customTextColor) {

@@ -7,29 +7,27 @@ import { ILogger, ILoggerOptions, AbstractMessageLogger, LogLevel, AbstractLogge
 import { MainThreadLoggerShape, MainContext, ExtHostLogLevelServiceShape as ExtHostLogLevelServiceShape } from 'vs/workbench/api/common/extHost.protocol';
 import { IExtHostInitDataService } from 'vs/workbench/api/common/extHostInitDataService';
 import { IExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
-import { URI, UriComponents } from 'vs/base/common/uri';
-import { Event } from 'vs/base/common/event';
-import { isUndefined } from 'vs/base/common/types';
+import { URI } from 'vs/base/common/uri';
+import { Emitter } from 'vs/base/common/event';
 
 export class ExtHostLoggerService extends AbstractLoggerService implements ExtHostLogLevelServiceShape {
 
 	declare readonly _serviceBrand: undefined;
+	private readonly _onDidChangeLogLevel: Emitter<LogLevel>;
 	private readonly _proxy: MainThreadLoggerShape;
 
 	constructor(
 		@IExtHostRpcService rpc: IExtHostRpcService,
 		@IExtHostInitDataService initData: IExtHostInitDataService,
 	) {
-		super(initData.logLevel, Event.None);
+		const emitter = new Emitter<LogLevel>();
+		super(initData.logLevel, emitter.event);
 		this._proxy = rpc.getProxy(MainContext.MainThreadLogger);
+		this._onDidChangeLogLevel = this._register(emitter);
 	}
 
-	$setLevel(level: LogLevel, resource?: UriComponents): void {
-		if (resource) {
-			this.setLevel(URI.revive(resource), level);
-		} else if (!isUndefined(level)) {
-			this.setLevel(level);
-		}
+	$setLevel(level: LogLevel): void {
+		this._onDidChangeLogLevel.fire(level);
 	}
 
 	protected doCreateLogger(resource: URI, logLevel: LogLevel, options?: ILoggerOptions): ILogger {

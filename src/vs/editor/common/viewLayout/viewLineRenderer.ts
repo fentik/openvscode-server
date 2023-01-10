@@ -3,11 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as nls from 'vs/nls';
 import { CharCode } from 'vs/base/common/charCode';
 import * as strings from 'vs/base/common/strings';
 import { IViewLineTokens } from 'vs/editor/common/tokens/lineTokens';
-import { StringBuilder } from 'vs/editor/common/core/stringBuilder';
+import { IStringBuilder, createStringBuilder } from 'vs/editor/common/core/stringBuilder';
 import { LineDecoration, LineDecorationsNormalizer } from 'vs/editor/common/viewLayout/lineDecorations';
 import { InlineDecorationType } from 'vs/editor/common/viewModel';
 import { LinePart, LinePartMetadata } from 'vs/editor/common/viewLayout/linePart';
@@ -176,7 +175,7 @@ export class RenderLineInput {
 	}
 }
 
-const enum CharacterMappingConstants {
+export const enum CharacterMappingConstants {
 	PART_INDEX_MASK = 0b11111111111111110000000000000000,
 	CHAR_INDEX_MASK = 0b00000000000000001111111111111111,
 
@@ -349,21 +348,21 @@ export class RenderLineOutput {
 	}
 }
 
-export function renderViewLine(input: RenderLineInput, sb: StringBuilder): RenderLineOutput {
+export function renderViewLine(input: RenderLineInput, sb: IStringBuilder): RenderLineOutput {
 	if (input.lineContent.length === 0) {
 
 		if (input.lineDecorations.length > 0) {
 			// This line is empty, but it contains inline decorations
-			sb.appendString(`<span>`);
+			sb.appendASCIIString(`<span>`);
 
 			let beforeCount = 0;
 			let afterCount = 0;
 			let containsForeignElements = ForeignElementType.None;
 			for (const lineDecoration of input.lineDecorations) {
 				if (lineDecoration.type === InlineDecorationType.Before || lineDecoration.type === InlineDecorationType.After) {
-					sb.appendString(`<span class="`);
-					sb.appendString(lineDecoration.className);
-					sb.appendString(`"></span>`);
+					sb.appendASCIIString(`<span class="`);
+					sb.appendASCIIString(lineDecoration.className);
+					sb.appendASCIIString(`"></span>`);
 
 					if (lineDecoration.type === InlineDecorationType.Before) {
 						containsForeignElements |= ForeignElementType.Before;
@@ -376,7 +375,7 @@ export function renderViewLine(input: RenderLineInput, sb: StringBuilder): Rende
 				}
 			}
 
-			sb.appendString(`</span>`);
+			sb.appendASCIIString(`</span>`);
 
 			const characterMapping = new CharacterMapping(1, beforeCount + afterCount);
 			characterMapping.setColumnInfo(1, beforeCount, 0, 0);
@@ -389,7 +388,7 @@ export function renderViewLine(input: RenderLineInput, sb: StringBuilder): Rende
 		}
 
 		// completely empty line
-		sb.appendString('<span><span></span></span>');
+		sb.appendASCIIString('<span><span></span></span>');
 		return new RenderLineOutput(
 			new CharacterMapping(0, 0),
 			false,
@@ -411,7 +410,7 @@ export class RenderLineOutput2 {
 }
 
 export function renderViewLine2(input: RenderLineInput): RenderLineOutput2 {
-	const sb = new StringBuilder(10000);
+	const sb = createStringBuilder(10000);
 	const out = renderViewLine(input, sb);
 	return new RenderLineOutput2(out.characterMapping, sb.build(), out.containsRTL, out.containsForeignElements);
 }
@@ -423,7 +422,6 @@ class ResolvedRenderLineInput {
 		public readonly lineContent: string,
 		public readonly len: number,
 		public readonly isOverflowing: boolean,
-		public readonly overflowingCharCount: number,
 		public readonly parts: LinePart[],
 		public readonly containsForeignElements: ForeignElementType,
 		public readonly fauxIndentLength: number,
@@ -443,16 +441,13 @@ function resolveRenderLineInput(input: RenderLineInput): ResolvedRenderLineInput
 	const lineContent = input.lineContent;
 
 	let isOverflowing: boolean;
-	let overflowingCharCount: number;
 	let len: number;
 
 	if (input.stopRenderingLineAfter !== -1 && input.stopRenderingLineAfter < lineContent.length) {
 		isOverflowing = true;
-		overflowingCharCount = lineContent.length - input.stopRenderingLineAfter;
 		len = input.stopRenderingLineAfter;
 	} else {
 		isOverflowing = false;
-		overflowingCharCount = 0;
 		len = lineContent.length;
 	}
 
@@ -465,8 +460,8 @@ function resolveRenderLineInput(input: RenderLineInput): ResolvedRenderLineInput
 	if (input.renderWhitespace === RenderWhitespace.All ||
 		input.renderWhitespace === RenderWhitespace.Boundary ||
 		(input.renderWhitespace === RenderWhitespace.Selection && !!input.selectionsOnLine) ||
-		(input.renderWhitespace === RenderWhitespace.Trailing && !input.continuesWithWrappedLine)
-	) {
+		input.renderWhitespace === RenderWhitespace.Trailing) {
+
 		tokens = _applyRenderWhitespace(input, lineContent, len, tokens);
 	}
 	let containsForeignElements = ForeignElementType.None;
@@ -495,7 +490,6 @@ function resolveRenderLineInput(input: RenderLineInput): ResolvedRenderLineInput
 		lineContent,
 		len,
 		isOverflowing,
-		overflowingCharCount,
 		tokens,
 		containsForeignElements,
 		input.fauxIndentLength,
@@ -910,14 +904,13 @@ function _applyInlineDecorations(lineContent: string, len: number, tokens: LineP
  * This function is on purpose not split up into multiple functions to allow runtime type inference (i.e. performance reasons).
  * Notice how all the needed data is fully resolved and passed in (i.e. no other calls).
  */
-function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderLineOutput {
+function _renderLine(input: ResolvedRenderLineInput, sb: IStringBuilder): RenderLineOutput {
 	const fontIsMonospace = input.fontIsMonospace;
 	const canUseHalfwidthRightwardsArrow = input.canUseHalfwidthRightwardsArrow;
 	const containsForeignElements = input.containsForeignElements;
 	const lineContent = input.lineContent;
 	const len = input.len;
 	const isOverflowing = input.isOverflowing;
-	const overflowingCharCount = input.overflowingCharCount;
 	const parts = input.parts;
 	const fauxIndentLength = input.fauxIndentLength;
 	const tabSize = input.tabSize;
@@ -939,9 +932,9 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 	let partDisplacement = 0;
 
 	if (containsRTL) {
-		sb.appendString('<span dir="ltr">');
+		sb.appendASCIIString('<span dir="ltr">');
 	} else {
-		sb.appendString('<span>');
+		sb.appendASCIIString('<span>');
 	}
 
 	for (let partIndex = 0, tokensLen = parts.length; partIndex < tokensLen; partIndex++) {
@@ -955,13 +948,13 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 		const partIsEmptyAndHasPseudoAfter = (charIndex === partEndIndex && part.isPseudoAfter());
 		charOffsetInPart = 0;
 
-		sb.appendString('<span ');
+		sb.appendASCIIString('<span ');
 		if (partContainsRTL) {
-			sb.appendString('style="unicode-bidi:isolate" ');
+			sb.appendASCIIString('style="unicode-bidi:isolate" ');
 		}
-		sb.appendString('class="');
-		sb.appendString(partRendersWhitespaceWithWidth ? 'mtkz' : partType);
-		sb.appendASCIICharCode(CharCode.DoubleQuote);
+		sb.appendASCIIString('class="');
+		sb.appendASCIIString(partRendersWhitespaceWithWidth ? 'mtkz' : partType);
+		sb.appendASCII(CharCode.DoubleQuote);
 
 		if (partRendersWhitespace) {
 
@@ -981,11 +974,11 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 			}
 
 			if (partRendersWhitespaceWithWidth) {
-				sb.appendString(' style="width:');
-				sb.appendString(String(spaceWidth * partWidth));
-				sb.appendString('px"');
+				sb.appendASCIIString(' style="width:');
+				sb.appendASCIIString(String(spaceWidth * partWidth));
+				sb.appendASCIIString('px"');
 			}
-			sb.appendASCIICharCode(CharCode.GreaterThan);
+			sb.appendASCII(CharCode.GreaterThan);
 
 			for (; charIndex < partEndIndex; charIndex++) {
 				characterMapping.setColumnInfo(charIndex + 1, partIndex - partDisplacement, charOffsetInPart, charHorizontalOffset);
@@ -1000,20 +993,20 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 					charWidth = producedCharacters;
 
 					if (!canUseHalfwidthRightwardsArrow || charWidth > 1) {
-						sb.appendCharCode(0x2192); // RIGHTWARDS ARROW
+						sb.write1(0x2192); // RIGHTWARDS ARROW
 					} else {
-						sb.appendCharCode(0xFFEB); // HALFWIDTH RIGHTWARDS ARROW
+						sb.write1(0xFFEB); // HALFWIDTH RIGHTWARDS ARROW
 					}
 					for (let space = 2; space <= charWidth; space++) {
-						sb.appendCharCode(0xA0); // &nbsp;
+						sb.write1(0xA0); // &nbsp;
 					}
 
 				} else { // must be CharCode.Space
 					producedCharacters = 2;
 					charWidth = 1;
 
-					sb.appendCharCode(renderSpaceCharCode); // &middot; or word separator middle dot
-					sb.appendCharCode(0x200C); // ZERO WIDTH NON-JOINER
+					sb.write1(renderSpaceCharCode); // &middot; or word separator middle dot
+					sb.write1(0x200C); // ZERO WIDTH NON-JOINER
 				}
 
 				charOffsetInPart += producedCharacters;
@@ -1025,7 +1018,7 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 
 		} else {
 
-			sb.appendASCIICharCode(CharCode.GreaterThan);
+			sb.appendASCII(CharCode.GreaterThan);
 
 			for (; charIndex < partEndIndex; charIndex++) {
 				characterMapping.setColumnInfo(charIndex + 1, partIndex - partDisplacement, charOffsetInPart, charHorizontalOffset);
@@ -1040,32 +1033,32 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 						producedCharacters = (tabSize - (visibleColumn % tabSize));
 						charWidth = producedCharacters;
 						for (let space = 1; space <= producedCharacters; space++) {
-							sb.appendCharCode(0xA0); // &nbsp;
+							sb.write1(0xA0); // &nbsp;
 						}
 						break;
 
 					case CharCode.Space:
-						sb.appendCharCode(0xA0); // &nbsp;
+						sb.write1(0xA0); // &nbsp;
 						break;
 
 					case CharCode.LessThan:
-						sb.appendString('&lt;');
+						sb.appendASCIIString('&lt;');
 						break;
 
 					case CharCode.GreaterThan:
-						sb.appendString('&gt;');
+						sb.appendASCIIString('&gt;');
 						break;
 
 					case CharCode.Ampersand:
-						sb.appendString('&amp;');
+						sb.appendASCIIString('&amp;');
 						break;
 
 					case CharCode.Null:
 						if (renderControlCharacters) {
 							// See https://unicode-table.com/en/blocks/control-pictures/
-							sb.appendCharCode(9216);
+							sb.write1(9216);
 						} else {
-							sb.appendString('&#00;');
+							sb.appendASCIIString('&#00;');
 						}
 						break;
 
@@ -1073,7 +1066,7 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 					case CharCode.LINE_SEPARATOR:
 					case CharCode.PARAGRAPH_SEPARATOR:
 					case CharCode.NEXT_LINE:
-						sb.appendCharCode(0xFFFD);
+						sb.write1(0xFFFD);
 						break;
 
 					default:
@@ -1082,18 +1075,18 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 						}
 						// See https://unicode-table.com/en/blocks/control-pictures/
 						if (renderControlCharacters && charCode < 32) {
-							sb.appendCharCode(9216 + charCode);
+							sb.write1(9216 + charCode);
 						} else if (renderControlCharacters && charCode === 127) {
 							// DEL
-							sb.appendCharCode(9249);
+							sb.write1(9249);
 						} else if (renderControlCharacters && isControlCharacter(charCode)) {
-							sb.appendString('[U+');
-							sb.appendString(to4CharHex(charCode));
-							sb.appendString(']');
+							sb.appendASCIIString('[U+');
+							sb.appendASCIIString(to4CharHex(charCode));
+							sb.appendASCIIString(']');
 							producedCharacters = 8;
 							charWidth = producedCharacters;
 						} else {
-							sb.appendCharCode(charCode);
+							sb.write1(charCode);
 						}
 				}
 
@@ -1116,7 +1109,7 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 			characterMapping.setColumnInfo(charIndex + 1, partIndex, charOffsetInPart, charHorizontalOffset);
 		}
 
-		sb.appendString('</span>');
+		sb.appendASCIIString('</span>');
 
 	}
 
@@ -1127,26 +1120,14 @@ function _renderLine(input: ResolvedRenderLineInput, sb: StringBuilder): RenderL
 	}
 
 	if (isOverflowing) {
-		sb.appendString('<span class="mtkoverflow">');
-		sb.appendString(nls.localize('showMore', "Show more ({0})", renderOverflowingCharCount(overflowingCharCount)));
-		sb.appendString('</span>');
+		sb.appendASCIIString('<span>&hellip;</span>');
 	}
 
-	sb.appendString('</span>');
+	sb.appendASCIIString('</span>');
 
 	return new RenderLineOutput(characterMapping, containsRTL, containsForeignElements);
 }
 
 function to4CharHex(n: number): string {
 	return n.toString(16).toUpperCase().padStart(4, '0');
-}
-
-function renderOverflowingCharCount(n: number): string {
-	if (n < 1024) {
-		return nls.localize('overflow.chars', "{0} chars", n);
-	}
-	if (n < 1024 * 1024) {
-		return `${(n / 1024).toFixed(1)} KB`;
-	}
-	return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }

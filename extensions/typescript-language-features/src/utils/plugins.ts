@@ -8,7 +8,6 @@ import * as arrays from './arrays';
 import { Disposable } from './dispose';
 
 export interface TypeScriptServerPlugin {
-	readonly extension: vscode.Extension<unknown>;
 	readonly uri: vscode.Uri;
 	readonly name: string;
 	readonly enableForWorkspaceTypeScriptVersions: boolean;
@@ -28,7 +27,7 @@ namespace TypeScriptServerPlugin {
 export class PluginManager extends Disposable {
 	private readonly _pluginConfigurations = new Map<string, {}>();
 
-	private _plugins?: Map<string, ReadonlyArray<TypeScriptServerPlugin>>;
+	private _plugins: Map<string, ReadonlyArray<TypeScriptServerPlugin>> | undefined;
 
 	constructor() {
 		super();
@@ -37,7 +36,6 @@ export class PluginManager extends Disposable {
 			if (!this._plugins) {
 				return;
 			}
-
 			const newPlugins = this.readPlugins();
 			if (!arrays.equals(Array.from(this._plugins.values()).flat(), Array.from(newPlugins.values()).flat(), TypeScriptServerPlugin.equals)) {
 				this._plugins = newPlugins;
@@ -47,7 +45,9 @@ export class PluginManager extends Disposable {
 	}
 
 	public get plugins(): ReadonlyArray<TypeScriptServerPlugin> {
-		this._plugins ??= this.readPlugins();
+		if (!this._plugins) {
+			this._plugins = this.readPlugins();
+		}
 		return Array.from(this._plugins.values()).flat();
 	}
 
@@ -74,7 +74,6 @@ export class PluginManager extends Disposable {
 				const plugins: TypeScriptServerPlugin[] = [];
 				for (const plugin of pack.contributes.typescriptServerPlugins) {
 					plugins.push({
-						extension,
 						name: plugin.name,
 						enableForWorkspaceTypeScriptVersions: !!plugin.enableForWorkspaceTypeScriptVersions,
 						uri: extension.extensionUri,

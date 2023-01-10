@@ -10,7 +10,7 @@ import * as objects from 'vs/base/common/objects';
 import { IDiffEditor } from 'vs/editor/browser/editorBrowser';
 import { ICursorPositionChangedEvent } from 'vs/editor/common/cursorEvents';
 import { Range } from 'vs/editor/common/core/range';
-import { ILineChange } from 'vs/editor/common/diff/smartLinesDiffComputer';
+import { ILineChange } from 'vs/editor/common/diff/diffComputer';
 import { ScrollType } from 'vs/editor/common/editorCommon';
 
 
@@ -23,14 +23,12 @@ export interface Options {
 	followsCaret?: boolean;
 	ignoreCharChanges?: boolean;
 	alwaysRevealFirst?: boolean;
-	findResultLoop?: boolean;
 }
 
 const defaultOptions: Options = {
 	followsCaret: true,
 	ignoreCharChanges: true,
-	alwaysRevealFirst: true,
-	findResultLoop: true
+	alwaysRevealFirst: true
 };
 
 export interface IDiffNavigator {
@@ -218,29 +216,11 @@ export class DiffNavigator extends Disposable implements IDiffNavigator {
 	}
 
 	next(scrollType: ScrollType = ScrollType.Smooth): void {
-		if (!this.canNavigateNext()) {
-			return;
-		}
 		this._move(true, scrollType);
 	}
 
 	previous(scrollType: ScrollType = ScrollType.Smooth): void {
-		if (!this.canNavigatePrevious()) {
-			return;
-		}
 		this._move(false, scrollType);
-	}
-
-	canNavigateNext(): boolean {
-		return this.canNavigateLoop() || this.nextIdx < this.ranges.length - 1;
-	}
-
-	canNavigatePrevious(): boolean {
-		return this.canNavigateLoop() || this.nextIdx !== 0;
-	}
-
-	canNavigateLoop(): boolean {
-		return Boolean(this._options.findResultLoop);
 	}
 
 	override dispose(): void {

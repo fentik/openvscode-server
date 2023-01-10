@@ -95,7 +95,7 @@ export function notebookCellRangeString(index: number | undefined, range: vscode
 	return hash;
 }
 
-export function getLink(gitAPI: GitAPI, useSelection: boolean, hostPrefix?: string, linkType: 'permalink' | 'headlink' = 'permalink'): string | undefined {
+export function getPermalink(gitAPI: GitAPI, useSelection: boolean, hostPrefix?: string): string | undefined {
 	hostPrefix = hostPrefix ?? 'https://github.com';
 	const fileAndPosition = getFileAndPosition();
 	if (!fileAndPosition) {
@@ -125,11 +125,11 @@ export function getLink(gitAPI: GitAPI, useSelection: boolean, hostPrefix?: stri
 		return;
 	}
 
-	const blobSegment = (gitRepo.state.HEAD?.ahead === 0) ? `/blob/${linkType === 'headlink' ? gitRepo.state.HEAD.name : gitRepo.state.HEAD?.commit}` : '';
+	const commitHash = (gitRepo.state.HEAD?.ahead === 0) ? `/blob/${gitRepo.state.HEAD?.commit}` : '';
 	const fileSegments = fileAndPosition.type === LinkType.File
 		? (useSelection ? `${uri.path.substring(gitRepo.rootUri.path.length)}${rangeString(fileAndPosition.range)}` : '')
 		: (useSelection ? `${uri.path.substring(gitRepo.rootUri.path.length)}${notebookCellRangeString(fileAndPosition.cellIndex, fileAndPosition.range)}` : '');
 
-	return `${hostPrefix}/${repo.owner}/${repo.repo}${blobSegment
+	return `${hostPrefix}/${repo.owner}/${repo.repo}${commitHash
 		}${fileSegments}`;
 }

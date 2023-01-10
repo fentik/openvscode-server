@@ -22,20 +22,15 @@ export class DataTransferCache {
 		};
 	}
 
-	async resolveDropFileData(requestId: number, dataItemId: string): Promise<VSBuffer> {
+	async resolveDropFileData(requestId: number, dataItemIndex: number): Promise<VSBuffer> {
 		const entry = this.dataTransfers.get(requestId);
 		if (!entry) {
 			throw new Error('No data transfer found');
 		}
 
-		const item = entry.find(x => x.id === dataItemId);
-		if (!item) {
-			throw new Error('No item found in data transfer');
-		}
-
-		const file = item.asFile();
+		const file = entry[dataItemIndex]?.asFile();
 		if (!file) {
-			throw new Error('Found data transfer item is not a file');
+			throw new Error('No file item found in data transfer');
 		}
 
 		return VSBuffer.wrap(await file.data());

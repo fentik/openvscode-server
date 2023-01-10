@@ -237,42 +237,6 @@
 	max-width: 300px;
 }
 
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item > .extension-action.label {
-	border-right-width: 0;
-}
-
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item > .action-dropdown-item-separator {
-	height: 22px;
-}
-
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item > .action-dropdown-item-separator > div {
-	height: 16px;
-}
-
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item.empty > .extension-action.label {
-	margin-right: 2px;
-}
-
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item.empty > .action-dropdown-item-separator {
-	display: none;
-}
-
-/* single install */
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item > .extension-action.label,
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item.empty > .extension-action.label {
-	border-radius: 2px;
-}
-
-/* split install */
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item:not(.empty) > .extension-action.label {
-	border-radius: 2px 0 0 2px;
-}
-
-.extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item.action-dropdown-item:not(.empty)  > .monaco-dropdown .extension-action.label {
-	border-left-width: 0;
-	border-radius: 0 2px 2px 0;
-}
-
 .extension-editor > .header > .details > .actions-status-container > .monaco-action-bar > .actions-container > .action-item > .action-label.extension-status {
 	margin-right: 0;
 }
@@ -355,34 +319,31 @@
 	font-size: 14px;
 	line-height: 36px;
 	padding-left: 20px;
-	border-bottom: 1px solid var(--vscode-panelSection-border);
+	border-bottom: 1px solid rgba(136, 136, 136, 0.45);
+	box-sizing: border-box;
 }
 
 .extension-editor > .body > .navbar > .monaco-action-bar > .actions-container {
 	justify-content: initial;
 }
 
-.extension-editor > .body > .navbar > .monaco-action-bar > .actions-container > .action-item {
-	height: 100%;
+.extension-editor > .body > .navbar > .monaco-action-bar > .actions-container > .action-item > .action-label {
+	margin-right: 16px;
+	font-size: inherit;
+	opacity: 0.7;
 }
 
 .extension-editor > .body > .navbar > .monaco-action-bar > .actions-container > .action-item > .action-label {
-	padding: 0 10px;
-	font-size: 11px;
-	font-weight: normal;
-	color: var(--vscode-panelTitle-inactiveForeground);
-	text-transform: uppercase;
 	background: none !important;
-	border-radius: 0px !important;
 }
 
 .extension-editor > .body > .navbar > .monaco-action-bar > .actions-container > .action-item > .action-label.checked {
-	border-bottom: 1px solid var(--vscode-panelTitle-activeBorder);
-	color: var(--vscode-panelTitle-activeForeground);
+	opacity: 1;
+	text-decoration: underline;
 }
 
 .extension-editor > .body > .navbar > .monaco-action-bar > .actions-container > .action-item > .action-label:hover {
-	color: var(--vscode-panelTitle-activeForeground);
+	text-decoration: underline;
 }
 
 .extension-editor > .body > .content {
@@ -760,8 +721,9 @@
 	opacity: 0.5;
 }
 
-.extension-editor > .body > .content .runtime-status .activation-details > .activation-element-entry > .activation-message-title {
-	padding-right: 10px;
+.extension-editor > .body > .content .runtime-status .no-status-message,
+.extension-editor > .body > .content .runtime-status .activation-message {
+	font-size: medium;
 }
 
 .extension-editor > .body > .content .runtime-status .message-entry {
@@ -772,8 +734,4 @@
 
 .extension-editor > .body > .content .runtime-status .message-entry .codicon {
 	padding-right: 2px;
-}
-
-.monaco-workbench .extension-editor > .header > .details > .recommendation .codicon {
-	color: var(--vscode-extensionButton-prominentBackground);
 }

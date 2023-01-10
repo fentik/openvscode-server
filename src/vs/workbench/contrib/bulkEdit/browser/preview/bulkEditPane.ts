@@ -26,7 +26,9 @@ import { ResourceLabels, IResourceLabelsContainer } from 'vs/workbench/browser/l
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import Severity from 'vs/base/common/severity';
 import { basename, dirname } from 'vs/base/common/resources';
-import { MenuId } from 'vs/platform/actions/common/actions';
+import { IMenuService, MenuId } from 'vs/platform/actions/common/actions';
+import { IAction } from 'vs/base/common/actions';
+import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { ITreeContextMenuEvent } from 'vs/base/browser/ui/tree/tree';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { ITextEditorOptions } from 'vs/platform/editor/common/editor';
@@ -37,8 +39,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ResourceEdit } from 'vs/editor/browser/services/bulkEditService';
 import { ButtonBar } from 'vs/base/browser/ui/button/button';
-import { defaultButtonStyles } from 'vs/platform/theme/browser/defaultStyles';
-import { Mutable } from 'vs/base/common/types';
 
 const enum State {
 	Data = 'data',
@@ -78,9 +78,10 @@ export class BulkEditPane extends ViewPane {
 		@ILabelService private readonly _labelService: ILabelService,
 		@ITextModelService private readonly _textModelService: ITextModelService,
 		@IDialogService private readonly _dialogService: IDialogService,
+		@IMenuService private readonly _menuService: IMenuService,
 		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
+		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IStorageService private readonly _storageService: IStorageService,
-		@IContextKeyService contextKeyService: IContextKeyService,
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -91,13 +92,13 @@ export class BulkEditPane extends ViewPane {
 	) {
 		super(
 			{ ...options, titleMenuId: MenuId.BulkEditTitle },
-			keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, _instaService, openerService, themeService, telemetryService
+			keybindingService, contextMenuService, configurationService, _contextKeyService, viewDescriptorService, _instaService, openerService, themeService, telemetryService
 		);
 
 		this.element.classList.add('bulk-edit-panel', 'show-file-icons');
-		this._ctxHasCategories = BulkEditPane.ctxHasCategories.bindTo(contextKeyService);
-		this._ctxGroupByFile = BulkEditPane.ctxGroupByFile.bindTo(contextKeyService);
-		this._ctxHasCheckedChanges = BulkEditPane.ctxHasCheckedChanges.bindTo(contextKeyService);
+		this._ctxHasCategories = BulkEditPane.ctxHasCategories.bindTo(_contextKeyService);
+		this._ctxGroupByFile = BulkEditPane.ctxGroupByFile.bindTo(_contextKeyService);
+		this._ctxHasCheckedChanges = BulkEditPane.ctxHasCheckedChanges.bindTo(_contextKeyService);
 	}
 
 	override dispose(): void {
@@ -152,11 +153,11 @@ export class BulkEditPane extends ViewPane {
 		const buttonBar = new ButtonBar(buttonsContainer);
 		this._disposables.add(buttonBar);
 
-		const btnConfirm = buttonBar.addButton({ supportIcons: true, ...defaultButtonStyles });
+		const btnConfirm = buttonBar.addButton({ supportIcons: true });
 		btnConfirm.label = localize('ok', 'Apply');
 		btnConfirm.onDidClick(() => this.accept(), this, this._disposables);
 
-		const btnCancel = buttonBar.addButton({ ...defaultButtonStyles, secondary: true });
+		const btnCancel = buttonBar.addButton({ /* secondary: true */ });
 		btnCancel.label = localize('cancel', 'Discard');
 		btnCancel.onDidClick(() => this.discard(), this, this._disposables);
 
@@ -281,8 +282,6 @@ export class BulkEditPane extends ViewPane {
 		const [first] = this._tree.getFocus();
 		if ((first instanceof FileElement || first instanceof TextEditElement) && !first.isDisabled()) {
 			first.setChecked(!first.isChecked());
-		} else if (first instanceof CategoryElement) {
-			first.setChecked(!first.isChecked());
 		}
 	}
 
@@ -317,6 +316,9 @@ export class BulkEditPane extends ViewPane {
 	}
 
 	private async _openElementAsEditor(e: IOpenEvent<BulkEditElement | undefined>): Promise<void> {
+		type Mutable<T> = {
+			-readonly [P in keyof T]: T[P]
+		};
 
 		const options: Mutable<ITextEditorOptions> = { ...e.editorOptions };
 		let fileElement: FileElement;
@@ -378,11 +380,17 @@ export class BulkEditPane extends ViewPane {
 	}
 
 	private _onContextMenu(e: ITreeContextMenuEvent<any>): void {
+		const menu = this._menuService.createMenu(MenuId.BulkEditContext, this._contextKeyService);
+		const actions: IAction[] = [];
+		const disposable = createAndFillInContextMenuActions(menu, undefined, actions);
 
 		this._contextMenuService.showContextMenu({
-			menuId: MenuId.BulkEditContext,
-			contextKeyService: this.contextKeyService,
-			getAnchor: () => e.anchor
+			getActions: () => actions,
+			getAnchor: () => e.anchor,
+			onHide: () => {
+				disposable.dispose();
+				menu.dispose();
+			}
 		});
 	}
 }

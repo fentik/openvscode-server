@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { EditorConfiguration, IEnvConfiguration } from 'vs/editor/browser/config/editorConfiguration';
-import { EditorFontLigatures, EditorFontVariations, IEditorOptions } from 'vs/editor/common/config/editorOptions';
+import { EditorFontLigatures, IEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { BareFontInfo, FontInfo } from 'vs/editor/common/config/fontInfo';
 import { AccessibilitySupport } from 'vs/platform/accessibility/common/accessibility';
 import { TestAccessibilityService } from 'vs/platform/accessibility/test/common/testAccessibilityService';
@@ -33,7 +33,6 @@ export class TestConfiguration extends EditorConfiguration {
 			fontWeight: 'normal',
 			fontSize: 14,
 			fontFeatureSettings: EditorFontLigatures.OFF,
-			fontVariationSettings: EditorFontVariations.OFF,
 			lineHeight: 19,
 			letterSpacing: 1.5,
 			isMonospace: true,

@@ -7,6 +7,7 @@ import { IStringDictionary } from 'vs/base/common/collections';
 import { ProcessItem } from 'vs/base/common/processes';
 import { UriComponents } from 'vs/base/common/uri';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { IMainProcessInfo } from 'vs/platform/launch/common/launch';
 import { IWorkspace } from 'vs/platform/workspace/common/workspace';
 
 export const ID = 'diagnosticsService';
@@ -15,9 +16,9 @@ export const IDiagnosticsService = createDecorator<IDiagnosticsService>(ID);
 export interface IDiagnosticsService {
 	readonly _serviceBrand: undefined;
 
-	getPerformanceInfo(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<PerformanceInfo>;
-	getSystemInfo(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<SystemInfo>;
-	getDiagnostics(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<string>;
+	getPerformanceInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<PerformanceInfo>;
+	getSystemInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<SystemInfo>;
+	getDiagnostics(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<string>;
 	getWorkspaceFileExtensions(workspace: IWorkspace): Promise<{ extensions: string[] }>;
 	reportWorkspaceStats(workspace: IWorkspaceInformation): Promise<void>;
 }
@@ -95,11 +96,11 @@ export function isRemoteDiagnosticError(x: any): x is IRemoteDiagnosticError {
 export class NullDiagnosticsService implements IDiagnosticsService {
 	_serviceBrand: undefined;
 
-	async getPerformanceInfo(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<PerformanceInfo> {
+	async getPerformanceInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<PerformanceInfo> {
 		return {};
 	}
 
-	async getSystemInfo(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<SystemInfo> {
+	async getSystemInfo(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<SystemInfo> {
 		return {
 			processArgs: 'nullProcessArgs',
 			gpuStatus: 'nullGpuStatus',
@@ -111,7 +112,7 @@ export class NullDiagnosticsService implements IDiagnosticsService {
 		};
 	}
 
-	async getDiagnostics(mainProcessInfo: IMainProcessDiagnostics, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<string> {
+	async getDiagnostics(mainProcessInfo: IMainProcessInfo, remoteInfo: (IRemoteDiagnosticInfo | IRemoteDiagnosticError)[]): Promise<string> {
 		return '';
 	}
 
@@ -121,19 +122,4 @@ export class NullDiagnosticsService implements IDiagnosticsService {
 
 	async reportWorkspaceStats(workspace: IWorkspaceInformation): Promise<void> { }
 
-}
-
-export interface IWindowDiagnostics {
-	readonly pid: number;
-	readonly title: string;
-	readonly folderURIs: UriComponents[];
-	readonly remoteAuthority?: string;
-}
-
-export interface IMainProcessDiagnostics {
-	readonly mainPID: number;
-	readonly mainArguments: string[]; // All arguments after argv[0], the exec path
-	readonly windows: IWindowDiagnostics[];
-	readonly screenReader: boolean;
-	readonly gpuFeatureStatus: any;
 }

@@ -6,7 +6,7 @@
 import { CancelablePromise, createCancelablePromise, RunOnceScheduler } from 'vs/base/common/async';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { EditorContributionInstantiation, registerEditorContribution } from 'vs/editor/browser/editorExtensions';
+import { registerEditorContribution } from 'vs/editor/browser/editorExtensions';
 import { Range } from 'vs/editor/common/core/range';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { ITextModel } from 'vs/editor/common/model';
@@ -80,7 +80,6 @@ class ViewportSemanticTokensContribution extends Disposable implements IEditorCo
 			this._cancelAll();
 			scheduleTokenizeViewport();
 		}));
-		scheduleTokenizeViewport();
 	}
 
 	private _cancelAll(): void {
@@ -141,4 +140,4 @@ class ViewportSemanticTokensContribution extends Disposable implements IEditorCo
 	}
 }
 
-registerEditorContribution(ViewportSemanticTokensContribution.ID, ViewportSemanticTokensContribution, EditorContributionInstantiation.AfterFirstRender);
+registerEditorContribution(ViewportSemanticTokensContribution.ID, ViewportSemanticTokensContribution);

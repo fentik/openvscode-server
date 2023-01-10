@@ -5,22 +5,24 @@
 
 import { raceCancellation } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
-import { UriList, VSDataTransfer } from 'vs/base/common/dataTransfer';
+import { VSDataTransfer } from 'vs/base/common/dataTransfer';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Mimes } from 'vs/base/common/mime';
 import { relativePath } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
-import { addExternalEditorsDropData, toVSDataTransfer } from 'vs/editor/browser/dnd';
+import { addExternalEditorsDropData, toVSDataTransfer, UriList } from 'vs/editor/browser/dnd';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { EditorContributionInstantiation, registerEditorContribution } from 'vs/editor/browser/editorExtensions';
-import { IBulkEditService, ResourceTextEdit } from 'vs/editor/browser/services/bulkEditService';
+import { registerEditorContribution } from 'vs/editor/browser/editorExtensions';
+import { IBulkEditService, ResourceEdit } from 'vs/editor/browser/services/bulkEditService';
 import { IPosition } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
+import { Selection, SelectionDirection } from 'vs/editor/common/core/selection';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
-import { DocumentOnDropEdit, DocumentOnDropEditProvider, WorkspaceEdit } from 'vs/editor/common/languages';
+import { DocumentOnDropEdit, DocumentOnDropEditProvider } from 'vs/editor/common/languages';
 import { ITextModel } from 'vs/editor/common/model';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
 import { CodeEditorStateFlag, EditorStateCancellationTokenSource } from 'vs/editor/contrib/editorState/browser/editorState';
+import { performSnippetEdit } from 'vs/editor/contrib/snippet/browser/snippetController2';
 import { SnippetParser } from 'vs/editor/contrib/snippet/browser/snippetParser';
 import { localize } from 'vs/nls';
 import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
@@ -66,7 +68,7 @@ export class DropIntoEditorController extends Disposable implements IEditorContr
 		try {
 			const providers = this._languageFeaturesService.documentOnDropEditProvider.ordered(model);
 
-			const providerEdit = await this._progressService.withProgress({
+			const edit = await this._progressService.withProgress({
 				location: ProgressLocation.Notification,
 				delay: 750,
 				title: localize('dropProgressTitle', "Running drop handlers..."),
@@ -92,19 +94,13 @@ export class DropIntoEditorController extends Disposable implements IEditorContr
 				return;
 			}
 
-			if (providerEdit) {
-				const snippet = typeof providerEdit.insertText === 'string' ? SnippetParser.escape(providerEdit.insertText) : providerEdit.insertText.snippet;
-				const combinedWorkspaceEdit: WorkspaceEdit = {
-					edits: [
-						new ResourceTextEdit(model.uri, {
-							range: new Range(position.lineNumber, position.column, position.lineNumber, position.column),
-							text: snippet,
-							insertAsSnippet: true,
-						}),
-						...(providerEdit.additionalEdit?.edits ?? [])
-					]
-				};
-				await this._bulkEditService.apply(combinedWorkspaceEdit, { editor });
+			if (edit) {
+				const range = new Range(position.lineNumber, position.column, position.lineNumber, position.column);
+				performSnippetEdit(editor, typeof edit.insertText === 'string' ? SnippetParser.escape(edit.insertText) : edit.insertText.snippet, [Selection.fromRange(range, SelectionDirection.LTR)]);
+
+				if (edit.additionalEdit) {
+					await this._bulkEditService.apply(ResourceEdit.convert(edit.additionalEdit), { editor });
+				}
 				return;
 			}
 		} finally {
@@ -178,5 +174,5 @@ class DefaultOnDropProvider implements DocumentOnDropEditProvider {
 }
 
 
-registerEditorContribution(DropIntoEditorController.ID, DropIntoEditorController, EditorContributionInstantiation.BeforeFirstInteraction);
+registerEditorContribution(DropIntoEditorController.ID, DropIntoEditorController);
 

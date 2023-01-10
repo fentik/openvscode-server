@@ -16,7 +16,7 @@ import { joinPath } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { Promises } from 'vs/base/node/pfs';
 import { flakySuite, getPathFromAmdModule, getRandomTestPath } from 'vs/base/test/node/testUtils';
-import { etag, IFileAtomicReadOptions, FileOperation, FileOperationError, FileOperationEvent, FileOperationResult, FilePermission, FileSystemProviderCapabilities, hasFileAtomicReadCapability, hasOpenReadWriteCloseCapability, IFileStat, IFileStatWithMetadata, IReadFileOptions, IStat, NotModifiedSinceFileOperationError, TooLargeFileOperationError } from 'vs/platform/files/common/files';
+import { etag, IFileAtomicReadOptions, FileOperation, FileOperationError, FileOperationEvent, FileOperationResult, FilePermission, FileSystemProviderCapabilities, hasFileAtomicReadCapability, hasOpenReadWriteCloseCapability, IFileStat, IFileStatWithMetadata, IReadFileOptions, IStat, NotModifiedSinceFileOperationError } from 'vs/platform/files/common/files';
 import { FileService } from 'vs/platform/files/common/fileService';
 import { DiskFileSystemProvider } from 'vs/platform/files/node/diskFileSystemProvider';
 import { NullLogService } from 'vs/platform/log/common/log';
@@ -1643,14 +1643,14 @@ flakySuite('Disk File Service', function () {
 	});
 
 	async function testFileExceedsMemoryLimit() {
-		await doTestFileExceedsMemoryLimit(false);
+		await doTestFileExceedsMemoryLimit();
 
 		// Also test when the stat size is wrong
 		fileProvider.setSmallStatSize(true);
-		return doTestFileExceedsMemoryLimit(true);
+		return doTestFileExceedsMemoryLimit();
 	}
 
-	async function doTestFileExceedsMemoryLimit(statSizeWrong: boolean) {
+	async function doTestFileExceedsMemoryLimit() {
 		const resource = URI.file(join(testDir, 'index.html'));
 
 		let error: FileOperationError | undefined = undefined;
@@ -1661,10 +1661,6 @@ flakySuite('Disk File Service', function () {
 		}
 
 		assert.ok(error);
-		if (!statSizeWrong) {
-			assert.ok(error instanceof TooLargeFileOperationError);
-			assert.ok(typeof error.size === 'number');
-		}
 		assert.strictEqual(error!.fileOperationResult, FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT);
 	}
 
@@ -1691,14 +1687,14 @@ flakySuite('Disk File Service', function () {
 	});
 
 	async function testFileTooLarge() {
-		await doTestFileTooLarge(false);
+		await doTestFileTooLarge();
 
 		// Also test when the stat size is wrong
 		fileProvider.setSmallStatSize(true);
-		return doTestFileTooLarge(true);
+		return doTestFileTooLarge();
 	}
 
-	async function doTestFileTooLarge(statSizeWrong: boolean) {
+	async function doTestFileTooLarge() {
 		const resource = URI.file(join(testDir, 'index.html'));
 
 		let error: FileOperationError | undefined = undefined;
@@ -1708,10 +1704,7 @@ flakySuite('Disk File Service', function () {
 			error = err;
 		}
 
-		if (!statSizeWrong) {
-			assert.ok(error instanceof TooLargeFileOperationError);
-			assert.ok(typeof error.size === 'number');
-		}
+		assert.ok(error);
 		assert.strictEqual(error!.fileOperationResult, FileOperationResult.FILE_TOO_LARGE);
 	}
 

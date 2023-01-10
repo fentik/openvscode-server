@@ -293,7 +293,7 @@ suite('Editor Modes - textToHtmlTokenizer', () => {
 
 class Mode extends Disposable {
 
-	public readonly languageId = 'textToHtmlTokenizerMode';
+	private readonly languageId = 'textToHtmlTokenizerMode';
 
 	constructor(
 		@ILanguageService languageService: ILanguageService
@@ -305,9 +305,9 @@ class Mode extends Disposable {
 			tokenize: undefined!,
 			tokenizeEncoded: (line: string, hasEOL: boolean, state: IState): EncodedTokenizationResult => {
 				const tokensArr: number[] = [];
-				let prevColor = -1 as ColorId;
+				let prevColor: ColorId = -1;
 				for (let i = 0; i < line.length; i++) {
-					const colorId = (line.charAt(i) === '.' ? 7 : 9) as ColorId;
+					const colorId: ColorId = line.charAt(i) === '.' ? 7 : 9;
 					if (prevColor !== colorId) {
 						tokensArr.push(i);
 						tokensArr.push((

@@ -12,13 +12,11 @@ export const enum MarshalledId {
 	ScmProvider,
 	CommentController,
 	CommentThread,
-	CommentThreadInstance,
 	CommentThreadReply,
 	CommentNode,
 	CommentThreadNode,
 	TimelineActionContext,
 	NotebookCellActionContext,
-	NotebookActionContext,
 	TestItemContext,
 	Date
 }

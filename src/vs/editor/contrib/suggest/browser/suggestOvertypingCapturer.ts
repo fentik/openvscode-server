@@ -13,12 +13,15 @@ export class OvertypingCapturer implements IDisposable {
 	private readonly _disposables = new DisposableStore();
 
 	private _lastOvertyped: { value: string; multiline: boolean }[] = [];
-	private _locked: boolean = false;
+	private _empty: boolean = true;
 
 	constructor(editor: ICodeEditor, suggestModel: SuggestModel) {
 
 		this._disposables.add(editor.onWillType(() => {
-			if (this._locked || !editor.hasModel()) {
+			if (!this._empty) {
+				return;
+			}
+			if (!editor.hasModel()) {
 				return;
 			}
 
@@ -34,9 +37,6 @@ export class OvertypingCapturer implements IDisposable {
 				}
 			}
 			if (!willOvertype) {
-				if (this._lastOvertyped.length !== 0) {
-					this._lastOvertyped.length = 0;
-				}
 				return;
 			}
 
@@ -50,19 +50,18 @@ export class OvertypingCapturer implements IDisposable {
 				}
 				this._lastOvertyped[i] = { value: model.getValueInRange(selection), multiline: selection.startLineNumber !== selection.endLineNumber };
 			}
-		}));
-
-		this._disposables.add(suggestModel.onDidTrigger(e => {
-			this._locked = true;
+			this._empty = false;
 		}));
 
 		this._disposables.add(suggestModel.onDidCancel(e => {
-			this._locked = false;
+			if (!this._empty && !e.retrigger) {
+				this._empty = true;
+			}
 		}));
 	}
 
 	getLastOvertypedInfo(idx: number): { value: string; multiline: boolean } | undefined {
-		if (idx >= 0 && idx < this._lastOvertyped.length) {
+		if (!this._empty && idx >= 0 && idx < this._lastOvertyped.length) {
 			return this._lastOvertyped[idx];
 		}
 		return undefined;

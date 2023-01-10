@@ -8,11 +8,10 @@ import { INativeEnvironmentService } from 'vs/platform/environment/common/enviro
 import { IExtensionsProfileScannerService } from 'vs/platform/extensionManagement/common/extensionsProfileScannerService';
 import { IExtensionsScannerService, NativeExtensionsScannerService, } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 import { IFileService } from 'vs/platform/files/common/files';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 
 export class ExtensionsScannerService extends NativeExtensionsScannerService implements IExtensionsScannerService {
@@ -24,7 +23,6 @@ export class ExtensionsScannerService extends NativeExtensionsScannerService imp
 		@ILogService logService: ILogService,
 		@INativeEnvironmentService environmentService: INativeEnvironmentService,
 		@IProductService productService: IProductService,
-		@IUriIdentityService uriIdentityService: IUriIdentityService,
 		@IInstantiationService instantiationService: IInstantiationService,
 	) {
 		super(
@@ -32,9 +30,9 @@ export class ExtensionsScannerService extends NativeExtensionsScannerService imp
 			URI.file(environmentService.extensionsPath),
 			environmentService.userHome,
 			URI.file(environmentService.userDataPath),
-			userDataProfilesService, extensionsProfileScannerService, fileService, logService, environmentService, productService, uriIdentityService, instantiationService);
+			userDataProfilesService, extensionsProfileScannerService, fileService, logService, environmentService, productService, instantiationService);
 	}
 
 }
 
-registerSingleton(IExtensionsScannerService, ExtensionsScannerService, InstantiationType.Delayed);
+registerSingleton(IExtensionsScannerService, ExtensionsScannerService);

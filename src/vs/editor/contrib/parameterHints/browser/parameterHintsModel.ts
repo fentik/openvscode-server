@@ -56,14 +56,12 @@ export class ParameterHintsModel extends Disposable {
 
 	private readonly editor: ICodeEditor;
 	private readonly providers: LanguageFeatureRegistry<languages.SignatureHelpProvider>;
-
 	private triggerOnType = false;
 	private _state: ParameterHintState.State = ParameterHintState.Default;
 	private _pendingTriggers: TriggerContext[] = [];
-
 	private readonly _lastSignatureHelpResult = this._register(new MutableDisposable<languages.SignatureHelpResult>());
-	private readonly triggerChars = new CharacterSet();
-	private readonly retriggerChars = new CharacterSet();
+	private triggerChars = new CharacterSet();
+	private retriggerChars = new CharacterSet();
 
 	private readonly throttledDelayer: Delayer<boolean>;
 	private triggerId = 0;
@@ -250,8 +248,9 @@ export class ParameterHintsModel extends Disposable {
 	private onModelChanged(): void {
 		this.cancel();
 
-		this.triggerChars.clear();
-		this.retriggerChars.clear();
+		// Update trigger characters
+		this.triggerChars = new CharacterSet();
+		this.retriggerChars = new CharacterSet();
 
 		const model = this.editor.getModel();
 		if (!model) {
@@ -260,19 +259,14 @@ export class ParameterHintsModel extends Disposable {
 
 		for (const support of this.providers.ordered(model)) {
 			for (const ch of support.signatureHelpTriggerCharacters || []) {
-				if (ch.length) {
-					const charCode = ch.charCodeAt(0);
-					this.triggerChars.add(charCode);
+				this.triggerChars.add(ch.charCodeAt(0));
 
-					// All trigger characters are also considered retrigger characters
-					this.retriggerChars.add(charCode);
-				}
+				// All trigger characters are also considered retrigger characters
+				this.retriggerChars.add(ch.charCodeAt(0));
 			}
 
 			for (const ch of support.signatureHelpRetriggerCharacters || []) {
-				if (ch.length) {
-					this.retriggerChars.add(ch.charCodeAt(0));
-				}
+				this.retriggerChars.add(ch.charCodeAt(0));
 			}
 		}
 	}

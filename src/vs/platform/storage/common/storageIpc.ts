@@ -5,11 +5,11 @@
 
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
-import { UriDto } from 'vs/base/common/uri';
+import { UriDto } from 'vs/base/common/types';
 import { IChannel } from 'vs/base/parts/ipc/common/ipc';
 import { IStorageDatabase, IStorageItemsChangeEvent, IUpdateRequest } from 'vs/base/parts/storage/common/storage';
 import { IUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
-import { ISerializedSingleFolderWorkspaceIdentifier, ISerializedWorkspaceIdentifier, IEmptyWorkspaceIdentifier, IAnyWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
+import { ISerializedSingleFolderWorkspaceIdentifier, ISerializedWorkspaceIdentifier, IEmptyWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 
 export type Key = string;
 export type Value = string;
@@ -29,11 +29,6 @@ export interface IBaseSerializableStorageRequest {
 	 * denote application or profile scope depending on profile.
 	 */
 	readonly workspace: ISerializedWorkspaceIdentifier | ISerializedSingleFolderWorkspaceIdentifier | IEmptyWorkspaceIdentifier | undefined;
-
-	/**
-	 * Additional payload for the request to perform.
-	 */
-	readonly payload?: unknown;
 }
 
 export interface ISerializableUpdateRequest extends IBaseSerializableStorageRequest {
@@ -53,7 +48,7 @@ abstract class BaseStorageDatabaseClient extends Disposable implements IStorageD
 	constructor(
 		protected channel: IChannel,
 		protected profile: UriDto<IUserDataProfile> | undefined,
-		protected workspace: IAnyWorkspaceIdentifier | undefined
+		protected workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | IEmptyWorkspaceIdentifier | undefined
 	) {
 		super();
 	}
@@ -144,7 +139,7 @@ export class WorkspaceStorageDatabaseClient extends BaseStorageDatabaseClient im
 
 	readonly onDidChangeItemsExternal = Event.None; // unsupported for workspace storage because we only ever write from one window
 
-	constructor(channel: IChannel, workspace: IAnyWorkspaceIdentifier) {
+	constructor(channel: IChannel, workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | IEmptyWorkspaceIdentifier) {
 		super(channel, undefined, workspace);
 	}
 
@@ -155,16 +150,5 @@ export class WorkspaceStorageDatabaseClient extends BaseStorageDatabaseClient im
 		// can take care of that.
 
 		this.dispose();
-	}
-}
-
-export class StorageClient {
-
-	constructor(private readonly channel: IChannel) { }
-
-	isUsed(path: string): Promise<boolean> {
-		const serializableRequest: ISerializableUpdateRequest = { payload: path, profile: undefined, workspace: undefined };
-
-		return this.channel.call('isUsed', serializableRequest);
 	}
 }

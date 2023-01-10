@@ -46,8 +46,7 @@ export class CompletionModel {
 	private _lineContext: LineContext;
 	private _refilterKind: Refilter;
 	private _filteredItems?: StrictCompletionItem[];
-
-	private _itemsByProvider?: Map<CompletionItemProvider, CompletionItem[]>;
+	private _providerInfo?: Map<CompletionItemProvider, boolean>;
 	private _stats?: ICompletionStats;
 
 	constructor(
@@ -93,20 +92,38 @@ export class CompletionModel {
 		return this._filteredItems!;
 	}
 
-	getItemsByProvider(): ReadonlyMap<CompletionItemProvider, CompletionItem[]> {
+	get allProvider(): IterableIterator<CompletionItemProvider> {
 		this._ensureCachedState();
-		return this._itemsByProvider!;
+		return this._providerInfo!.keys();
 	}
 
-	getIncompleteProvider(): Set<CompletionItemProvider> {
+	get incomplete(): Set<CompletionItemProvider> {
 		this._ensureCachedState();
 		const result = new Set<CompletionItemProvider>();
-		for (const [provider, items] of this.getItemsByProvider()) {
-			if (items.length > 0 && items[0].container.incomplete) {
+		for (const [provider, incomplete] of this._providerInfo!) {
+			if (incomplete) {
 				result.add(provider);
 			}
 		}
 		return result;
+	}
+
+	adopt(except: Set<CompletionItemProvider>): CompletionItem[] {
+		const res: CompletionItem[] = [];
+		for (let i = 0; i < this._items.length;) {
+			if (!except.has(this._items[i].provider)) {
+				res.push(this._items[i]);
+
+				// unordered removed
+				this._items[i] = this._items[this._items.length - 1];
+				this._items.pop();
+			} else {
+				// continue with next item
+				i++;
+			}
+		}
+		this._refilterKind = Refilter.All;
+		return res;
 	}
 
 	get stats(): ICompletionStats {
@@ -122,7 +139,7 @@ export class CompletionModel {
 
 	private _createCachedState(): void {
 
-		this._itemsByProvider = new Map();
+		this._providerInfo = new Map();
 
 		const labelLengths: number[] = [];
 
@@ -147,13 +164,8 @@ export class CompletionModel {
 				continue; // SKIP invalid items
 			}
 
-			// keep all items by their provider
-			const arr = this._itemsByProvider.get(item.provider);
-			if (arr) {
-				arr.push(item);
-			} else {
-				this._itemsByProvider.set(item.provider, [item]);
-			}
+			// collect all support, know if their result is incomplete
+			this._providerInfo.set(item.provider, Boolean(item.container.incomplete));
 
 			// 'word' is that remainder of the current line that we
 			// filter and score against. In theory each suggestion uses a

@@ -21,7 +21,6 @@ import { DisposableStore } from 'vs/base/common/lifecycle';
 import { SaveReason, SaveSourceRegistry } from 'vs/workbench/common/editor';
 import { isEqual } from 'vs/base/common/resources';
 import { UTF16be } from 'vs/workbench/services/textfile/common/encoding';
-import { isWeb } from 'vs/base/common/platform';
 
 suite('Files - TextFileEditorModel', () => {
 
@@ -51,7 +50,7 @@ suite('Files - TextFileEditorModel', () => {
 
 	test('basic events', async function () {
 		const model = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
-		accessor.workingCopyService.testUnregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
+		accessor.workingCopyService.unregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
 
 		let onDidResolveCounter = 0;
 		model.onDidResolve(() => onDidResolveCounter++);
@@ -84,7 +83,7 @@ suite('Files - TextFileEditorModel', () => {
 	});
 
 	test('isTextFileEditorModel', async function () {
-		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
+		const model = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
 
 		assert.strictEqual(isTextFileEditorModel(model), true);
 
@@ -304,7 +303,7 @@ suite('Files - TextFileEditorModel', () => {
 
 	test('setEncoding - decode', async function () {
 		let model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
-		accessor.workingCopyService.testUnregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
+		accessor.workingCopyService.unregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
 
 		await model.setEncoding('utf16', EncodingMode.Decode);
 
@@ -319,7 +318,7 @@ suite('Files - TextFileEditorModel', () => {
 
 	test('setEncoding - decode dirty file saves first', async function () {
 		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
-		accessor.workingCopyService.testUnregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
+		accessor.workingCopyService.unregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
 
 		await model.resolve();
 
@@ -341,7 +340,7 @@ suite('Files - TextFileEditorModel', () => {
 		accessor.testConfigurationService.setOverrideIdentifiers('files.encoding', [languageId]);
 
 		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
-		accessor.workingCopyService.testUnregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
+		accessor.workingCopyService.unregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
 
 		await model.resolve();
 
@@ -464,7 +463,7 @@ suite('Files - TextFileEditorModel', () => {
 		assert.strictEqual(accessor.workingCopyService.dirtyCount, 1);
 		assert.strictEqual(accessor.workingCopyService.isDirty(model.resource, model.typeId), true);
 
-		accessor.workingCopyService.testUnregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
+		accessor.workingCopyService.unregisterWorkingCopy(model); // causes issues with subsequent resolves otherwise
 
 		await model.revert();
 
@@ -656,18 +655,8 @@ suite('Files - TextFileEditorModel', () => {
 		await accessor.textFileService.save(toResource.call(this, '/path/index_async2.txt'));
 		assert.ok(!accessor.textFileService.isDirty(toResource.call(this, '/path/index_async.txt')));
 		assert.ok(!accessor.textFileService.isDirty(toResource.call(this, '/path/index_async2.txt')));
-
-		if (isWeb) {
-			// web tests does not ensure timeouts are respected at all, so we cannot
-			// really assert the mtime to be different, only that it is equal or greater.
-			// https://github.com/microsoft/vscode/issues/161886
-			assert.ok(assertIsDefined(getLastResolvedFileStat(model1)).mtime >= m1Mtime);
-			assert.ok(assertIsDefined(getLastResolvedFileStat(model2)).mtime >= m2Mtime);
-		} else {
-			// on desktop we want to assert this condition more strictly though
-			assert.ok(assertIsDefined(getLastResolvedFileStat(model1)).mtime > m1Mtime);
-			assert.ok(assertIsDefined(getLastResolvedFileStat(model2)).mtime > m2Mtime);
-		}
+		assert.ok(assertIsDefined(getLastResolvedFileStat(model1)).mtime > m1Mtime);
+		assert.ok(assertIsDefined(getLastResolvedFileStat(model2)).mtime > m2Mtime);
 
 		model1.dispose();
 		model2.dispose();
@@ -815,81 +804,51 @@ suite('Files - TextFileEditorModel', () => {
 		participant.dispose();
 	});
 
-	test('Save Participant, calling save from within is unsupported but does not explode (sync save, no model change)', async function () {
+	test('Save Participant, calling save from within is unsupported but does not explode (sync save)', async function () {
 		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
 
-		await testSaveFromSaveParticipant(model, false, false, false);
+		await testSaveFromSaveParticipant(model, false);
 
 		model.dispose();
 	});
 
-	test('Save Participant, calling save from within is unsupported but does not explode (async save, no model change)', async function () {
+	test('Save Participant, calling save from within is unsupported but does not explode (async save)', async function () {
 		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
 
-		await testSaveFromSaveParticipant(model, true, false, false);
+		await testSaveFromSaveParticipant(model, true);
 
 		model.dispose();
 	});
 
-	test('Save Participant, calling save from within is unsupported but does not explode (sync save, model change)', async function () {
-		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
+	async function testSaveFromSaveParticipant(model: TextFileEditorModel, async: boolean): Promise<void> {
 
-		await testSaveFromSaveParticipant(model, false, true, false);
+		let breakLoop = false;
 
-		model.dispose();
-	});
+		const participant = accessor.textFileService.files.addSaveParticipant({
+			participate: async model => {
+				if (breakLoop) {
+					return;
+				}
 
-	test('Save Participant, calling save from within is unsupported but does not explode (async save, model change)', async function () {
-		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
+				breakLoop = true;
 
-		await testSaveFromSaveParticipant(model, true, true, false);
-
-		model.dispose();
-	});
-
-	test('Save Participant, calling save from within is unsupported but does not explode (force)', async function () {
-		const model: TextFileEditorModel = instantiationService.createInstance(TextFileEditorModel, toResource.call(this, '/path/index_async.txt'), 'utf8', undefined);
-
-		await testSaveFromSaveParticipant(model, false, false, true);
-
-		model.dispose();
-	});
-
-	async function testSaveFromSaveParticipant(model: TextFileEditorModel, async: boolean, modelChange: boolean, force: boolean): Promise<void> {
-
-		const disposable = accessor.textFileService.files.addSaveParticipant({
-			participate: async () => {
 				if (async) {
 					await timeout(10);
 				}
+				const newSavePromise = model.save();
 
-				if (modelChange) {
-					model.updateTextEditorModel(createTextBufferFactory('bar'));
-
-					const newSavePromise = model.save(force ? { force } : undefined);
-
-					// assert that this is not the same promise as the outer one
-					assert.notStrictEqual(savePromise, newSavePromise);
-
-					await newSavePromise;
-				} else {
-					const newSavePromise = model.save(force ? { force } : undefined);
-
-					// assert that this is the same promise as the outer one
-					assert.strictEqual(savePromise, newSavePromise);
-
-					await savePromise;
-				}
+				// assert that this is the same promise as the outer one
+				assert.strictEqual(savePromise, newSavePromise);
 			}
 		});
 
 		await model.resolve();
 		model.updateTextEditorModel(createTextBufferFactory('foo'));
 
-		const savePromise = model.save(force ? { force } : undefined);
+		const savePromise = model.save();
 		await savePromise;
 
-		disposable.dispose();
+		participant.dispose();
 	}
 
 	test('backup and restore (simple)', async function () {

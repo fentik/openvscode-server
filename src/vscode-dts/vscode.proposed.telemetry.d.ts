@@ -9,15 +9,15 @@ declare module 'vscode' {
 		/**
 		 * Whether or not usage telemetry collection is allowed
 		 */
-		readonly isUsageEnabled: boolean;
+		isUsageEnabled: boolean;
 		/**
 		 * Whether or not crash error telemetry collection is allowed
 		 */
-		readonly isErrorsEnabled: boolean;
+		isErrorsEnabled: boolean;
 		/**
 		 * Whether or not crash report collection is allowed
 		 */
-		readonly isCrashEnabled: boolean;
+		isCrashEnabled: boolean;
 	}
 
 	export namespace env {

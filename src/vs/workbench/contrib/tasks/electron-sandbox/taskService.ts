@@ -11,7 +11,7 @@ import { ExecutionEngine } from 'vs/workbench/contrib/tasks/common/tasks';
 import * as TaskConfig from '../common/taskConfiguration';
 import { AbstractTaskService } from 'vs/workbench/contrib/tasks/browser/abstractTaskService';
 import { ITaskFilter, ITaskService } from 'vs/workbench/contrib/tasks/common/taskService';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { TerminalTaskSystem } from 'vs/workbench/contrib/tasks/browser/terminalTaskSystem';
 import { IConfirmationResult, IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { TerminateResponseCode } from 'vs/base/common/processes';
@@ -45,8 +45,6 @@ import { ITerminalProfileResolverService } from 'vs/workbench/contrib/terminal/c
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IRemoteAgentService } from 'vs/workbench/services/remote/common/remoteAgentService';
-import { IAudioCueService } from 'vs/platform/audioCues/browser/audioCueService';
 
 interface IWorkspaceFolderConfigurationResult {
 	workspaceFolder: IWorkspaceFolder;
@@ -89,10 +87,7 @@ export class TaskService extends AbstractTaskService {
 		@IWorkspaceTrustManagementService workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@ILogService logService: ILogService,
 		@IThemeService themeService: IThemeService,
-		@IInstantiationService instantiationService: IInstantiationService,
-		@IRemoteAgentService remoteAgentService: IRemoteAgentService,
-		@IAudioCueService audioCueService: IAudioCueService
-	) {
+		@IInstantiationService instantiationService: IInstantiationService) {
 		super(configurationService,
 			markerService,
 			outputService,
@@ -126,9 +121,6 @@ export class TaskService extends AbstractTaskService {
 			workspaceTrustManagementService,
 			logService,
 			themeService,
-			lifecycleService,
-			remoteAgentService,
-			instantiationService
 		);
 		this._register(lifecycleService.onBeforeShutdown(event => event.veto(this.beforeShutdown(), 'veto.tasks')));
 	}
@@ -137,15 +129,13 @@ export class TaskService extends AbstractTaskService {
 		if (this._taskSystem) {
 			return this._taskSystem;
 		}
-		const taskSystem = this._createTerminalTaskSystem();
-		this._taskSystem = taskSystem;
-		this._taskSystemListeners =
-			[
-				this._taskSystem.onDidStateChange((event) => {
-					this._taskRunningState.set(this._taskSystem!.isActiveSync());
-					this._onDidStateChange.fire(event);
-				})
-			];
+		this._taskSystem = this._createTerminalTaskSystem();
+		this._taskSystemListener = this._taskSystem!.onDidStateChange((event) => {
+			if (this._taskSystem) {
+				this._taskRunningState.set(this._taskSystem.isActiveSync());
+			}
+			this._onDidStateChange.fire(event);
+		});
 		return this._taskSystem;
 	}
 
@@ -227,4 +217,4 @@ export class TaskService extends AbstractTaskService {
 	}
 }
 
-registerSingleton(ITaskService, TaskService, InstantiationType.Delayed);
+registerSingleton(ITaskService, TaskService, true);

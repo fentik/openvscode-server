@@ -5,7 +5,7 @@
 
 import * as browser from 'vs/base/browser/browser';
 import { EVENT_KEY_CODE_MAP, KeyCode, KeyCodeUtils, KeyMod } from 'vs/base/common/keyCodes';
-import { KeyCodeChord } from 'vs/base/common/keybindings';
+import { SimpleKeybinding } from 'vs/base/common/keybindings';
 import * as platform from 'vs/base/common/platform';
 
 
@@ -58,14 +58,13 @@ export interface IKeyboardEvent {
 	readonly shiftKey: boolean;
 	readonly altKey: boolean;
 	readonly metaKey: boolean;
-	readonly altGraphKey: boolean;
 	readonly keyCode: KeyCode;
 	readonly code: string;
 
 	/**
 	 * @internal
 	 */
-	toKeyCodeChord(): KeyCodeChord;
+	toKeybinding(): SimpleKeybinding;
 	equals(keybinding: number): boolean;
 
 	preventDefault(): void;
@@ -122,12 +121,11 @@ export class StandardKeyboardEvent implements IKeyboardEvent {
 	public readonly shiftKey: boolean;
 	public readonly altKey: boolean;
 	public readonly metaKey: boolean;
-	public readonly altGraphKey: boolean;
 	public readonly keyCode: KeyCode;
 	public readonly code: string;
 
 	private _asKeybinding: number;
-	private _asKeyCodeChord: KeyCodeChord;
+	private _asRuntimeKeybinding: SimpleKeybinding;
 
 	constructor(source: KeyboardEvent) {
 		const e = source;
@@ -139,7 +137,6 @@ export class StandardKeyboardEvent implements IKeyboardEvent {
 		this.shiftKey = e.shiftKey;
 		this.altKey = e.altKey;
 		this.metaKey = e.metaKey;
-		this.altGraphKey = e.getModifierState('AltGraph');
 		this.keyCode = extractKeyCode(e);
 		this.code = e.code;
 
@@ -151,7 +148,7 @@ export class StandardKeyboardEvent implements IKeyboardEvent {
 		this.metaKey = this.metaKey || this.keyCode === KeyCode.Meta;
 
 		this._asKeybinding = this._computeKeybinding();
-		this._asKeyCodeChord = this._computeKeyCodeChord();
+		this._asRuntimeKeybinding = this._computeRuntimeKeybinding();
 
 		// console.log(`code: ${e.code}, keyCode: ${e.keyCode}, key: ${e.key}`);
 	}
@@ -168,8 +165,8 @@ export class StandardKeyboardEvent implements IKeyboardEvent {
 		}
 	}
 
-	public toKeyCodeChord(): KeyCodeChord {
-		return this._asKeyCodeChord;
+	public toKeybinding(): SimpleKeybinding {
+		return this._asRuntimeKeybinding;
 	}
 
 	public equals(other: number): boolean {
@@ -200,11 +197,11 @@ export class StandardKeyboardEvent implements IKeyboardEvent {
 		return result;
 	}
 
-	private _computeKeyCodeChord(): KeyCodeChord {
+	private _computeRuntimeKeybinding(): SimpleKeybinding {
 		let key = KeyCode.Unknown;
 		if (this.keyCode !== KeyCode.Ctrl && this.keyCode !== KeyCode.Shift && this.keyCode !== KeyCode.Alt && this.keyCode !== KeyCode.Meta) {
 			key = this.keyCode;
 		}
-		return new KeyCodeChord(this.ctrlKey, this.shiftKey, this.altKey, this.metaKey, key);
+		return new SimpleKeybinding(this.ctrlKey, this.shiftKey, this.altKey, this.metaKey, key);
 	}
 }

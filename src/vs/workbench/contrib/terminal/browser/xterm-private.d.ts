@@ -31,17 +31,13 @@ export interface IXtermCore {
 
 	_renderService: {
 		dimensions: {
-			css: {
-				cell: {
-					width: number;
-					height: number;
-				}
-			}
+			actualCellWidth: number;
+			actualCellHeight: number;
 		},
 		_renderer: {
 			_renderLayers?: any[];
 		};
-		_handleIntersectionChange: any;
+		_onIntersectionChange: any;
 	};
 }
 

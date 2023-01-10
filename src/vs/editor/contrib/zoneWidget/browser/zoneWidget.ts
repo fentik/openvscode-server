@@ -287,7 +287,9 @@ export abstract class ZoneWidget implements IHorizontalSashLayoutProvider {
 			this._doLayout(containerHeight, this._getWidth(layoutInfo));
 		}
 
-		this._resizeSash?.layout();
+		if (this._resizeSash) {
+			this._resizeSash.layout();
+		}
 	}
 
 	get position(): Position | undefined {
@@ -321,7 +323,9 @@ export abstract class ZoneWidget implements IHorizontalSashLayoutProvider {
 			this.editor.removeOverlayWidget(this._overlayWidget);
 			this._overlayWidget = null;
 		}
-		this._arrow?.hide();
+		if (this._arrow) {
+			this._arrow.hide();
+		}
 	}
 
 	private _decoratingElementsHeight(): number {
@@ -417,16 +421,22 @@ export abstract class ZoneWidget implements IHorizontalSashLayoutProvider {
 
 		const model = this.editor.getModel();
 		if (model) {
-			const range = model.validateRange(new Range(where.startLineNumber, 1, where.endLineNumber + 1, 1));
-			this.revealRange(range, range.endLineNumber === model.getLineCount());
+			const revealLine = where.endLineNumber + 1;
+			if (revealLine <= model.getLineCount()) {
+				// reveal line below the zone widget
+				this.revealLine(revealLine, false);
+			} else {
+				// reveal last line atop
+				this.revealLine(model.getLineCount(), true);
+			}
 		}
 	}
 
-	protected revealRange(range: Range, isLastLine: boolean) {
+	protected revealLine(lineNumber: number, isLastLine: boolean) {
 		if (isLastLine) {
-			this.editor.revealLineNearTop(range.endLineNumber, ScrollType.Smooth);
+			this.editor.revealLineInCenter(lineNumber, ScrollType.Smooth);
 		} else {
-			this.editor.revealRange(range, ScrollType.Smooth);
+			this.editor.revealLine(lineNumber, ScrollType.Smooth);
 		}
 	}
 

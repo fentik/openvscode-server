@@ -52,7 +52,7 @@ suite('ExtHostDecorations', function () {
 				calledA = true;
 				return new Promise(() => { });
 			}
-		}, nullExtensionDescription);
+		}, nullExtensionDescription.identifier);
 
 		// always returns
 		extHostDecorations.registerFileDecorationProvider({
@@ -61,7 +61,7 @@ suite('ExtHostDecorations', function () {
 				calledB = true;
 				return new Promise(resolve => resolve({ badge: 'H', tooltip: 'Hello' }));
 			}
-		}, nullExtensionDescription);
+		}, nullExtensionDescription.identifier);
 
 
 		const requests = [...providers.values()].map((handle, idx) => {

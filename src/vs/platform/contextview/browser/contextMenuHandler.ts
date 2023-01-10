@@ -4,12 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IContextMenuDelegate } from 'vs/base/browser/contextmenu';
-import { $, addDisposableListener, EventType, getActiveElement, isAncestor, isHTMLElement } from 'vs/base/browser/dom';
+import { $, addDisposableListener, EventType, isHTMLElement } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { Menu } from 'vs/base/browser/ui/menu/menu';
 import { ActionRunner, IRunEvent, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { isCancellationError } from 'vs/base/common/errors';
-import { combinedDisposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
+import { combinedDisposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { INotificationService } from 'vs/platform/notification/common/notification';
@@ -24,9 +24,7 @@ export interface IContextMenuHandlerOptions {
 
 export class ContextMenuHandler {
 	private focusToReturn: HTMLElement | null = null;
-	private lastContainer: HTMLElement | null = null;
 	private block: HTMLElement | null = null;
-	private blockDisposable: IDisposable | null = null;
 	private options: IContextMenuHandlerOptions = { blockMouse: true };
 
 	constructor(
@@ -59,7 +57,6 @@ export class ContextMenuHandler {
 			anchorAxisAlignment: delegate.anchorAxisAlignment,
 
 			render: (container) => {
-				this.lastContainer = container;
 				const className = delegate.getMenuClassName ? delegate.getMenuClassName() : '';
 
 				if (className) {
@@ -77,14 +74,14 @@ export class ContextMenuHandler {
 					this.block.style.height = '100%';
 					this.block.style.zIndex = '-1';
 
-					this.blockDisposable?.dispose();
-					this.blockDisposable = addDisposableListener(this.block, EventType.MOUSE_DOWN, e => e.stopPropagation());
+					// TODO@Steven: this is never getting disposed
+					addDisposableListener(this.block, EventType.MOUSE_DOWN, e => e.stopPropagation());
 				}
 
 				const menuDisposables = new DisposableStore();
 
 				const actionRunner = delegate.actionRunner || new ActionRunner();
-				actionRunner.onWillRun(this.onActionRun, this, menuDisposables);
+				actionRunner.onBeforeRun(this.onActionRun, this, menuDisposables);
 				actionRunner.onDidRun(this.onDidActionRun, this, menuDisposables);
 				menu = new Menu(container, actions, {
 					actionViewItemProvider: delegate.getActionViewItem,
@@ -137,14 +134,9 @@ export class ContextMenuHandler {
 					this.block = null;
 				}
 
-				this.blockDisposable?.dispose();
-				this.blockDisposable = null;
-
-				if (!!this.lastContainer && (getActiveElement() === this.lastContainer || isAncestor(getActiveElement(), this.lastContainer))) {
-					this.focusToReturn?.focus();
+				if (this.focusToReturn) {
+					this.focusToReturn.focus();
 				}
-
-				this.lastContainer = null;
 			}
 		}, shadowRootElement, !!shadowRootElement);
 	}
@@ -153,6 +145,11 @@ export class ContextMenuHandler {
 		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'contextMenu' });
 
 		this.contextViewService.hideContextView(false);
+
+		// Restore focus here
+		if (this.focusToReturn) {
+			this.focusToReturn.focus();
+		}
 	}
 
 	private onDidActionRun(e: IRunEvent): void {

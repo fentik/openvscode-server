@@ -5,7 +5,7 @@
 
 import { Event } from 'vs/base/common/event';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -13,7 +13,7 @@ import { IWindowSettings, IWindowOpenable, IOpenWindowOptions, isFolderToOpen, i
 import { isResourceEditorInput, pathsToEditors } from 'vs/workbench/common/editor';
 import { whenEditorClosed } from 'vs/workbench/browser/editor';
 import { IFileService } from 'vs/platform/files/common/files';
-import { ILabelService, Verbosity } from 'vs/platform/label/common/label';
+import { ILabelService } from 'vs/platform/label/common/label';
 import { ModifierKeyEmitter, trackFocus } from 'vs/base/browser/dom';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IBrowserWorkbenchEnvironmentService } from 'vs/workbench/services/environment/browser/environmentService';
@@ -35,8 +35,6 @@ import { isTemporaryWorkspace, IWorkspaceContextService } from 'vs/platform/work
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { Schemas } from 'vs/base/common/network';
 import { ITextEditorOptions } from 'vs/platform/editor/common/editor';
-import { IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
-import { coalesce } from 'vs/base/common/arrays';
 
 /**
  * A workspace to open in the workbench can either be:
@@ -114,8 +112,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 		@ILifecycleService private readonly lifecycleService: BrowserLifecycleService,
 		@ILogService private readonly logService: ILogService,
 		@IDialogService private readonly dialogService: IDialogService,
-		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
-		@IUserDataProfileService private readonly userDataProfileService: IUserDataProfileService,
+		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService
 	) {
 		super();
 
@@ -217,7 +214,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 	}
 
 	private async doOpenWindow(toOpen: IWindowOpenable[], options?: IOpenWindowOptions): Promise<void> {
-		const payload = this.preservePayload(false /* not an empty window */);
+		const payload = this.preservePayload();
 		const fileOpenables: IFileToOpen[] = [];
 		const foldersToAdd: IWorkspaceFolderCreationData[] = [];
 
@@ -259,7 +256,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 
 				// Support mergeMode
 				if (options?.mergeMode && fileOpenables.length === 4) {
-					const editors = coalesce(await pathsToEditors(fileOpenables, this.fileService, this.logService));
+					const editors = await pathsToEditors(fileOpenables, this.fileService);
 					if (editors.length !== 4 || !isResourceEditorInput(editors[0]) || !isResourceEditorInput(editors[1]) || !isResourceEditorInput(editors[2]) || !isResourceEditorInput(editors[3])) {
 						return; // invalid resources
 					}
@@ -271,7 +268,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 							input2: { resource: editors[1].resource },
 							base: { resource: editors[2].resource },
 							result: { resource: editors[3].resource },
-							options: { pinned: true }
+							options: { pinned: true, override: 'mergeEditor.Input' } // TODO@bpasero remove the override once the resolver is ready
 						});
 					}
 
@@ -289,7 +286,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 
 				// Support diffMode
 				if (options?.diffMode && fileOpenables.length === 2) {
-					const editors = coalesce(await pathsToEditors(fileOpenables, this.fileService, this.logService));
+					const editors = await pathsToEditors(fileOpenables, this.fileService);
 					if (editors.length !== 2 || !isResourceEditorInput(editors[0]) || !isResourceEditorInput(editors[1])) {
 						return; // invalid resources
 					}
@@ -334,7 +331,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 								openables = [openable];
 							}
 
-							editorService.openEditors(coalesce(await pathsToEditors(openables, this.fileService, this.logService)), undefined, { validateTrust: true });
+							editorService.openEditors(await pathsToEditors(openables, this.fileService), undefined, { validateTrust: true });
 						}
 
 						// New Window: open into empty window
@@ -374,11 +371,13 @@ export class BrowserHostService extends Disposable implements IHostService {
 		this.instantiationService.invokeFunction(accessor => fn(accessor));
 	}
 
-	private preservePayload(isEmptyWindow: boolean): Array<unknown> | undefined {
+	private preservePayload(): Array<unknown> | undefined {
 
 		// Selectively copy payload: for now only extension debugging properties are considered
-		const newPayload: Array<unknown> = new Array();
-		if (!isEmptyWindow && this.environmentService.extensionDevelopmentLocationURI) {
+		let newPayload: Array<unknown> | undefined = undefined;
+		if (this.environmentService.extensionDevelopmentLocationURI) {
+			newPayload = new Array();
+
 			newPayload.push(['extensionDevelopmentPath', this.environmentService.extensionDevelopmentLocationURI.toString()]);
 
 			if (this.environmentService.debugExtensionHost.debugId) {
@@ -390,20 +389,16 @@ export class BrowserHostService extends Disposable implements IHostService {
 			}
 		}
 
-		if (!this.userDataProfileService.currentProfile.isDefault) {
-			newPayload.push(['lastActiveProfile', this.userDataProfileService.currentProfile.id]);
-		}
-
-		return newPayload.length ? newPayload : undefined;
+		return newPayload;
 	}
 
 	private getRecentLabel(openable: IWindowOpenable): string {
 		if (isFolderToOpen(openable)) {
-			return this.labelService.getWorkspaceLabel(openable.folderUri, { verbose: Verbosity.LONG });
+			return this.labelService.getWorkspaceLabel(openable.folderUri, { verbose: true });
 		}
 
 		if (isWorkspaceToOpen(openable)) {
-			return this.labelService.getWorkspaceLabel(getWorkspaceIdentifier(openable.workspaceUri), { verbose: Verbosity.LONG });
+			return this.labelService.getWorkspaceLabel(getWorkspaceIdentifier(openable.workspaceUri), { verbose: true });
 		}
 
 		return this.labelService.getUriLabel(openable.fileUri);
@@ -426,10 +421,7 @@ export class BrowserHostService extends Disposable implements IHostService {
 	}
 
 	private async doOpenEmptyWindow(options?: IOpenEmptyWindowOptions): Promise<void> {
-		return this.doOpen(undefined, {
-			reuse: options?.forceReuseWindow,
-			payload: this.preservePayload(true /* empty window */)
-		});
+		return this.doOpen(undefined, { reuse: options?.forceReuseWindow });
 	}
 
 	private async doOpen(workspace: IWorkspace, options?: { reuse?: boolean; payload?: object }): Promise<void> {
@@ -531,4 +523,4 @@ export class BrowserHostService extends Disposable implements IHostService {
 	//#endregion
 }
 
-registerSingleton(IHostService, BrowserHostService, InstantiationType.Delayed);
+registerSingleton(IHostService, BrowserHostService, true);

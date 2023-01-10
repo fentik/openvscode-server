@@ -497,7 +497,7 @@ const encodeTable: { [ch: number]: string } = {
 	[CharCode.Space]: '%20',
 };
 
-function encodeURIComponentFast(uriComponent: string, isPath: boolean, isAuthority: boolean): string {
+function encodeURIComponentFast(uriComponent: string, allowSlash: boolean): string {
 	let res: string | undefined = undefined;
 	let nativeEncodePos = -1;
 
@@ -513,10 +513,7 @@ function encodeURIComponentFast(uriComponent: string, isPath: boolean, isAuthori
 			|| code === CharCode.Period
 			|| code === CharCode.Underline
 			|| code === CharCode.Tilde
-			|| (isPath && code === CharCode.Slash)
-			|| (isAuthority && code === CharCode.OpenSquareBracket)
-			|| (isAuthority && code === CharCode.CloseSquareBracket)
-			|| (isAuthority && code === CharCode.Colon)
+			|| (allowSlash && code === CharCode.Slash)
 		) {
 			// check if we are delaying native encode
 			if (nativeEncodePos !== -1) {
@@ -634,24 +631,24 @@ function _asFormatted(uri: URI, skipEncoding: boolean): string {
 			// <user>@<auth>
 			const userinfo = authority.substr(0, idx);
 			authority = authority.substr(idx + 1);
-			idx = userinfo.lastIndexOf(':');
+			idx = userinfo.indexOf(':');
 			if (idx === -1) {
-				res += encoder(userinfo, false, false);
+				res += encoder(userinfo, false);
 			} else {
 				// <user>:<pass>@<auth>
-				res += encoder(userinfo.substr(0, idx), false, false);
+				res += encoder(userinfo.substr(0, idx), false);
 				res += ':';
-				res += encoder(userinfo.substr(idx + 1), false, true);
+				res += encoder(userinfo.substr(idx + 1), false);
 			}
 			res += '@';
 		}
 		authority = authority.toLowerCase();
-		idx = authority.lastIndexOf(':');
+		idx = authority.indexOf(':');
 		if (idx === -1) {
-			res += encoder(authority, false, true);
+			res += encoder(authority, false);
 		} else {
 			// <auth>:<port>
-			res += encoder(authority.substr(0, idx), false, true);
+			res += encoder(authority.substr(0, idx), false);
 			res += authority.substr(idx);
 		}
 	}
@@ -669,15 +666,15 @@ function _asFormatted(uri: URI, skipEncoding: boolean): string {
 			}
 		}
 		// encode the rest of the path
-		res += encoder(path, true, false);
+		res += encoder(path, true);
 	}
 	if (query) {
 		res += '?';
-		res += encoder(query, false, false);
+		res += encoder(query, false);
 	}
 	if (fragment) {
 		res += '#';
-		res += !skipEncoding ? encodeURIComponentFast(fragment, false, false) : fragment;
+		res += !skipEncoding ? encodeURIComponentFast(fragment, false) : fragment;
 	}
 	return res;
 }
@@ -704,10 +701,3 @@ function percentDecode(str: string): string {
 	}
 	return str.replace(_rEncodedAsHex, (match) => decodeURIComponentGraceful(match));
 }
-
-/**
- * Mapped-type that replaces all occurrences of URI with UriComponents
- */
-export type UriDto<T> = { [K in keyof T]: T[K] extends URI
-	? UriComponents
-	: UriDto<T[K]> };

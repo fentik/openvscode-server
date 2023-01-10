@@ -30,7 +30,9 @@ export class SearchConfigurationModel {
 export class SearchEditorModel {
 	constructor(
 		private resource: URI,
-	) { }
+		@IWorkingCopyBackupService readonly workingCopyBackupService: IWorkingCopyBackupService,
+	) {
+	}
 
 	async resolve(): Promise<SearchEditorData> {
 		return assertIsDefined(searchEditorModelFactory.models.get(this.resource)).resolve();

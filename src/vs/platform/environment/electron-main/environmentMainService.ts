@@ -19,21 +19,22 @@ export const IEnvironmentMainService = refineServiceDecorator<IEnvironmentServic
 export interface IEnvironmentMainService extends INativeEnvironmentService {
 
 	// --- NLS cache path
-	readonly cachedLanguagesPath: string;
+	cachedLanguagesPath: string;
 
 	// --- backup paths
-	readonly backupHome: string;
+	backupHome: string;
+	backupWorkspacesPath: string;
 
 	// --- V8 code caching
-	readonly codeCachePath: string | undefined;
-	readonly useCodeCache: boolean;
+	codeCachePath: string | undefined;
+	useCodeCache: boolean;
 
 	// --- IPC
-	readonly mainIPCHandle: string;
-	readonly mainLockfile: string;
+	mainIPCHandle: string;
+	mainLockfile: string;
 
 	// --- config
-	readonly disableUpdates: boolean;
+	disableUpdates: boolean;
 }
 
 export class EnvironmentMainService extends NativeEnvironmentService implements IEnvironmentMainService {
@@ -43,6 +44,9 @@ export class EnvironmentMainService extends NativeEnvironmentService implements 
 
 	@memoize
 	get backupHome(): string { return join(this.userDataPath, 'Backups'); }
+
+	@memoize
+	get backupWorkspacesPath(): string { return join(this.backupHome, 'workspaces.json'); }
 
 	@memoize
 	get mainIPCHandle(): string { return createStaticIPCHandle(this.userDataPath, 'main', this.productService.version); }
@@ -55,9 +59,6 @@ export class EnvironmentMainService extends NativeEnvironmentService implements 
 
 	@memoize
 	get disableKeytar(): boolean { return !!this.args['disable-keytar']; }
-
-	@memoize
-	get crossOriginIsolated(): boolean { return !!this.args['enable-coi']; }
 
 	@memoize
 	get codeCachePath(): string | undefined { return process.env['VSCODE_CODE_CACHE_PATH'] || undefined; }

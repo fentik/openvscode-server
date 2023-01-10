@@ -6,7 +6,6 @@
 export interface ICommentsConfiguration {
 	openView: 'never' | 'file' | 'firstFile';
 	useRelativeTime: boolean;
-	visible: boolean;
 }
 
 export const COMMENTS_SECTION = 'comments';

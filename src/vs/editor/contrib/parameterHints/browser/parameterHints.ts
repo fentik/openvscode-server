@@ -4,15 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { Lazy } from 'vs/base/common/lazy';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { EditorAction, EditorCommand, EditorContributionInstantiation, registerEditorAction, registerEditorCommand, registerEditorContribution, ServicesAccessor } from 'vs/editor/browser/editorExtensions';
+import { EditorAction, EditorCommand, registerEditorAction, registerEditorCommand, registerEditorContribution, ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import * as languages from 'vs/editor/common/languages';
-import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
-import { ParameterHintsModel, TriggerContext } from 'vs/editor/contrib/parameterHints/browser/parameterHintsModel';
+import { TriggerContext } from 'vs/editor/contrib/parameterHints/browser/parameterHintsModel';
 import { Context } from 'vs/editor/contrib/parameterHints/browser/provideSignatureHelp';
 import * as nls from 'vs/nls';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
@@ -29,46 +27,28 @@ class ParameterHintsController extends Disposable implements IEditorContribution
 	}
 
 	private readonly editor: ICodeEditor;
-	private readonly model: ParameterHintsModel;
-	private readonly widget: Lazy<ParameterHintsWidget>;
+	private readonly widget: ParameterHintsWidget;
 
-	constructor(
-		editor: ICodeEditor,
-		@IInstantiationService instantiationService: IInstantiationService,
-		@ILanguageFeaturesService languageFeaturesService: ILanguageFeaturesService,
-	) {
+	constructor(editor: ICodeEditor, @IInstantiationService instantiationService: IInstantiationService) {
 		super();
-
 		this.editor = editor;
-
-		this.model = this._register(new ParameterHintsModel(editor, languageFeaturesService.signatureHelpProvider));
-
-		this._register(this.model.onChangedHints(newParameterHints => {
-			if (newParameterHints) {
-				this.widget.getValue().show();
-				this.widget.getValue().render(newParameterHints);
-			} else {
-				this.widget.rawValue?.hide();
-			}
-		}));
-
-		this.widget = new Lazy(() => this._register(instantiationService.createInstance(ParameterHintsWidget, this.editor, this.model)));
+		this.widget = this._register(instantiationService.createInstance(ParameterHintsWidget, this.editor));
 	}
 
 	cancel(): void {
-		this.model.cancel();
+		this.widget.cancel();
 	}
 
 	previous(): void {
-		this.widget.rawValue?.previous();
+		this.widget.previous();
 	}
 
 	next(): void {
-		this.widget.rawValue?.next();
+		this.widget.next();
 	}
 
 	trigger(context: TriggerContext): void {
-		this.model.trigger(context, 0);
+		this.widget.trigger(context);
 	}
 }
 
@@ -90,13 +70,15 @@ export class TriggerParameterHintsAction extends EditorAction {
 
 	public run(accessor: ServicesAccessor, editor: ICodeEditor): void {
 		const controller = ParameterHintsController.get(editor);
-		controller?.trigger({
-			triggerKind: languages.SignatureHelpTriggerKind.Invoke
-		});
+		if (controller) {
+			controller.trigger({
+				triggerKind: languages.SignatureHelpTriggerKind.Invoke
+			});
+		}
 	}
 }
 
-registerEditorContribution(ParameterHintsController.ID, ParameterHintsController, EditorContributionInstantiation.BeforeFirstInteraction);
+registerEditorContribution(ParameterHintsController.ID, ParameterHintsController);
 registerEditorAction(TriggerParameterHintsAction);
 
 const weight = KeybindingWeight.EditorContrib + 75;
@@ -114,7 +96,6 @@ registerEditorCommand(new ParameterHintsCommand({
 		secondary: [KeyMod.Shift | KeyCode.Escape]
 	}
 }));
-
 registerEditorCommand(new ParameterHintsCommand({
 	id: 'showPrevParameterHint',
 	precondition: ContextKeyExpr.and(Context.Visible, Context.MultipleSignatures),
@@ -127,7 +108,6 @@ registerEditorCommand(new ParameterHintsCommand({
 		mac: { primary: KeyCode.UpArrow, secondary: [KeyMod.Alt | KeyCode.UpArrow, KeyMod.WinCtrl | KeyCode.KeyP] }
 	}
 }));
-
 registerEditorCommand(new ParameterHintsCommand({
 	id: 'showNextParameterHint',
 	precondition: ContextKeyExpr.and(Context.Visible, Context.MultipleSignatures),

@@ -42,11 +42,7 @@ export class ColorizedBracketPairsDecorationProvider extends Disposable implemen
 
 	//#endregion
 
-	getDecorationsInRange(range: Range, ownerId?: number, filterOutValidation?: boolean, onlyMinimapDecorations?: boolean): IModelDecoration[] {
-		if (onlyMinimapDecorations) {
-			// Bracket pair colorization decorations are not rendered in the minimap
-			return [];
-		}
+	getDecorationsInRange(range: Range, ownerId?: number, filterOutValidation?: boolean): IModelDecoration[] {
 		if (ownerId === undefined) {
 			return [];
 		}
@@ -54,20 +50,22 @@ export class ColorizedBracketPairsDecorationProvider extends Disposable implemen
 			return [];
 		}
 
-		const result = this.textModel.bracketPairs.getBracketsInRange(range).map<IModelDecoration>(bracket =>
-		({
-			id: `bracket${bracket.range.toString()}-${bracket.nestingLevel}`,
-			options: {
-				description: 'BracketPairColorization',
-				inlineClassName: this.colorProvider.getInlineClassName(
-					bracket,
-					this.colorizationOptions.independentColorPoolPerBracketType
-				),
-			},
-			ownerId: 0,
-			range: bracket.range,
-		})).toArray();
-
+		const result = new Array<IModelDecoration>();
+		const bracketsInRange = this.textModel.bracketPairs.getBracketsInRange(range);
+		for (const bracket of bracketsInRange) {
+			result.push({
+				id: `bracket${bracket.range.toString()}-${bracket.nestingLevel}`,
+				options: {
+					description: 'BracketPairColorization',
+					inlineClassName: this.colorProvider.getInlineClassName(
+						bracket,
+						this.colorizationOptions.independentColorPoolPerBracketType
+					),
+				},
+				ownerId: 0,
+				range: bracket.range,
+			});
+		}
 		return result;
 	}
 

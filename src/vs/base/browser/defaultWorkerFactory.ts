@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { COI } from 'vs/base/common/network';
 import { globals } from 'vs/base/common/platform';
 import { IWorker, IWorkerCallback, IWorkerFactory, logOnceWebWorkerWarning } from 'vs/base/common/worker/simpleWorker';
 
@@ -42,21 +41,7 @@ export function getWorkerBootstrapUrl(scriptPath: string, label: string): string
 		const blob = new Blob([js], { type: 'application/javascript' });
 		return URL.createObjectURL(blob);
 	}
-
-	const start = scriptPath.lastIndexOf('?');
-	const end = scriptPath.lastIndexOf('#', start);
-	const params = start > 0
-		? new URLSearchParams(scriptPath.substring(start + 1, ~end ? end : undefined))
-		: new URLSearchParams();
-
-	COI.addSearchParam(params, true, true);
-	const search = params.toString();
-
-	if (!search) {
-		return `${scriptPath}#${label}`;
-	} else {
-		return `${scriptPath}?${params.toString()}#${label}`;
-	}
+	return scriptPath + '#' + label;
 }
 // ESM-comment-end
 

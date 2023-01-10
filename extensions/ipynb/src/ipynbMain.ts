@@ -4,10 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { NotebookSerializer } from './notebookSerializer';
 import { ensureAllNewCellsHaveCellIds } from './cellIdService';
-import { notebookImagePasteSetup } from './notebookImagePaste';
-import { AttachmentCleaner } from './notebookAttachmentCleaner';
+import { NotebookSerializer } from './notebookSerializer';
 
 // From {nbformat.INotebookMetadata} in @jupyterlab/coreutils
 type NotebookMetadata = {
@@ -35,13 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
 		transientOutputs: false,
 		transientCellMetadata: {
 			breakpointMargin: true,
-			custom: false,
-			attachments: false
-		},
-		cellContentMetadata: {
-			attachments: true
+			custom: false
 		}
-	} as vscode.NotebookDocumentContentOptions));
+	}));
 
 	vscode.languages.registerCodeLensProvider({ pattern: '**/*.ipynb' }, {
 		provideCodeLenses: (document) => {
@@ -83,20 +77,11 @@ export function activate(context: vscode.ExtensionContext) {
 		await vscode.window.showNotebookDocument(document);
 	}));
 
-	context.subscriptions.push(notebookImagePasteSetup());
-
-	const enabled = vscode.workspace.getConfiguration('ipynb').get('pasteImagesAsAttachments.enabled', false);
-	if (enabled) {
-		const cleaner = new AttachmentCleaner();
-		context.subscriptions.push(cleaner);
-	}
-
 	// Update new file contribution
 	vscode.extensions.onDidChange(() => {
 		vscode.commands.executeCommand('setContext', 'jupyterEnabled', vscode.extensions.getExtension('ms-toolsai.jupyter'));
 	});
 	vscode.commands.executeCommand('setContext', 'jupyterEnabled', vscode.extensions.getExtension('ms-toolsai.jupyter'));
-
 
 	return {
 		exportNotebook: (notebook: vscode.NotebookData): string => {

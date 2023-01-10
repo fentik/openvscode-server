@@ -3,12 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IFileService } from 'vs/platform/files/common/files';
 import { toLocalISOString } from 'vs/base/common/date';
-import { joinPath } from 'vs/base/common/resources';
+import { dirname, joinPath } from 'vs/base/common/resources';
 import { DelegatedOutputChannelModel, FileOutputChannelModel, IOutputChannelModel } from 'vs/workbench/contrib/output/common/outputChannelModel';
 import { URI } from 'vs/base/common/uri';
 import { ILanguageSelection } from 'vs/editor/common/languages/language';
@@ -22,19 +22,15 @@ export interface IOutputChannelModelService {
 
 }
 
-export class OutputChannelModelService {
+export abstract class AbstractOutputChannelModelService {
 
 	declare readonly _serviceBrand: undefined;
 
-	private readonly outputLocation: URI;
-
 	constructor(
-		@IFileService private readonly fileService: IFileService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService
-	) {
-		this.outputLocation = joinPath(environmentService.windowLogsPath, `output_${toLocalISOString(new Date()).replace(/-|:|\.\d+Z$/g, '')}`);
-	}
+		private readonly outputLocation: URI,
+		@IFileService protected readonly fileService: IFileService,
+		@IInstantiationService protected readonly instantiationService: IInstantiationService
+	) { }
 
 	createOutputChannelModel(id: string, modelUri: URI, language: ILanguageSelection, file?: URI): IOutputChannelModel {
 		return file ? this.instantiationService.createInstance(FileOutputChannelModel, modelUri, language, file) : this.instantiationService.createInstance(DelegatedOutputChannelModel, id, modelUri, language, this.outputDir);
@@ -50,4 +46,16 @@ export class OutputChannelModelService {
 
 }
 
-registerSingleton(IOutputChannelModelService, OutputChannelModelService, InstantiationType.Delayed);
+export class OutputChannelModelService extends AbstractOutputChannelModelService implements IOutputChannelModelService {
+
+	constructor(
+		@IInstantiationService instantiationService: IInstantiationService,
+		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
+		@IFileService fileService: IFileService,
+	) {
+		super(joinPath(dirname(environmentService.logFile), toLocalISOString(new Date()).replace(/-|:|\.\d+Z$/g, '')), fileService, instantiationService);
+	}
+}
+
+registerSingleton(IOutputChannelModelService, OutputChannelModelService);
+

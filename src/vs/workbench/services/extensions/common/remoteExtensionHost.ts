@@ -27,7 +27,7 @@ import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { parseExtensionDevOptions } from 'vs/workbench/services/extensions/common/extensionDevOptions';
 import { createMessageOfType, isMessageOfType, MessageType, IExtensionHostInitData, UIKind } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
-import { ExtensionHostExtensions, ExtensionHostLogFileName, IExtensionHost, remoteExtHostLog, RemoteRunningLocation } from 'vs/workbench/services/extensions/common/extensions';
+import { ExtensionHostExtensions, ExtensionHostLogFileName, IExtensionHost, RemoteRunningLocation } from 'vs/workbench/services/extensions/common/extensions';
 import { Extensions, IOutputChannelRegistry } from 'vs/workbench/services/output/common/output';
 
 export interface IRemoteExtensionHostInitData {
@@ -171,7 +171,7 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 							disposable.dispose();
 
 							// Register log channel for remote exthost log
-							Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels).registerChannel({ id: remoteExtHostLog, label: localize('remote extension host Log', "Remote Extension Host"), file: logFile, log: true });
+							Registry.as<IOutputChannelRegistry>(Extensions.OutputChannels).registerChannel({ id: 'remoteExtHostLog', label: localize('remote extension host Log', "Remote Extension Host"), file: logFile, log: true });
 
 							// release this promise
 							this._protocol = protocol;
@@ -221,13 +221,11 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 				appName: this._productService.nameLong,
 				appHost: this._productService.embedderIdentifier || 'desktop',
 				appUriScheme: this._productService.urlProtocol,
-				extensionTelemetryLogResource: this._environmentService.extHostTelemetryLogFile,
 				appLanguage: platform.language,
 				extensionDevelopmentLocationURI: this._environmentService.extensionDevelopmentLocationURI,
 				extensionTestsLocationURI: this._environmentService.extensionTestsLocationURI,
 				globalStorageHome: remoteInitData.globalStorageHome,
-				workspaceStorageHome: remoteInitData.workspaceStorageHome,
-				extensionLogLevel: this._environmentService.extensionLogLevel
+				workspaceStorageHome: remoteInitData.workspaceStorageHome
 			},
 			workspace: this._contextService.getWorkbenchState() === WorkbenchState.EMPTY ? null : {
 				configuration: workspace.configuration,
@@ -284,4 +282,3 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 		}
 	}
 }
-

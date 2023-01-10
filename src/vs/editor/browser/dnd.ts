@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DataTransfers } from 'vs/base/browser/dnd';
-import { createFileDataTransferItem, createStringDataTransferItem, IDataTransferItem, UriList, VSDataTransfer } from 'vs/base/common/dataTransfer';
+import { distinct } from 'vs/base/common/arrays';
+import { createFileDataTransferItem, createStringDataTransferItem, IDataTransferItem, VSDataTransfer } from 'vs/base/common/dataTransfer';
 import { Mimes } from 'vs/base/common/mime';
 import { URI } from 'vs/base/common/uri';
 import { CodeDataTransfers, extractEditorsDropData, FileAdditionalNativeProperties } from 'vs/platform/dnd/browser/dnd';
@@ -27,7 +28,7 @@ export function toVSDataTransfer(dataTransfer: DataTransfer) {
 	return vsDataTransfer;
 }
 
-function createFileDataTransferItemFromFile(file: File): IDataTransferItem {
+export function createFileDataTransferItemFromFile(file: File): IDataTransferItem {
 	const uri = (file as FileAdditionalNativeProperties).path ? URI.parse((file as FileAdditionalNativeProperties).path!) : undefined;
 	return createFileDataTransferItem(file.name, uri, async () => {
 		return new Uint8Array(await file.arrayBuffer());
@@ -63,3 +64,13 @@ export function addExternalEditorsDropData(dataTransfer: VSDataTransfer, dragEve
 		dataTransfer.delete(internal);
 	}
 }
+
+export const UriList = Object.freeze({
+	// http://amundsen.com/hypermedia/urilist/
+	create: (entries: ReadonlyArray<string | URI>): string => {
+		return distinct(entries.map(x => x.toString())).join('\r\n');
+	},
+	parse: (str: string): string[] => {
+		return str.split('\r\n').filter(value => !value.startsWith('#'));
+	}
+});

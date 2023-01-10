@@ -78,9 +78,9 @@
 }
 
 .monaco-workbench .notebookOverlay .notebook-toolbar-container .monaco-action-bar:not(.vertical) .action-item.active {
-	background-color: var(--vscode-toolbar-activeBackground);
+	background-color: unset;
 }
 
 .monaco-workbench .notebookOverlay .notebook-toolbar-container .monaco-action-bar .action-item .codicon-notebook-state-error {
-	color: var(--vscode-notebookStatusErrorIcon-foreground);
+	color: var(--notebook-cell-status-icon-error);
 }

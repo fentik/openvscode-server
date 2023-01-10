@@ -9,8 +9,8 @@ import { tmpdir } from 'os';
 import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
-import { DebianArchString } from './types';
-import * as util from '../../lib/util';
+import { sysrootInfo } from './sysroots';
+import { ArchString } from './types';
 
 // Based on https://source.chromium.org/chromium/chromium/src/+/main:build/linux/sysroot_scripts/install-sysroot.py.
 const URL_PREFIX = 'https://msftelectron.blob.core.windows.net';
@@ -37,16 +37,8 @@ type SysrootDictEntry = {
 	Tarball: string;
 };
 
-export async function getSysroot(arch: DebianArchString): Promise<string> {
-	const sysrootJSONUrl = `https://raw.githubusercontent.com/electron/electron/v${util.getElectronVersion()}/script/sysroots.json`;
-	const sysrootDictLocation = `${tmpdir()}/sysroots.json`;
-	const result = spawnSync('curl', [sysrootJSONUrl, '-o', sysrootDictLocation]);
-	if (result.status !== 0) {
-		throw new Error('Cannot retrieve sysroots.json. Stderr:\n' + result.stderr);
-	}
-	const sysrootInfo = require(sysrootDictLocation);
-	const sysrootArch = arch === 'armhf' ? 'bullseye_arm' : `bullseye_${arch}`;
-	const sysrootDict: SysrootDictEntry = sysrootInfo[sysrootArch];
+export async function getSysroot(arch: ArchString): Promise<string> {
+	const sysrootDict: SysrootDictEntry = sysrootInfo[arch];
 	const tarballFilename = sysrootDict['Tarball'];
 	const tarballSha = sysrootDict['Sha1Sum'];
 	const sysroot = path.join(tmpdir(), sysrootDict['SysrootDir']);
@@ -63,13 +55,14 @@ export async function getSysroot(arch: DebianArchString): Promise<string> {
 	console.log(`Downloading ${url}`);
 	let downloadSuccess = false;
 	for (let i = 0; i < 3 && !downloadSuccess; i++) {
-		fs.writeFileSync(tarball, '');
 		await new Promise<void>((c) => {
 			https.get(url, (res) => {
+				const chunks: Uint8Array[] = [];
 				res.on('data', (chunk) => {
-					fs.appendFileSync(tarball, chunk);
+					chunks.push(chunk);
 				});
 				res.on('end', () => {
+					fs.writeFileSync(tarball, Buffer.concat(chunks));
 					downloadSuccess = true;
 					c();
 				});
@@ -80,7 +73,6 @@ export async function getSysroot(arch: DebianArchString): Promise<string> {
 		});
 	}
 	if (!downloadSuccess) {
-		fs.rmSync(tarball);
 		throw new Error('Failed to download ' + url);
 	}
 	const sha = getSha(tarball);

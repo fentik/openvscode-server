@@ -4,19 +4,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import * as nls from 'vscode-nls';
 import { Command, CommandManager } from '../commands/commandManager';
 import { LearnMoreAboutRefactoringsCommand } from '../commands/learnMoreAboutRefactorings';
 import type * as Proto from '../protocol';
 import { ClientCapability, ITypeScriptServiceClient } from '../typescriptService';
 import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
-import { conditionalRegistration, requireSomeCapability } from '../utils/dependentRegistration';
+import { conditionalRegistration, requireMinVersion, requireSomeCapability } from '../utils/dependentRegistration';
 import { DocumentSelector } from '../utils/documentSelector';
 import * as fileSchemes from '../utils/fileSchemes';
 import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/typeConverters';
 import FormattingOptionsManager from './fileConfigurationManager';
 
+const localize = nls.loadMessageBundle();
 
 
 interface DidApplyRefactoringCommand_Args {
@@ -46,7 +48,7 @@ class DidApplyRefactoringCommand implements Command {
 		});
 
 		if (!args.codeAction.edit?.size) {
-			vscode.window.showErrorMessage(vscode.l10n.t("Could not apply refactoring"));
+			vscode.window.showErrorMessage(localize('refactoringFailed', "Could not apply refactoring"));
 			return;
 		}
 
@@ -98,7 +100,7 @@ class SelectRefactorCommand implements Command {
 
 		if (tsAction.edit) {
 			if (!(await vscode.workspace.applyEdit(tsAction.edit))) {
-				vscode.window.showErrorMessage(vscode.l10n.t("Could not apply refactoring"));
+				vscode.window.showErrorMessage(localize('refactoringFailed', "Could not apply refactoring"));
 				return;
 			}
 		}
@@ -133,7 +135,7 @@ const Extract_Interface = Object.freeze<CodeActionKind>({
 });
 
 const Move_NewFile = Object.freeze<CodeActionKind>({
-	kind: vscode.CodeActionKind.RefactorMove.append('newFile'),
+	kind: vscode.CodeActionKind.Refactor.append('move').append('newFile'),
 	matches: refactor => refactor.name.startsWith('Move to a new file')
 });
 
@@ -249,6 +251,7 @@ class SelectCodeAction extends vscode.CodeAction {
 type TsCodeAction = InlinedCodeAction | SelectCodeAction;
 
 class TypeScriptRefactorProvider implements vscode.CodeActionProvider<TsCodeAction> {
+	public static readonly minVersion = API.v240;
 
 	constructor(
 		private readonly client: ITypeScriptServiceClient,
@@ -270,7 +273,7 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider<TsCodeActi
 				kind: vscode.CodeActionKind.Refactor,
 				command: {
 					command: LearnMoreAboutRefactoringsCommand.id,
-					title: vscode.l10n.t("Learn more about JS/TS refactorings")
+					title: localize('refactor.documentation.title', "Learn more about JS/TS refactorings")
 				}
 			}
 		]
@@ -438,11 +441,11 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider<TsCodeActi
 
 		if (!actions.some(action => action.kind && Extract_Constant.kind.contains(action.kind))) {
 			const disabledAction = new vscode.CodeAction(
-				vscode.l10n.t("Extract to constant"),
+				localize('extractConstant.disabled.title', "Extract to constant"),
 				Extract_Constant.kind);
 
 			disabledAction.disabled = {
-				reason: vscode.l10n.t("The current selection cannot be extracted"),
+				reason: localize('extractConstant.disabled.reason', "The current selection cannot be extracted"),
 			};
 			disabledAction.isPreferred = true;
 
@@ -451,11 +454,11 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider<TsCodeActi
 
 		if (!actions.some(action => action.kind && Extract_Function.kind.contains(action.kind))) {
 			const disabledAction = new vscode.CodeAction(
-				vscode.l10n.t("Extract to function"),
+				localize('extractFunction.disabled.title', "Extract to function"),
 				Extract_Function.kind);
 
 			disabledAction.disabled = {
-				reason: vscode.l10n.t("The current selection cannot be extracted"),
+				reason: localize('extractFunction.disabled.reason', "The current selection cannot be extracted"),
 			};
 			actions.push(disabledAction);
 		}
@@ -504,6 +507,7 @@ export function register(
 	telemetryReporter: TelemetryReporter,
 ) {
 	return conditionalRegistration([
+		requireMinVersion(client, TypeScriptRefactorProvider.minVersion),
 		requireSomeCapability(client, ClientCapability.Semantic),
 	], () => {
 		return vscode.languages.registerCodeActionsProvider(selector.semantic,

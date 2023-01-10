@@ -13,18 +13,12 @@ suite('History Navigator', () => {
 		assert.deepStrictEqual(['3', '4'], toArray(testObject));
 	});
 
-	test('create sets the position after last', () => {
+	test('create sets the position to last', () => {
 		const testObject = new HistoryNavigator(['1', '2', '3', '4'], 100);
 
 		assert.strictEqual(testObject.current(), null);
-		assert.strictEqual(testObject.isNowhere(), true);
-		assert.strictEqual(testObject.isFirst(), false);
-		assert.strictEqual(testObject.isLast(), false);
 		assert.strictEqual(testObject.next(), null);
 		assert.strictEqual(testObject.previous(), '4');
-		assert.strictEqual(testObject.isNowhere(), false);
-		assert.strictEqual(testObject.isFirst(), false);
-		assert.strictEqual(testObject.isLast(), true);
 	});
 
 	test('last returns last element', () => {
@@ -32,16 +26,12 @@ suite('History Navigator', () => {
 
 		assert.strictEqual(testObject.first(), '1');
 		assert.strictEqual(testObject.last(), '4');
-		assert.strictEqual(testObject.isFirst(), false);
-		assert.strictEqual(testObject.isLast(), true);
 	});
 
 	test('first returns first element', () => {
 		const testObject = new HistoryNavigator(['1', '2', '3', '4'], 3);
 
 		assert.strictEqual('2', testObject.first());
-		assert.strictEqual(testObject.isFirst(), true);
-		assert.strictEqual(testObject.isLast(), false);
 	});
 
 	test('next returns next element', () => {
@@ -63,27 +53,23 @@ suite('History Navigator', () => {
 		assert.strictEqual(testObject.previous(), null);
 	});
 
-	test('next on last element returns null and remains on last', () => {
+	test('next on last element returs null and remains on last', () => {
 		const testObject = new HistoryNavigator(['1', '2', '3', '4'], 3);
 
 		testObject.first();
 		testObject.last();
 
-		assert.strictEqual(testObject.isLast(), true);
 		assert.strictEqual(testObject.current(), '4');
 		assert.strictEqual(testObject.next(), null);
-		assert.strictEqual(testObject.isLast(), true);
 	});
 
-	test('previous on first element returns null and remains on first', () => {
+	test('previous on first element returs null and remains on first', () => {
 		const testObject = new HistoryNavigator(['1', '2', '3', '4'], 3);
 
 		testObject.first();
 
-		assert.strictEqual(testObject.isFirst(), true);
 		assert.strictEqual(testObject.current(), '2');
 		assert.strictEqual(testObject.previous(), null);
-		assert.strictEqual(testObject.isFirst(), true);
 	});
 
 	test('add reduces the input to limit', () => {
@@ -110,7 +96,6 @@ suite('History Navigator', () => {
 
 		assert.strictEqual(testObject.previous(), '5');
 		assert.strictEqual(testObject.next(), null);
-		assert.strictEqual(testObject.isLast(), true);
 	});
 
 	test('adding an existing item changes the order', () => {
@@ -127,7 +112,6 @@ suite('History Navigator', () => {
 		testObject.first();
 
 		assert.deepStrictEqual(testObject.previous(), null);
-		assert.strictEqual(testObject.isFirst(), true);
 	});
 
 	test('previous returns object if the current position is not the first one', () => {
@@ -145,7 +129,6 @@ suite('History Navigator', () => {
 		testObject.last();
 
 		assert.deepStrictEqual(testObject.next(), null);
-		assert.strictEqual(testObject.isLast(), true);
 	});
 
 	test('next returns object if the current position is not the last one', () => {
@@ -162,7 +145,6 @@ suite('History Navigator', () => {
 		assert.strictEqual(testObject.previous(), 'c');
 		testObject.clear();
 		assert.strictEqual(testObject.current(), null);
-		assert.strictEqual(testObject.isNowhere(), true);
 	});
 
 	function toArray(historyNavigator: HistoryNavigator<string>): Array<string | null> {

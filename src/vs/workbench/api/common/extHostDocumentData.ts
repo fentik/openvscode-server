@@ -23,7 +23,7 @@ export function setWordDefinitionFor(languageId: string, wordDefinition: RegExp 
 	}
 }
 
-function getWordDefinitionFor(languageId: string): RegExp | undefined {
+export function getWordDefinitionFor(languageId: string): RegExp | undefined {
 	return _languageId2WordDefinition.get(languageId);
 }
 

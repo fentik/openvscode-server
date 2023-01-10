@@ -5,7 +5,7 @@
 
 import { WrappingIndent } from 'vs/editor/common/config/editorOptions';
 import { FontInfo } from 'vs/editor/common/config/fontInfo';
-import { StringBuilder } from 'vs/editor/common/core/stringBuilder';
+import { createStringBuilder, IStringBuilder } from 'vs/editor/common/core/stringBuilder';
 import { CharCode } from 'vs/base/common/charCode';
 import * as strings from 'vs/base/common/strings';
 import { applyFontInfo } from 'vs/editor/browser/config/domFontInfo';
@@ -24,7 +24,7 @@ export class DOMLineBreaksComputerFactory implements ILineBreaksComputerFactory 
 	constructor() {
 	}
 
-	public createLineBreaksComputer(fontInfo: FontInfo, tabSize: number, wrappingColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll'): ILineBreaksComputer {
+	public createLineBreaksComputer(fontInfo: FontInfo, tabSize: number, wrappingColumn: number, wrappingIndent: WrappingIndent): ILineBreaksComputer {
 		const requests: string[] = [];
 		const injectedTexts: (LineInjectedText[] | null)[] = [];
 		return {
@@ -33,13 +33,13 @@ export class DOMLineBreaksComputerFactory implements ILineBreaksComputerFactory 
 				injectedTexts.push(injectedText);
 			},
 			finalize: () => {
-				return createLineBreaks(requests, fontInfo, tabSize, wrappingColumn, wrappingIndent, wordBreak, injectedTexts);
+				return createLineBreaks(requests, fontInfo, tabSize, wrappingColumn, wrappingIndent, injectedTexts);
 			}
 		};
 	}
 }
 
-function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: number, firstLineBreakColumn: number, wrappingIndent: WrappingIndent, wordBreak: 'normal' | 'keepAll', injectedTextsPerLine: (LineInjectedText[] | null)[]): (ModelLineProjectionData | null)[] {
+function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: number, firstLineBreakColumn: number, wrappingIndent: WrappingIndent, injectedTextsPerLine: (LineInjectedText[] | null)[]): (ModelLineProjectionData | null)[] {
 	function createEmptyLineBreakWithPossiblyInjectedText(requestIdx: number): ModelLineProjectionData | null {
 		const injectedTexts = injectedTextsPerLine[requestIdx];
 		if (injectedTexts) {
@@ -72,7 +72,7 @@ function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: numbe
 	const containerDomNode = document.createElement('div');
 	applyFontInfo(containerDomNode, fontInfo);
 
-	const sb = new StringBuilder(10000);
+	const sb = createStringBuilder(10000);
 	const firstNonWhitespaceIndices: number[] = [];
 	const wrappedTextIndentLengths: number[] = [];
 	const renderLineContents: string[] = [];
@@ -129,15 +129,7 @@ function createLineBreaks(requests: string[], fontInfo: FontInfo, tabSize: numbe
 
 	containerDomNode.style.position = 'absolute';
 	containerDomNode.style.top = '10000';
-	if (wordBreak === 'keepAll') {
-		// word-break: keep-all; overflow-wrap: anywhere
-		containerDomNode.style.wordBreak = 'keep-all';
-		containerDomNode.style.overflowWrap = 'anywhere';
-	} else {
-		// overflow-wrap: break-word
-		containerDomNode.style.wordBreak = 'inherit';
-		containerDomNode.style.overflowWrap = 'break-word';
-	}
+	containerDomNode.style.wordWrap = 'break-word';
 	document.body.appendChild(containerDomNode);
 
 	const range = document.createRange();
@@ -190,20 +182,20 @@ const enum Constants {
 	SPAN_MODULO_LIMIT = 16384
 }
 
-function renderLine(lineContent: string, initialVisibleColumn: number, tabSize: number, width: number, sb: StringBuilder, wrappingIndentLength: number): [number[], number[]] {
+function renderLine(lineContent: string, initialVisibleColumn: number, tabSize: number, width: number, sb: IStringBuilder, wrappingIndentLength: number): [number[], number[]] {
 
 	if (wrappingIndentLength !== 0) {
 		const hangingOffset = String(wrappingIndentLength);
-		sb.appendString('<div style="text-indent: -');
-		sb.appendString(hangingOffset);
-		sb.appendString('px; padding-left: ');
-		sb.appendString(hangingOffset);
-		sb.appendString('px; box-sizing: border-box; width:');
+		sb.appendASCIIString('<div style="text-indent: -');
+		sb.appendASCIIString(hangingOffset);
+		sb.appendASCIIString('px; padding-left: ');
+		sb.appendASCIIString(hangingOffset);
+		sb.appendASCIIString('px; box-sizing: border-box; width:');
 	} else {
-		sb.appendString('<div style="width:');
+		sb.appendASCIIString('<div style="width:');
 	}
-	sb.appendString(String(width));
-	sb.appendString('px;">');
+	sb.appendASCIIString(String(width));
+	sb.appendASCIIString('px;">');
 	// if (containsRTL) {
 	// 	sb.appendASCIIString('" dir="ltr');
 	// }
@@ -215,10 +207,10 @@ function renderLine(lineContent: string, initialVisibleColumn: number, tabSize: 
 	const visibleColumns: number[] = [];
 	let nextCharCode = (0 < len ? lineContent.charCodeAt(0) : CharCode.Null);
 
-	sb.appendString('<span>');
+	sb.appendASCIIString('<span>');
 	for (let charIndex = 0; charIndex < len; charIndex++) {
 		if (charIndex !== 0 && charIndex % Constants.SPAN_MODULO_LIMIT === 0) {
-			sb.appendString('</span><span>');
+			sb.appendASCIIString('</span><span>');
 		}
 		charOffsets[charIndex] = charOffset;
 		visibleColumns[charIndex] = visibleColumn;
@@ -232,42 +224,42 @@ function renderLine(lineContent: string, initialVisibleColumn: number, tabSize: 
 				charWidth = producedCharacters;
 				for (let space = 1; space <= producedCharacters; space++) {
 					if (space < producedCharacters) {
-						sb.appendCharCode(0xA0); // &nbsp;
+						sb.write1(0xA0); // &nbsp;
 					} else {
-						sb.appendASCIICharCode(CharCode.Space);
+						sb.appendASCII(CharCode.Space);
 					}
 				}
 				break;
 
 			case CharCode.Space:
 				if (nextCharCode === CharCode.Space) {
-					sb.appendCharCode(0xA0); // &nbsp;
+					sb.write1(0xA0); // &nbsp;
 				} else {
-					sb.appendASCIICharCode(CharCode.Space);
+					sb.appendASCII(CharCode.Space);
 				}
 				break;
 
 			case CharCode.LessThan:
-				sb.appendString('&lt;');
+				sb.appendASCIIString('&lt;');
 				break;
 
 			case CharCode.GreaterThan:
-				sb.appendString('&gt;');
+				sb.appendASCIIString('&gt;');
 				break;
 
 			case CharCode.Ampersand:
-				sb.appendString('&amp;');
+				sb.appendASCIIString('&amp;');
 				break;
 
 			case CharCode.Null:
-				sb.appendString('&#00;');
+				sb.appendASCIIString('&#00;');
 				break;
 
 			case CharCode.UTF8_BOM:
 			case CharCode.LINE_SEPARATOR:
 			case CharCode.PARAGRAPH_SEPARATOR:
 			case CharCode.NEXT_LINE:
-				sb.appendCharCode(0xFFFD);
+				sb.write1(0xFFFD);
 				break;
 
 			default:
@@ -275,21 +267,21 @@ function renderLine(lineContent: string, initialVisibleColumn: number, tabSize: 
 					charWidth++;
 				}
 				if (charCode < 32) {
-					sb.appendCharCode(9216 + charCode);
+					sb.write1(9216 + charCode);
 				} else {
-					sb.appendCharCode(charCode);
+					sb.write1(charCode);
 				}
 		}
 
 		charOffset += producedCharacters;
 		visibleColumn += charWidth;
 	}
-	sb.appendString('</span>');
+	sb.appendASCIIString('</span>');
 
 	charOffsets[lineContent.length] = charOffset;
 	visibleColumns[lineContent.length] = visibleColumn;
 
-	sb.appendString('</div>');
+	sb.appendASCIIString('</div>');
 
 	return [charOffsets, visibleColumns];
 }

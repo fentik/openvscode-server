@@ -8,15 +8,14 @@ import { Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
 import { IProcessEnvironment, OperatingSystem } from 'vs/base/common/platform';
 import { IExtensionPointDescriptor } from 'vs/workbench/services/extensions/common/extensionsRegistry';
-import { IProcessDataEvent, IProcessReadyEvent, IShellLaunchConfig, ITerminalChildProcess, ITerminalLaunchError, ITerminalProfile, ITerminalProfileObject, ITerminalsLayoutInfo, ITerminalsLayoutInfoById, TerminalIcon, TerminalLocationString, IProcessProperty, TitleEventSource, ProcessPropertyType, IFixedTerminalDimensions, IExtensionTerminalProfile, ICreateContributedTerminalProfileOptions, IProcessPropertyMap, ITerminalEnvironment, ITerminalProcessOptions, ITerminalContributions } from 'vs/platform/terminal/common/terminal';
+import { IProcessDataEvent, IProcessReadyEvent, IShellLaunchConfig, ITerminalChildProcess, ITerminalLaunchError, ITerminalProfile, ITerminalProfileObject, ITerminalsLayoutInfo, ITerminalsLayoutInfoById, TerminalIcon, TerminalLocationString, IProcessProperty, TitleEventSource, ProcessPropertyType, IFixedTerminalDimensions, IExtensionTerminalProfile, ICreateContributedTerminalProfileOptions, IProcessPropertyMap, ITerminalEnvironment, ITerminalProcessOptions } from 'vs/platform/terminal/common/terminal';
 import { IEnvironmentVariableInfo } from 'vs/workbench/contrib/terminal/common/environmentVariable';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { URI } from 'vs/base/common/uri';
+import { IGenericMarkProperties, IProcessDetails, ISerializedCommandDetectionCapability } from 'vs/platform/terminal/common/terminalProcess';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { IMarkProperties, ISerializedCommandDetectionCapability, ITerminalCapabilityStore, IXtermMarker } from 'vs/platform/terminal/common/capabilities/capabilities';
+import { ITerminalCapabilityStore, IXtermMarker } from 'vs/platform/terminal/common/capabilities/capabilities';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
-import { IProcessDetails } from 'vs/platform/terminal/common/terminalProcess';
-import { ITerminalQuickFixProvider, ITerminalCommandSelector, ITerminalOutputMatch, ITerminalOutputMatcher } from 'vs/platform/terminal/common/xterm/terminalQuickFix';
 
 export const TERMINAL_VIEW_ID = 'terminal';
 
@@ -80,7 +79,6 @@ export interface ITerminalProfileService {
 	getPlatformKey(): Promise<string>;
 	refreshAvailableProfiles(): void;
 	getDefaultProfileName(): string | undefined;
-	getDefaultProfile(os?: OperatingSystem): ITerminalProfile | undefined;
 	onDidChangeAvailableProfiles: Event<ITerminalProfile[]>;
 	getContributedDefaultProfile(shellLaunchConfig: IShellLaunchConfig): Promise<IExtensionTerminalProfile | undefined>;
 	registerContributedProfile(args: IRegisterContributedProfileArgs): Promise<void>;
@@ -88,21 +86,6 @@ export interface ITerminalProfileService {
 	registerTerminalProfileProvider(extensionIdentifier: string, id: string, profileProvider: ITerminalProfileProvider): IDisposable;
 }
 
-export const ITerminalQuickFixService = createDecorator<ITerminalQuickFixService>('terminalQuickFixService');
-export interface ITerminalQuickFixService {
-	onDidRegisterProvider: Event<ITerminalQuickFixProviderSelector>;
-	onDidRegisterCommandSelector: Event<ITerminalCommandSelector>;
-	onDidUnregisterProvider: Event<string>;
-	readonly _serviceBrand: undefined;
-	providers: Map<string, ITerminalQuickFixProvider>;
-	registerQuickFixProvider(id: string, provider: ITerminalQuickFixProvider): IDisposable;
-	registerCommandSelector(selector: ITerminalCommandSelector): void;
-}
-
-export interface ITerminalQuickFixProviderSelector {
-	selector: ITerminalCommandSelector;
-	provider: ITerminalQuickFixProvider;
-}
 export interface ITerminalProfileProvider {
 	createContributedTerminalProfile(options: ICreateContributedTerminalProfileOptions): Promise<void>;
 }
@@ -139,12 +122,12 @@ export interface ITerminalBackend {
 	listProcesses(): Promise<IProcessDetails[]>;
 	getDefaultSystemShell(osOverride?: OperatingSystem): Promise<string>;
 	getProfiles(profiles: unknown, defaultProfile: unknown, includeDetectedProfiles?: boolean): Promise<ITerminalProfile[]>;
-	getWslPath(original: string, direction: 'unix-to-win' | 'win-to-unix'): Promise<string>;
+	getWslPath(original: string): Promise<string>;
 	getEnvironment(): Promise<IProcessEnvironment>;
 	getShellEnvironment(): Promise<IProcessEnvironment | undefined>;
 	setTerminalLayoutInfo(layoutInfo?: ITerminalsLayoutInfoById): Promise<void>;
 	updateTitle(id: number, title: string, titleSource: TitleEventSource): Promise<void>;
-	updateIcon(id: number, userInitiated: boolean, icon: TerminalIcon, color?: string): Promise<void>;
+	updateIcon(id: number, icon: TerminalIcon, color?: string): Promise<void>;
 	getTerminalLayoutInfo(): Promise<ITerminalsLayoutInfo | undefined>;
 	reduceConnectionGraceTime(): Promise<void>;
 	requestDetachInstance(workspaceId: string, instanceId: number): Promise<IProcessDetails | undefined>;
@@ -292,7 +275,7 @@ export interface ITerminalConfiguration {
 	splitCwd: 'workspaceRoot' | 'initial' | 'inherited';
 	windowsEnableConpty: boolean;
 	wordSeparators: string;
-	enableFileLinks: 'off' | 'on' | 'notRemote';
+	enableFileLinks: boolean;
 	unicodeVersion: '6' | '11';
 	localEchoLatencyThreshold: number;
 	localEchoExcludePrograms: ReadonlyArray<string>;
@@ -319,7 +302,6 @@ export interface ITerminalConfiguration {
 		enabled: boolean;
 		decorationsEnabled: boolean;
 	};
-	smoothScrolling: boolean;
 }
 
 export const DEFAULT_LOCAL_ECHO_EXCLUDE: ReadonlyArray<string> = ['vim', 'vi', 'nano', 'tmux'];
@@ -361,10 +343,9 @@ export interface ITerminalCommand {
 	cwd?: string;
 	exitCode?: number;
 	marker?: IXtermMarker;
-	markProperties?: IMarkProperties;
 	hasOutput(): boolean;
 	getOutput(): string | undefined;
-	getOutputMatch(outputMatcher: ITerminalOutputMatcher): ITerminalOutputMatch | undefined;
+	genericMarkProperties?: IGenericMarkProperties;
 }
 
 export interface INavigationMode {
@@ -395,10 +376,10 @@ export interface ITerminalProcessManager extends IDisposable {
 	readonly remoteAuthority: string | undefined;
 	readonly os: OperatingSystem | undefined;
 	readonly userHome: string | undefined;
-	readonly initialCwd: string;
 	readonly environmentVariableInfo: IEnvironmentVariableInfo | undefined;
 	readonly persistentProcessId: number | undefined;
 	readonly shouldPersist: boolean;
+	readonly isDisconnected: boolean;
 	readonly hasWrittenData: boolean;
 	readonly hasChildProcesses: boolean;
 	readonly backend: ITerminalBackend | undefined;
@@ -416,7 +397,7 @@ export interface ITerminalProcessManager extends IDisposable {
 	readonly onRestoreCommands: Event<ISerializedCommandDetectionCapability>;
 
 	dispose(immediate?: boolean): void;
-	detachFromProcess(forcePersist?: boolean): Promise<void>;
+	detachFromProcess(): Promise<void>;
 	createProcess(shellLaunchConfig: IShellLaunchConfig, cols: number, rows: number, isScreenReaderModeEnabled: boolean): Promise<ITerminalLaunchError | undefined>;
 	relaunch(shellLaunchConfig: IShellLaunchConfig, cols: number, rows: number, isScreenReaderModeEnabled: boolean, reset: boolean): Promise<ITerminalLaunchError | undefined>;
 	write(data: string): Promise<void>;
@@ -427,11 +408,11 @@ export interface ITerminalProcessManager extends IDisposable {
 	acknowledgeDataEvent(charCount: number): void;
 	processBinary(data: string): void;
 
+	getInitialCwd(): Promise<string>;
 	getLatency(): Promise<number>;
 	refreshProperty<T extends ProcessPropertyType>(type: T): Promise<IProcessPropertyMap[T]>;
 	updateProperty<T extends ProcessPropertyType>(property: T, value: IProcessPropertyMap[T]): void;
 	getBackendOS(): Promise<OperatingSystem>;
-	freePortKillProcess(port: string): void;
 }
 
 export const enum ProcessState {
@@ -499,7 +480,6 @@ export const enum TerminalCommandId {
 	RunRecentCommand = 'workbench.action.terminal.runRecentCommand',
 	CopyLastCommand = 'workbench.action.terminal.copyLastCommand',
 	GoToRecentDirectory = 'workbench.action.terminal.goToRecentDirectory',
-	CopyAndClearSelection = 'workbench.action.terminal.copyAndClearSelection',
 	CopySelection = 'workbench.action.terminal.copySelection',
 	CopySelectionAsHtml = 'workbench.action.terminal.copySelectionAsHtml',
 	SelectAll = 'workbench.action.terminal.selectAll',
@@ -516,7 +496,6 @@ export const enum TerminalCommandId {
 	Split = 'workbench.action.terminal.split',
 	SplitInstance = 'workbench.action.terminal.splitInstance',
 	SplitInActiveWorkspace = 'workbench.action.terminal.splitInActiveWorkspace',
-	ShowQuickFixes = 'workbench.action.terminal.showQuickFixes',
 	Unsplit = 'workbench.action.terminal.unsplit',
 	UnsplitInstance = 'workbench.action.terminal.unsplitInstance',
 	JoinInstance = 'workbench.action.terminal.joinInstance',
@@ -531,7 +510,7 @@ export const enum TerminalCommandId {
 	ResizePaneLeft = 'workbench.action.terminal.resizePaneLeft',
 	ResizePaneRight = 'workbench.action.terminal.resizePaneRight',
 	ResizePaneUp = 'workbench.action.terminal.resizePaneUp',
-	CreateWithProfileButton = 'workbench.action.terminal.gitCreateProfileButton',
+	CreateWithProfileButton = 'workbench.action.terminal.createProfileButton',
 	SizeToContentWidth = 'workbench.action.terminal.sizeToContentWidth',
 	SizeToContentWidthInstance = 'workbench.action.terminal.sizeToContentWidthInstance',
 	ResizePaneDown = 'workbench.action.terminal.resizePaneDown',
@@ -573,7 +552,6 @@ export const enum TerminalCommandId {
 	SelectToNextLine = 'workbench.action.terminal.selectToNextLine',
 	ToggleEscapeSequenceLogging = 'toggleEscapeSequenceLogging',
 	SendSequence = 'workbench.action.terminal.sendSequence',
-	QuickFix = 'workbench.action.terminal.quickFix',
 	ToggleFindRegex = 'workbench.action.terminal.toggleFindRegex',
 	ToggleFindWholeWord = 'workbench.action.terminal.toggleFindWholeWord',
 	ToggleFindCaseSensitive = 'workbench.action.terminal.toggleFindCaseSensitive',
@@ -592,13 +570,11 @@ export const enum TerminalCommandId {
 	SetDimensions = 'workbench.action.terminal.setDimensions',
 	ClearCommandHistory = 'workbench.action.terminal.clearCommandHistory',
 	WriteDataToTerminal = 'workbench.action.terminal.writeDataToTerminal',
-	ShowTextureAtlas = 'workbench.action.terminal.showTextureAtlas',
 }
 
 export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	TerminalCommandId.ClearSelection,
 	TerminalCommandId.Clear,
-	TerminalCommandId.CopyAndClearSelection,
 	TerminalCommandId.CopySelection,
 	TerminalCommandId.CopySelectionAsHtml,
 	TerminalCommandId.CopyLastCommand,
@@ -629,7 +605,6 @@ export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	TerminalCommandId.New,
 	TerminalCommandId.Paste,
 	TerminalCommandId.PasteSelection,
-	TerminalCommandId.QuickFix,
 	TerminalCommandId.ResizePaneDown,
 	TerminalCommandId.ResizePaneLeft,
 	TerminalCommandId.ResizePaneRight,
@@ -660,7 +635,6 @@ export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	'editor.action.toggleTabFocusMode',
 	'notifications.hideList',
 	'notifications.hideToasts',
-	'workbench.action.closeQuickOpen',
 	'workbench.action.quickOpen',
 	'workbench.action.quickOpenPreviousEditor',
 	'workbench.action.showCommands',
@@ -730,70 +704,49 @@ export const DEFAULT_COMMANDS_TO_SKIP_SHELL: string[] = [
 	'workbench.action.toggleMaximizedPanel'
 ];
 
-export const terminalContributionsDescriptor: IExtensionPointDescriptor<ITerminalContributions> = {
+export const terminalContributionsDescriptor: IExtensionPointDescriptor = {
 	extensionPoint: 'terminal',
 	defaultExtensionKind: ['workspace'],
 	jsonSchema: {
 		description: nls.localize('vscode.extension.contributes.terminal', 'Contributes terminal functionality.'),
 		type: 'object',
 		properties: {
-			quickFixes: {
+			types: {
 				type: 'array',
-				description: nls.localize('vscode.extension.contributes.terminal.quickFixes', "Defines quick fixes for terminals with shell integration enabled."),
+				description: nls.localize('vscode.extension.contributes.terminal.types', "Defines additional terminal types that the user can create."),
 				items: {
 					type: 'object',
-					additionalProperties: false,
-					required: ['id', 'commandLineMatcher', 'outputMatcher', 'commandExitResult'],
-					defaultSnippets: [{
-						body: {
-							id: '$1',
-							commandLineMatcher: '$2',
-							outputMatcher: '$3',
-							exitStatus: '$4'
-						}
-					}],
+					required: ['command', 'title'],
 					properties: {
-						id: {
-							description: nls.localize('vscode.extension.contributes.terminal.quickFixes.id', "The ID of the quick fix provider."),
+						command: {
+							description: nls.localize('vscode.extension.contributes.terminal.types.command', "Command to execute when the user creates this type of terminal."),
 							type: 'string',
 						},
-						commandLineMatcher: {
-							description: nls.localize('vscode.extension.contributes.terminal.quickFixes.commandLineMatcher', "The regular expression to test the command line against."),
+						title: {
+							description: nls.localize('vscode.extension.contributes.terminal.types.title', "Title for this type of terminal."),
 							type: 'string',
 						},
-						outputMatcher: {
-							markdownDescription: nls.localize('vscode.extension.contributes.terminal.quickFixes.outputMatcher', "The regular expression to test the output against, which provides groups to be referenced in terminalCommand and uri.\n\nFor example:\n\n `lineMatcher: /git push --set-upstream origin (?<branchName>[^\s]+)/;`\n\n`terminalCommand: 'git push --set-upstream origin ${group:branchName}';`\n"),
-							type: 'object',
-							required: ['lineMatcher', 'anchor', 'offset', 'length'],
-							properties: {
-								lineMatcher: {
-									description: 'The command line to match',
-									type: 'string'
-								},
-								anchor: {
-									description: 'Where the search should begin in the buffer',
-									enum: ['top', 'bottom']
-								},
-								offset: {
-									description: 'The number of lines vertically from the anchor in the buffer to start matching against',
-									type: 'number'
-								},
-								length: {
-									description: 'The number of rows to match against, this should be as small as possible for performance reasons',
-									type: 'number'
+						icon: {
+							description: nls.localize('vscode.extension.contributes.terminal.types.icon', "A codicon, URI, or light and dark URIs to associate with this terminal type."),
+							anyOf: [{
+								type: 'string',
+							},
+							{
+								type: 'object',
+								properties: {
+									light: {
+										description: nls.localize('vscode.extension.contributes.terminal.types.icon.light', 'Icon path when a light theme is used'),
+										type: 'string'
+									},
+									dark: {
+										description: nls.localize('vscode.extension.contributes.terminal.types.icon.dark', 'Icon path when a dark theme is used'),
+										type: 'string'
+									}
 								}
-							}
+							}]
 						},
-						commandExitResult: {
-							description: nls.localize('vscode.extension.contributes.terminal.quickFixes.commandExitResult', "The command exit result to match on"),
-							enum: ['success', 'error'],
-							enumDescriptions: [
-								'The command exited with an exit code of zero.',
-								'The command exited with a non-zero exit code.'
-							]
-						}
 					},
-				}
+				},
 			},
 			profiles: {
 				type: 'array',

@@ -22,9 +22,7 @@ export function getShellIntegrationTooltip(instance: ITerminalInstance, markdown
 		if (instance.shellLaunchConfig.ignoreShellIntegration) {
 			shellIntegrationString += `${markdown ? '\n\n---\n\n' : '\n\n'} ${localize('launchFailed.exitCodeOnlyShellIntegration', "The terminal process failed to launch. Disabling shell integration with terminal.integrated.shellIntegration.enabled might help.")}`;
 		} else {
-			if (instance.usedShellIntegrationInjection) {
-				shellIntegrationString += `${markdown ? '\n\n---\n\n' : '\n\n'} ${localize('shellIntegration.activationFailed', "Shell integration failed to activate")}`;
-			}
+			shellIntegrationString += `${markdown ? '\n\n---\n\n' : '\n\n'} ${localize('shellIntegration.activationFailed', "Shell integration failed to activate")}`;
 		}
 	}
 	return shellIntegrationString;

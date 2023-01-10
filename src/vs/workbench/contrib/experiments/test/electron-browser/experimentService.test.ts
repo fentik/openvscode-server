@@ -89,7 +89,7 @@ suite('Experiment Service', () => {
 		instantiationService.stub(IWorkbenchExtensionManagementService, 'onDidInstallExtensions', didInstallEvent.event);
 		instantiationService.stub(IWorkbenchExtensionManagementService, 'onUninstallExtension', uninstallEvent.event);
 		instantiationService.stub(IWorkbenchExtensionManagementService, 'onDidUninstallExtension', didUninstallEvent.event);
-		instantiationService.stub(IWorkbenchExtensionManagementService, 'onDidChangeProfile', Event.None);
+		instantiationService.stub(IWorkbenchExtensionManagementService, 'onDidChangeProfileExtensions', Event.None);
 		instantiationService.stub(IWorkbenchExtensionEnablementService, new TestExtensionEnablementService(instantiationService));
 		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(IURLService, NativeURLService);
@@ -106,7 +106,9 @@ suite('Experiment Service', () => {
 		});
 
 		teardown(() => {
-			testObject?.dispose();
+			if (testObject) {
+				testObject.dispose();
+			}
 		});
 	});
 

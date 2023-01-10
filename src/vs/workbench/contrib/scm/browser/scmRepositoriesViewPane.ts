@@ -135,12 +135,15 @@ export class SCMRepositoriesViewPane extends ViewPane {
 		const provider = e.element.provider;
 		const menus = this.scmViewService.menus.getRepositoryMenus(provider);
 		const menu = menus.repositoryMenu;
-		const actions = collectContextMenuActions(menu);
+		const [actions, disposable] = collectContextMenuActions(menu);
 
 		this.contextMenuService.showContextMenu({
 			getAnchor: () => e.anchor,
 			getActions: () => actions,
-			getActionsContext: () => provider
+			getActionsContext: () => provider,
+			onHide() {
+				disposable.dispose();
+			}
 		});
 	}
 

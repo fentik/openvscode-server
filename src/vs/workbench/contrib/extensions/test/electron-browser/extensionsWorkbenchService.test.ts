@@ -51,7 +51,6 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { MockContextKeyService } from 'vs/platform/keybinding/test/common/mockKeybindingService';
 import { platform } from 'vs/base/common/platform';
 import { arch } from 'vs/base/common/process';
-import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 
 suite('ExtensionsWorkbenchServiceTest', () => {
 
@@ -95,7 +94,7 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			onDidInstallExtensions: didInstallEvent.event,
 			onUninstallExtension: uninstallEvent.event,
 			onDidUninstallExtension: didUninstallEvent.event,
-			onDidChangeProfile: Event.None,
+			onDidChangeProfileExtensions: Event.None,
 			async getInstalled() { return []; },
 			async getExtensionsControlManifest() { return { malicious: [], deprecated: {} }; },
 			async updateMetadata(local: ILocalExtension, metadata: IGalleryMetadata) {
@@ -122,17 +121,10 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 		instantiationService.stub(IExtensionRecommendationsService, {});
 
 		instantiationService.stub(INotificationService, { prompt: () => null! });
-
-		instantiationService.stub(IExtensionService, <Partial<IExtensionService>>{
-			onDidChangeExtensions: Event.None,
-			extensions: [],
-			async whenInstalledExtensionsRegistered() { return true; }
-		});
 	});
 
 	setup(async () => {
 		instantiationService.stubPromise(IExtensionManagementService, 'getInstalled', []);
-		instantiationService.stub(IExtensionGalleryService, 'isEnabled', true);
 		instantiationService.stubPromise(IExtensionGalleryService, 'query', aPage());
 		instantiationService.stubPromise(IExtensionGalleryService, 'getExtensions', []);
 		instantiationService.stubPromise(INotificationService, 'prompt', 0);
@@ -164,7 +156,6 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			icon: { uri: 'uri:icon', fallbackUri: 'fallback:icon' },
 			license: { uri: 'uri:license', fallbackUri: 'fallback:license' },
 			repository: { uri: 'uri:repository', fallbackUri: 'fallback:repository' },
-			signature: { uri: 'uri:signature', fallbackUri: 'fallback:signature' },
 			coreTranslations: []
 		});
 
@@ -315,7 +306,6 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			icon: { uri: 'uri:icon', fallbackUri: 'fallback:icon' },
 			license: { uri: 'uri:license', fallbackUri: 'fallback:license' },
 			repository: { uri: 'uri:repository', fallbackUri: 'fallback:repository' },
-			signature: { uri: 'uri:signature', fallbackUri: 'fallback:signature' },
 			coreTranslations: []
 		});
 		instantiationService.stubPromise(IExtensionManagementService, 'getInstalled', [local1, local2]);
@@ -449,7 +439,7 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 		testObject = await aWorkbenchService();
 		const target = testObject.local[0];
 
-		await eventToPromise(Event.filter(testObject.onChange, e => !!e?.gallery));
+		await eventToPromise(testObject.onChange);
 		assert.ok(await testObject.canInstall(target));
 	});
 
@@ -1442,7 +1432,6 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 		manifest: null,
 		readme: null,
 		repository: null,
-		signature: null,
 		coreTranslations: []
 	};
 
@@ -1490,7 +1479,7 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			onDidInstallExtensions: Event.None,
 			onUninstallExtension: Event.None,
 			onDidUninstallExtension: Event.None,
-			onDidChangeProfile: Event.None,
+			onDidChangeProfileExtensions: Event.None,
 			getInstalled: () => Promise.resolve<ILocalExtension[]>(installed),
 			installFromGallery: (extension: IGalleryExtension) => Promise.reject(new Error('not supported')),
 			updateMetadata: async (local: ILocalExtension, metadata: IGalleryMetadata) => {

@@ -17,7 +17,7 @@ import { IEditorFactoryRegistry, EditorExtensions } from 'vs/workbench/common/ed
 import { getSingletonServiceDescriptors } from 'vs/platform/instantiation/common/extensions';
 import { Position, Parts, IWorkbenchLayoutService, positionToString } from 'vs/workbench/services/layout/browser/layoutService';
 import { IStorageService, WillSaveStateReason, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { LifecyclePhase, ILifecycleService, WillShutdownEvent } from 'vs/workbench/services/lifecycle/common/lifecycle';
@@ -100,17 +100,14 @@ export class Workbench extends Layout {
 			phase: 'configuration';
 		}
 		type AnnotatedError = AnnotatedLoadingError | AnnotatedFactoryError | AnnotatedValidationError;
-
-		if (typeof (<any>window).require.config === 'function') {
-			(<any>window).require.config({
-				onError: (err: AnnotatedError) => {
-					if (err.phase === 'loading') {
-						onUnexpectedError(new Error(localize('loaderErrorNative', "Failed to load a required file. Please restart the application to try again. Details: {0}", JSON.stringify(err))));
-					}
-					console.error(err);
+		(<any>window).require.config({
+			onError: (err: AnnotatedError) => {
+				if (err.phase === 'loading') {
+					onUnexpectedError(new Error(localize('loaderErrorNative', "Failed to load a required file. Please restart the application to try again. Details: {0}", JSON.stringify(err))));
 				}
-			});
-		}
+				console.error(err);
+			}
+		});
 	}
 
 	private previousUnexpectedError: { message: string | undefined; time: number } = { message: undefined, time: 0 };
@@ -224,7 +221,7 @@ export class Workbench extends Layout {
 	private registerListeners(lifecycleService: ILifecycleService, storageService: IStorageService, configurationService: IConfigurationService, hostService: IHostService, dialogService: IDialogService): void {
 
 		// Configuration changes
-		this._register(configurationService.onDidChangeConfiguration(e => this.updateFontAliasing(e, configurationService)));
+		this._register(configurationService.onDidChangeConfiguration(() => this.setFontAliasing(configurationService)));
 
 		// Font Info
 		if (isNative) {
@@ -261,13 +258,9 @@ export class Workbench extends Layout {
 	}
 
 	private fontAliasing: 'default' | 'antialiased' | 'none' | 'auto' | undefined;
-	private updateFontAliasing(e: IConfigurationChangeEvent | undefined, configurationService: IConfigurationService) {
+	private setFontAliasing(configurationService: IConfigurationService) {
 		if (!isMacintosh) {
 			return; // macOS only
-		}
-
-		if (e && !e.affectsConfiguration('workbench.fontAliasing')) {
-			return;
 		}
 
 		const aliasing = configurationService.getValue<'default' | 'antialiased' | 'none' | 'auto'>('workbench.fontAliasing');
@@ -334,7 +327,7 @@ export class Workbench extends Layout {
 		}
 
 		// Apply font aliasing
-		this.updateFontAliasing(undefined, configurationService);
+		this.setFontAliasing(configurationService);
 
 		// Warm up font cache information before building up too many dom elements
 		this.restoreFontInfo(storageService, configurationService);

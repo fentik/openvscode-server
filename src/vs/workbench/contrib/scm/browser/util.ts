@@ -6,7 +6,7 @@
 import { ISCMResource, ISCMRepository, ISCMResourceGroup, ISCMInput, ISCMActionButton } from 'vs/workbench/contrib/scm/common/scm';
 import { IMenu } from 'vs/platform/actions/common/actions';
 import { ActionBar, IActionViewItemProvider } from 'vs/base/browser/ui/actionbar/actionbar';
-import { IDisposable } from 'vs/base/common/lifecycle';
+import { IDisposable, Disposable, combinedDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { Action, IAction } from 'vs/base/common/actions';
 import { createActionViewItem, createAndFillInActionBarActions, createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { equals } from 'vs/base/common/arrays';
@@ -40,6 +40,7 @@ export function isSCMResource(element: any): element is ISCMResource {
 const compareActions = (a: IAction, b: IAction) => a.id === b.id && a.enabled === b.enabled;
 
 export function connectPrimaryMenu(menu: IMenu, callback: (primary: IAction[], secondary: IAction[]) => void, primaryGroup?: string): IDisposable {
+	let cachedDisposable: IDisposable = Disposable.None;
 	let cachedPrimary: IAction[] = [];
 	let cachedSecondary: IAction[] = [];
 
@@ -47,12 +48,14 @@ export function connectPrimaryMenu(menu: IMenu, callback: (primary: IAction[], s
 		const primary: IAction[] = [];
 		const secondary: IAction[] = [];
 
-		createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, { primary, secondary }, primaryGroup);
+		const disposable = createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, { primary, secondary }, primaryGroup);
 
 		if (equals(cachedPrimary, primary, compareActions) && equals(cachedSecondary, secondary, compareActions)) {
+			disposable.dispose();
 			return;
 		}
 
+		cachedDisposable = disposable;
 		cachedPrimary = primary;
 		cachedSecondary = secondary;
 
@@ -61,7 +64,10 @@ export function connectPrimaryMenu(menu: IMenu, callback: (primary: IAction[], s
 
 	updateActions();
 
-	return menu.onDidChange(updateActions);
+	return combinedDisposable(
+		menu.onDidChange(updateActions),
+		toDisposable(() => cachedDisposable.dispose())
+	);
 }
 
 export function connectPrimaryMenuToInlineActionBar(menu: IMenu, actionBar: ActionBar): IDisposable {
@@ -71,11 +77,11 @@ export function connectPrimaryMenuToInlineActionBar(menu: IMenu, actionBar: Acti
 	}, 'inline');
 }
 
-export function collectContextMenuActions(menu: IMenu): IAction[] {
+export function collectContextMenuActions(menu: IMenu): [IAction[], IDisposable] {
 	const primary: IAction[] = [];
 	const actions: IAction[] = [];
-	createAndFillInContextMenuActions(menu, { shouldForwardArgs: true }, { primary, secondary: actions }, 'inline');
-	return actions;
+	const disposable = createAndFillInContextMenuActions(menu, { shouldForwardArgs: true }, { primary, secondary: actions }, 'inline');
+	return [actions, disposable];
 }
 
 export class StatusBarAction extends Action {
@@ -101,7 +107,7 @@ class StatusBarActionViewItem extends ActionViewItem {
 
 	override updateLabel(): void {
 		if (this.options.label && this.label) {
-			reset(this.label, ...renderLabelWithIcons(this.action.label));
+			reset(this.label, ...renderLabelWithIcons(this.getAction().label));
 		}
 	}
 }

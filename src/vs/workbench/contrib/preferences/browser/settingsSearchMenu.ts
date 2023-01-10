@@ -58,7 +58,8 @@ export class SettingsSearchFilterDropdownMenuActionViewItem extends DropdownMenu
 			class: undefined,
 			enabled: true,
 			checked: false,
-			run: () => { this.doSearchWidgetAction(queryToAppend, triggerSuggest); }
+			run: () => { this.doSearchWidgetAction(queryToAppend, triggerSuggest); },
+			dispose: () => { }
 		};
 	}
 
@@ -88,7 +89,8 @@ export class SettingsSearchFilterDropdownMenuActionViewItem extends DropdownMenu
 					this.searchWidget.setValue(queryWithRemovedTags);
 				}
 				this.searchWidget.focus();
-			}
+			},
+			dispose: () => { }
 		};
 	}
 

@@ -5,7 +5,7 @@
 
 import 'vs/css!./media/scm';
 import { Emitter } from 'vs/base/common/event';
-import { IDisposable, DisposableStore, dispose } from 'vs/base/common/lifecycle';
+import { IDisposable, Disposable, DisposableStore, dispose } from 'vs/base/common/lifecycle';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IMenuService, MenuId, IMenu } from 'vs/platform/actions/common/actions';
 import { IAction } from 'vs/base/common/actions';
@@ -32,6 +32,7 @@ export class SCMTitleMenu implements IDisposable {
 	readonly onDidChangeTitle = this._onDidChangeTitle.event;
 
 	readonly menu: IMenu;
+	private listener: IDisposable = Disposable.None;
 	private disposables = new DisposableStore();
 
 	constructor(
@@ -48,12 +49,15 @@ export class SCMTitleMenu implements IDisposable {
 	private updateTitleActions(): void {
 		const primary: IAction[] = [];
 		const secondary: IAction[] = [];
-		createAndFillInActionBarActions(this.menu, { shouldForwardArgs: true }, { primary, secondary });
+		const disposable = createAndFillInActionBarActions(this.menu, { shouldForwardArgs: true }, { primary, secondary });
 
 		if (equals(primary, this._actions, actionEquals) && equals(secondary, this._secondaryActions, actionEquals)) {
+			disposable.dispose();
 			return;
 		}
 
+		this.listener.dispose();
+		this.listener = disposable;
 		this._actions = primary;
 		this._secondaryActions = secondary;
 
@@ -61,7 +65,8 @@ export class SCMTitleMenu implements IDisposable {
 	}
 
 	dispose(): void {
-		this.disposables.dispose();
+		this.menu.dispose();
+		this.listener.dispose();
 	}
 }
 

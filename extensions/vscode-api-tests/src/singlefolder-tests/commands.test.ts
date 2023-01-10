@@ -11,10 +11,7 @@ import { assertNoRpc, closeAllEditors } from '../utils';
 
 suite('vscode API - commands', () => {
 
-	teardown(async function () {
-		assertNoRpc();
-		await closeAllEditors();
-	});
+	teardown(assertNoRpc);
 
 	test('getCommands', function (done) {
 
@@ -111,24 +108,19 @@ suite('vscode API - commands', () => {
 	});
 
 	test('api-command: vscode.open', async function () {
-		assert.ok(workspace.workspaceFolders);
-		assert.ok(workspace.workspaceFolders.length > 0);
-		const uri = Uri.parse(workspace.workspaceFolders[0].uri.toString() + '/far.js');
+		const uri = Uri.parse(workspace.workspaceFolders![0].uri.toString() + '/far.js');
 
 		await commands.executeCommand('vscode.open', uri);
-		assert.strictEqual(window.tabGroups.all.length, 1);
-		assert.strictEqual(window.tabGroups.all[0].activeTab?.group.viewColumn, ViewColumn.One);
 		assert.strictEqual(window.activeTextEditor?.viewColumn, ViewColumn.One);
+		assert.strictEqual(window.tabGroups.all[0].activeTab?.group.viewColumn, ViewColumn.One);
 
 		await commands.executeCommand('vscode.open', uri, ViewColumn.Two);
-		assert.strictEqual(window.tabGroups.all.length, 2);
-		assert.strictEqual(window.tabGroups.all[1].activeTab?.group.viewColumn, ViewColumn.Two);
 		assert.strictEqual(window.activeTextEditor?.viewColumn, ViewColumn.Two);
+		assert.strictEqual(window.tabGroups.all[1].activeTab?.group.viewColumn, ViewColumn.Two);
 
 		await commands.executeCommand('vscode.open', uri, ViewColumn.One);
-		assert.strictEqual(window.tabGroups.all.length, 2);
-		assert.strictEqual(window.tabGroups.all[0].activeTab?.group.viewColumn, ViewColumn.One);
 		assert.strictEqual(window.activeTextEditor?.viewColumn, ViewColumn.One);
+		assert.strictEqual(window.tabGroups.all[0].activeTab?.group.viewColumn, ViewColumn.One);
 
 		let e1: Error | undefined = undefined;
 		try {

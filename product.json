@@ -11,7 +11,6 @@
 	"serverLicensePrompt": "",
 	"serverApplicationName": "openvscode-server",
 	"serverDataFolderName": ".openvscode-server",
-	"tunnelApplicationName": "openvscode-server-tunnel",
 	"win32DirName": "OpenVSCode Server",
 	"win32NameVersion": "OpenVSCode Server",
 	"win32RegValueName": "OpenVSCodeServer",
@@ -36,7 +35,77 @@
 	},
 	"urlProtocol": "openvscode-server",
 	"embedderIdentifier": "openvscode-server",
-	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
+	"webEndpointUrlTemplate": "",
+	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/3c8520fab514b9f56070214496b26ff68d1b1cb5/out/vs/workbench/contrib/webview/browser/pre/",
+	"quality": "stable",
+	"extensionEnabledApiProposals": {
+		"ms-vscode.vscode-selfhost-test-provider": [
+			"testObserver"
+		],
+		"ms-vscode.js-debug": [
+			"portsAttributes",
+			"findTextInFiles",
+			"workspaceTrust",
+			"resolvers"
+		],
+		"ms-python.python": [
+			"quickPickSortByLabel",
+			"testObserver"
+		],
+		"ms-dotnettools.dotnet-interactive-vscode": [
+			"notebookCellExecutionState",
+			"notebookControllerKind",
+			"notebookDebugOptions",
+			"notebookEditor",
+			"notebookLiveShare",
+			"notebookMessaging",
+			"notebookMime",
+			"notebookWorkspaceEdit"
+		],
+		"ms-vscode.js-debug-nightly": [
+			"portsAttributes",
+			"findTextInFiles",
+			"workspaceTrust",
+			"resolvers"
+		],
+		"ms-vscode.lsif-browser": [
+			"documentFiltersExclusive"
+		],
+		"GitHub.vscode-pull-request-github": [
+			"tokenInformation",
+			"commentsResolvedState",
+			"badges",
+			"contribViewSize"
+		],
+		"ms-python.gather": [
+			"notebookCellExecutionState"
+		],
+		"ms-toolsai.jupyter": [
+			"notebookControllerKind",
+			"notebookDebugOptions",
+			"notebookDeprecated",
+			"notebookWorkspaceEdit",
+			"notebookMessaging",
+			"notebookMime",
+			"notebookCellExecutionState",
+			"portsAttributes",
+			"quickPickSortByLabel",
+			"notebookKernelSource",
+			"interactiveWindow"
+		],
+		"ms-toolsai.vscode-jupyter-powertoys": [
+			"notebookWorkspaceEdit"
+		],
+		"dbaeumer.vscode-eslint": [
+			"notebookCellExecutionState"
+		],
+		"ms-vscode.anycode": [
+			"extensionsAny"
+		],
+		"ms-vscode.cpptools": [
+			"terminalDataWriteEvent"
+		]
+	},
 	"extensionTips": {
 		"muhammad-sammy.csharp": "{**/*.cs,**/project.json,**/global.json,**/*.csproj,**/*.cshtml,**/*.sln,**/appsettings.json}",
 		"firefox-devtools.vscode-firefox-debug": "{**/*.ts,**/*.tsx,**/*.js,**/*.jsx,**/*.es6,**/.babelrc}",
@@ -606,66 +675,6 @@
 		]
 	},
 	"builtInExtensions": [
-		{
-			"name": "ms-vscode.js-debug-companion",
-			"version": "1.0.18",
-			"repo": "https://github.com/microsoft/vscode-js-debug-companion",
-			"metadata": {
-				"id": "99cb0b7f-7354-4278-b8da-6cc79972169d",
-				"publisherId": {
-					"publisherId": "5f5636e7-69ed-4afe-b5d6-8d231fb3d3ee",
-					"publisherName": "ms-vscode",
-					"displayName": "Microsoft",
-					"flags": "verified"
-				},
-				"eamodio.gitlens": {
-					"name": "GitLens"
-				}
-			}
-		},
-		{
-			"name": "ms-vscode.js-debug",
-			"version": "1.74.1",
-			"repo": "https://github.com/microsoft/vscode-js-debug",
-			"metadata": {
-				"id": "25629058-ddac-4e17-abba-74678e126c5d",
-				"publisherId": {
-					"publisherId": "5f5636e7-69ed-4afe-b5d6-8d231fb3d3ee",
-					"publisherName": "ms-vscode",
-					"displayName": "Microsoft",
-					"flags": "verified"
-				},
-				"Pivotal.vscode-boot-dev-pack": {
-					"name": "Spring Boot Extension Pack",
-					"isExtensionPack": true
-				}
-			}
-		},
-		"gradle": {
-			"configPath": "build.gradle",
-			"configName": "Gradle",
-			"recommendations": {
-				"vscjava.vscode-java-pack": {
-					"name": "Java",
-					"important": true,
-					"isExtensionPack": true,
-					"whenNotInstalled": [
-						"ASF.apache-netbeans-java"
-					]
-				}
-			}
-		},
-		"github-pull-request": {
-			"configPath": ".vscode/.github-pull-request.rec",
-			"configName": "GitHub",
-			"configScheme": "vscode-vfs",
-			"recommendations": {
-				"github.vscode-pull-request-github": {
-					"name": "GitHub Pull Request",
-					"important": true
-				}
-			}
-		}
 	],
 	"extensionsGallery": {
 		"serviceUrl": "https://open-vsx.org/vscode/gallery",

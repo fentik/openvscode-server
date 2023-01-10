@@ -65,26 +65,26 @@ export class MarkdownPreviewConfiguration {
 }
 
 export class MarkdownPreviewConfigurationManager {
-	private readonly _previewConfigurationsForWorkspaces = new Map<string, MarkdownPreviewConfiguration>();
+	private readonly previewConfigurationsForWorkspaces = new Map<string, MarkdownPreviewConfiguration>();
 
 	public loadAndCacheConfiguration(
 		resource: vscode.Uri
 	): MarkdownPreviewConfiguration {
 		const config = MarkdownPreviewConfiguration.getForResource(resource);
-		this._previewConfigurationsForWorkspaces.set(this._getKey(resource), config);
+		this.previewConfigurationsForWorkspaces.set(this.getKey(resource), config);
 		return config;
 	}
 
 	public hasConfigurationChanged(
 		resource: vscode.Uri
 	): boolean {
-		const key = this._getKey(resource);
-		const currentConfig = this._previewConfigurationsForWorkspaces.get(key);
+		const key = this.getKey(resource);
+		const currentConfig = this.previewConfigurationsForWorkspaces.get(key);
 		const newConfig = MarkdownPreviewConfiguration.getForResource(resource);
 		return (!currentConfig || !currentConfig.isEqualTo(newConfig));
 	}
 
-	private _getKey(
+	private getKey(
 		resource: vscode.Uri
 	): string {
 		const folder = vscode.workspace.getWorkspaceFolder(resource);

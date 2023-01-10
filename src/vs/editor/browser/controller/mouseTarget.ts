@@ -99,8 +99,8 @@ export class MouseTarget {
 	public static createOverlayWidget(element: Element | null, mouseColumn: number, detail: string): IMouseTargetOverlayWidget {
 		return { type: MouseTargetType.OVERLAY_WIDGET, element, mouseColumn, position: null, range: null, detail };
 	}
-	public static createOutsideEditor(mouseColumn: number, position: Position, outsidePosition: 'above' | 'below' | 'left' | 'right', outsideDistance: number): IMouseTargetOutsideEditor {
-		return { type: MouseTargetType.OUTSIDE_EDITOR, element: null, mouseColumn, position, range: this._deduceRage(position), outsidePosition, outsideDistance };
+	public static createOutsideEditor(mouseColumn: number, position: Position): IMouseTargetOutsideEditor {
+		return { type: MouseTargetType.OUTSIDE_EDITOR, element: null, mouseColumn, position, range: this._deduceRage(position) };
 	}
 
 	private static _typeToString(type: MouseTargetType): string {
@@ -495,16 +495,6 @@ export class MouseTargetFactory {
 		const request = new HitTestRequest(ctx, editorPos, pos, relativePos, target);
 		try {
 			const r = MouseTargetFactory._createMouseTarget(ctx, request, false);
-
-			if (r.type === MouseTargetType.CONTENT_TEXT) {
-				// Snap to the nearest soft tab boundary if atomic soft tabs are enabled.
-				if (ctx.stickyTabStops && r.position !== null) {
-					const position = MouseTargetFactory._snapToSoftTabBoundary(r.position, ctx.viewModel);
-					const range = EditorRange.fromPositions(position, position).plusRange(r.range);
-					return request.fulfillContentText(position, range, r.detail);
-				}
-			}
-
 			// console.log(MouseTarget.toString(r));
 			return r;
 		} catch (err) {
@@ -799,7 +789,7 @@ export class MouseTargetFactory {
 
 		const columnHorizontalOffset = visibleRange.left;
 
-		if (Math.abs(request.mouseContentHorizontalOffset - columnHorizontalOffset) < 1) {
+		if (request.mouseContentHorizontalOffset === columnHorizontalOffset) {
 			return request.fulfillContentText(pos, null, { mightBeForeignElement: !!injectedText, injectedText });
 		}
 
@@ -828,13 +818,11 @@ export class MouseTargetFactory {
 		const spanNodeClientRect = spanNode.getBoundingClientRect();
 		const mouseIsOverSpanNode = (spanNodeClientRect.left <= mouseCoordinates.clientX && mouseCoordinates.clientX <= spanNodeClientRect.right);
 
-		let rng: EditorRange | null = null;
-
 		for (let i = 1; i < points.length; i++) {
 			const prev = points[i - 1];
 			const curr = points[i];
 			if (prev.offset <= request.mouseContentHorizontalOffset && request.mouseContentHorizontalOffset <= curr.offset) {
-				rng = new EditorRange(lineNumber, prev.column, lineNumber, curr.column);
+				const rng = new EditorRange(lineNumber, prev.column, lineNumber, curr.column);
 
 				// See https://github.com/microsoft/vscode/issues/152819
 				// Due to the use of zwj, the browser's hit test result is skewed towards the left
@@ -843,17 +831,16 @@ export class MouseTargetFactory {
 				const prevDelta = Math.abs(prev.offset - request.mouseContentHorizontalOffset);
 				const nextDelta = Math.abs(curr.offset - request.mouseContentHorizontalOffset);
 
-				pos = (
+				const resultPos = (
 					prevDelta < nextDelta
 						? new Position(lineNumber, prev.column)
 						: new Position(lineNumber, curr.column)
 				);
 
-				break;
+				return request.fulfillContentText(resultPos, rng, { mightBeForeignElement: !mouseIsOverSpanNode || !!injectedText, injectedText });
 			}
 		}
-
-		return request.fulfillContentText(pos, rng, { mightBeForeignElement: !mouseIsOverSpanNode || !!injectedText, injectedText });
+		return request.fulfillContentText(pos, null, { mightBeForeignElement: !mouseIsOverSpanNode || !!injectedText, injectedText });
 	}
 
 	/**
@@ -864,31 +851,22 @@ export class MouseTargetFactory {
 		// In Chrome, especially on Linux it is possible to click between lines,
 		// so try to adjust the `hity` below so that it lands in the center of a line
 		const lineNumber = ctx.getLineNumberAtVerticalOffset(request.mouseVerticalOffset);
-		const lineStartVerticalOffset = ctx.getVerticalOffsetForLineNumber(lineNumber);
-		const lineEndVerticalOffset = lineStartVerticalOffset + ctx.lineHeight;
+		const lineVerticalOffset = ctx.getVerticalOffsetForLineNumber(lineNumber);
+		const lineCenteredVerticalOffset = lineVerticalOffset + Math.floor(ctx.lineHeight / 2);
+		let adjustedPageY = request.pos.y + (lineCenteredVerticalOffset - request.mouseVerticalOffset);
 
-		const isBelowLastLine = (
-			lineNumber === ctx.viewModel.getLineCount()
-			&& request.mouseVerticalOffset > lineEndVerticalOffset
-		);
+		if (adjustedPageY <= request.editorPos.y) {
+			adjustedPageY = request.editorPos.y + 1;
+		}
+		if (adjustedPageY >= request.editorPos.y + request.editorPos.height) {
+			adjustedPageY = request.editorPos.y + request.editorPos.height - 1;
+		}
 
-		if (!isBelowLastLine) {
-			const lineCenteredVerticalOffset = Math.floor((lineStartVerticalOffset + lineEndVerticalOffset) / 2);
-			let adjustedPageY = request.pos.y + (lineCenteredVerticalOffset - request.mouseVerticalOffset);
+		const adjustedPage = new PageCoordinates(request.pos.x, adjustedPageY);
 
-			if (adjustedPageY <= request.editorPos.y) {
-				adjustedPageY = request.editorPos.y + 1;
-			}
-			if (adjustedPageY >= request.editorPos.y + request.editorPos.height) {
-				adjustedPageY = request.editorPos.y + request.editorPos.height - 1;
-			}
-
-			const adjustedPage = new PageCoordinates(request.pos.x, adjustedPageY);
-
-			const r = this._actualDoHitTestWithCaretRangeFromPoint(ctx, adjustedPage.toClientCoordinates());
-			if (r.type === HitTestResultType.Content) {
-				return r;
-			}
+		const r = this._actualDoHitTestWithCaretRangeFromPoint(ctx, adjustedPage.toClientCoordinates());
+		if (r.type === HitTestResultType.Content) {
+			return r;
 		}
 
 		// Also try to hit test without the adjustment (for the edge cases that we are near the top or bottom)
@@ -1012,11 +990,15 @@ export class MouseTargetFactory {
 				result = new ContentHitTestResult(normalizedPosition, result.spanNode, injectedText);
 			}
 		}
+		// Snap to the nearest soft tab boundary if atomic soft tabs are enabled.
+		if (result.type === HitTestResultType.Content && ctx.stickyTabStops) {
+			result = new ContentHitTestResult(this._snapToSoftTabBoundary(result.position, ctx.viewModel), result.spanNode, result.injectedText);
+		}
 		return result;
 	}
 }
 
-function shadowCaretRangeFromPoint(shadowRoot: ShadowRoot, x: number, y: number): Range {
+export function shadowCaretRangeFromPoint(shadowRoot: ShadowRoot, x: number, y: number): Range {
 	const range = document.createRange();
 
 	// Get the element under the point

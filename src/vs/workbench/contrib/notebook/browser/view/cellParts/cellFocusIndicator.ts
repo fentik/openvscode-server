@@ -6,13 +6,13 @@
 import * as DOM from 'vs/base/browser/dom';
 import { FastDomNode } from 'vs/base/browser/fastDomNode';
 import { CodeCellLayoutInfo, ICellViewModel, INotebookEditorDelegate } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
-import { CellContentPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
+import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
 import { CellTitleToolbarPart } from 'vs/workbench/contrib/notebook/browser/view/cellParts/cellToolbars';
 import { CodeCellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/codeCellViewModel';
 import { MarkupCellViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/markupCellViewModel';
 import { CellKind } from 'vs/workbench/contrib/notebook/common/notebookCommon';
 
-export class CellFocusIndicator extends CellContentPart {
+export class CellFocusIndicator extends CellPart {
 	public codeFocusIndicator: FastDomNode<HTMLElement>;
 	public outputFocusIndicator: FastDomNode<HTMLElement>;
 
@@ -76,12 +76,14 @@ export class CellFocusIndicator extends CellContentPart {
 
 	override updateInternalLayoutNow(element: ICellViewModel): void {
 		if (element.cellKind === CellKind.Markup) {
+			// markdown cell
 			const indicatorPostion = this.notebookEditor.notebookOptions.computeIndicatorPosition(element.layoutInfo.totalHeight, (element as MarkupCellViewModel).layoutInfo.foldHintHeight, this.notebookEditor.textModel?.viewType);
 			this.bottom.domNode.style.transform = `translateY(${indicatorPostion.bottomIndicatorTop}px)`;
 			this.left.setHeight(indicatorPostion.verticalIndicatorHeight);
 			this.right.setHeight(indicatorPostion.verticalIndicatorHeight);
-			this.codeFocusIndicator.setHeight(indicatorPostion.verticalIndicatorHeight - this.getIndicatorTopMargin() * 2);
+			this.codeFocusIndicator.setHeight(indicatorPostion.verticalIndicatorHeight);
 		} else {
+			// code cell
 			const cell = element as CodeCellViewModel;
 			const layoutInfo = this.notebookEditor.notebookOptions.getLayoutConfiguration();
 			const bottomToolbarDimensions = this.notebookEditor.notebookOptions.computeBottomToolbarDimensions(this.notebookEditor.textModel?.viewType);
@@ -97,17 +99,13 @@ export class CellFocusIndicator extends CellContentPart {
 	}
 
 	private updateFocusIndicatorsForTitleMenu(): void {
-		this.left.domNode.style.transform = `translateY(${this.getIndicatorTopMargin()}px)`;
-		this.right.domNode.style.transform = `translateY(${this.getIndicatorTopMargin()}px)`;
-	}
-
-	private getIndicatorTopMargin() {
 		const layoutInfo = this.notebookEditor.notebookOptions.getLayoutConfiguration();
-
 		if (this.titleToolbar.hasActions) {
-			return layoutInfo.editorToolbarHeight + layoutInfo.cellTopMargin;
+			this.left.domNode.style.transform = `translateY(${layoutInfo.editorToolbarHeight + layoutInfo.cellTopMargin}px)`;
+			this.right.domNode.style.transform = `translateY(${layoutInfo.editorToolbarHeight + layoutInfo.cellTopMargin}px)`;
 		} else {
-			return layoutInfo.cellTopMargin;
+			this.left.domNode.style.transform = `translateY(${layoutInfo.cellTopMargin}px)`;
+			this.right.domNode.style.transform = `translateY(${layoutInfo.cellTopMargin}px)`;
 		}
 	}
 }

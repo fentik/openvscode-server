@@ -10,17 +10,18 @@ import { parseKeyboardLayoutDescription, areKeyboardLayoutsEqual, getKeyboardLay
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
+import { IWorkbenchActionRegistry, Extensions as ActionExtensions } from 'vs/workbench/common/actions';
 import { KEYBOARD_LAYOUT_OPEN_PICKER } from 'vs/workbench/contrib/preferences/common/preferences';
+import { Action } from 'vs/base/common/actions';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { QuickPickInput, IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
-import { Action2, registerAction2 } from 'vs/platform/actions/common/actions';
+import { SyncActionDescriptor } from 'vs/platform/actions/common/actions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { IEditorPane } from 'vs/workbench/common/editor';
-import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 
 export class KeyboardLayoutPickerContribution extends Disposable implements IWorkbenchContribution {
 	private readonly pickerElement = this._register(new MutableDisposable<IStatusbarEntryAccessor>());
@@ -92,34 +93,35 @@ interface IUnknownLayout {
 	layout?: string;
 }
 
-const DEFAULT_CONTENT: string = [
-	`// ${nls.localize('displayLanguage', 'Defines the keyboard layout used in VS Code in the browser environment.')}`,
-	`// ${nls.localize('doc', 'Open VS Code and run "Developer: Inspect Key Mappings (JSON)" from Command Palette.')}`,
-	``,
-	`// Once you have the keyboard layout info, please paste it below.`,
-	'\n'
-].join('\n');
+export class KeyboardLayoutPickerAction extends Action {
+	static readonly ID = KEYBOARD_LAYOUT_OPEN_PICKER;
+	static readonly LABEL = nls.localize('keyboard.chooseLayout', "Change Keyboard Layout");
 
-registerAction2(class extends Action2 {
-	constructor() {
-		super({
-			id: KEYBOARD_LAYOUT_OPEN_PICKER,
-			title: { value: nls.localize('keyboard.chooseLayout', "Change Keyboard Layout"), original: 'Change Keyboard Layout' },
-			f1: true
-		});
+	private static DEFAULT_CONTENT: string = [
+		`// ${nls.localize('displayLanguage', 'Defines the keyboard layout used in VS Code in the browser environment.')}`,
+		`// ${nls.localize('doc', 'Open VS Code and run "Developer: Inspect Key Mappings (JSON)" from Command Palette.')}`,
+		``,
+		`// Once you have the keyboard layout info, please paste it below.`,
+		'\n'
+	].join('\n');
+
+	constructor(
+		actionId: string,
+		actionLabel: string,
+		@IFileService private readonly fileService: IFileService,
+		@IQuickInputService private readonly quickInputService: IQuickInputService,
+		@IKeyboardLayoutService private readonly keyboardLayoutService: IKeyboardLayoutService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
+		@IEnvironmentService private readonly environmentService: IEnvironmentService,
+		@IEditorService private readonly editorService: IEditorService
+	) {
+		super(actionId, actionLabel, undefined, true);
 	}
 
-	async run(accessor: ServicesAccessor): Promise<void> {
-		const keyboardLayoutService = accessor.get(IKeyboardLayoutService);
-		const quickInputService = accessor.get(IQuickInputService);
-		const configurationService = accessor.get(IConfigurationService);
-		const environmentService = accessor.get(IEnvironmentService);
-		const editorService = accessor.get(IEditorService);
-		const fileService = accessor.get(IFileService);
-
-		const layouts = keyboardLayoutService.getAllKeyboardLayouts();
-		const currentLayout = keyboardLayoutService.getCurrentKeyboardLayout();
-		const layoutConfig = configurationService.getValue('keyboard.layout');
+	override async run(): Promise<void> {
+		const layouts = this.keyboardLayoutService.getAllKeyboardLayouts();
+		const currentLayout = this.keyboardLayoutService.getCurrentKeyboardLayout();
+		const layoutConfig = this.configurationService.getValue('keyboard.layout');
 		const isAutoDetect = layoutConfig === 'autodetect';
 
 		const picks: QuickPickInput[] = layouts.map(layout => {
@@ -154,27 +156,27 @@ registerAction2(class extends Action2 {
 
 		picks.unshift(autoDetectMode);
 
-		const pick = await quickInputService.pick(picks, { placeHolder: nls.localize('pickKeyboardLayout', "Select Keyboard Layout"), matchOnDescription: true });
+		const pick = await this.quickInputService.pick(picks, { placeHolder: nls.localize('pickKeyboardLayout', "Select Keyboard Layout"), matchOnDescription: true });
 		if (!pick) {
 			return;
 		}
 
 		if (pick === autoDetectMode) {
 			// set keymap service to auto mode
-			configurationService.updateValue('keyboard.layout', 'autodetect');
+			this.configurationService.updateValue('keyboard.layout', 'autodetect');
 			return;
 		}
 
 		if (pick === configureKeyboardLayout) {
-			const file = environmentService.keyboardLayoutResource;
+			const file = this.environmentService.keyboardLayoutResource;
 
-			await fileService.stat(file).then(undefined, () => {
-				return fileService.createFile(file, VSBuffer.fromString(DEFAULT_CONTENT));
+			await this.fileService.stat(file).then(undefined, () => {
+				return this.fileService.createFile(file, VSBuffer.fromString(KeyboardLayoutPickerAction.DEFAULT_CONTENT));
 			}).then((stat): Promise<IEditorPane | undefined> | undefined => {
 				if (!stat) {
 					return undefined;
 				}
-				return editorService.openEditor({
+				return this.editorService.openEditor({
 					resource: stat.resource,
 					languageId: 'jsonc',
 					options: { pinned: true }
@@ -186,6 +188,9 @@ registerAction2(class extends Action2 {
 			return Promise.resolve();
 		}
 
-		configurationService.updateValue('keyboard.layout', getKeyboardLayoutId((<LayoutQuickPickItem>pick).layout));
+		this.configurationService.updateValue('keyboard.layout', getKeyboardLayoutId((<LayoutQuickPickItem>pick).layout));
 	}
-});
+}
+
+const registry = Registry.as<IWorkbenchActionRegistry>(ActionExtensions.WorkbenchActions);
+registry.registerWorkbenchAction(SyncActionDescriptor.from(KeyboardLayoutPickerAction, {}), 'Preferences: Change Keyboard Layout', nls.localize('preferences', "Preferences"));

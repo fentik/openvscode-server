@@ -47,7 +47,7 @@ export function withEditorModel(text: string[], callback: (model: TextModel) => 
 
 export interface IRelaxedTextModelCreationOptions {
 	tabSize?: number;
-	indentSize?: number | 'tabSize';
+	indentSize?: number;
 	insertSpaces?: boolean;
 	detectIndentation?: boolean;
 	trimAutoWhitespace?: boolean;

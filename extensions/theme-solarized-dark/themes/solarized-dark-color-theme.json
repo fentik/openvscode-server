@@ -9,8 +9,7 @@
 		{
 			"scope": [
 				"meta.embedded",
-				"source.groovy.embedded",
-				"string meta.image.inline.markdown"
+				"source.groovy.embedded"
 			],
 			"settings": {
 				"foreground": "#839496"
