@@ -42,7 +42,14 @@ export class ListTopCellToolbar extends Disposable {
 				}
 
 				return undefined;
-			}
+			},
+			menuOptions: {
+				shouldForwardArgs: true
+			},
+			toolbarOptions: {
+				primaryGroup: (g: string) => /^inline/.test(g),
+			},
+			hiddenItemStrategy: HiddenItemStrategy.Ignore,
 		}));
 		this.toolbar.context = <INotebookActionContext>{
 			notebookEditor

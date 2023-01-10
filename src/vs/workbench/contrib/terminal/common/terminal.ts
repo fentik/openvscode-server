@@ -250,6 +250,7 @@ export interface ITerminalConfiguration {
 	fontWeightBold: FontWeight;
 	minimumContrastRatio: number;
 	mouseWheelScrollSensitivity: number;
+	tabStopWidth: number;
 	sendKeybindingsToShell: boolean;
 	// fontLigatures: boolean;
 	fontSize: number;

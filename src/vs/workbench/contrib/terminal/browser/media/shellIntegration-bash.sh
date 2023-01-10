@@ -13,7 +13,9 @@ VSCODE_SHELL_INTEGRATION=1
 # Run relevant rc/profile only if shell integration has been injected, not when run manually
 if [ "$VSCODE_INJECTION" == "1" ]; then
 	if [ -z "$VSCODE_SHELL_LOGIN" ]; then
-		. ~/.bashrc
+		if [ -f ~/.bashrc ]; then
+			. ~/.bashrc
+		fi
 	else
 		# Imitate -l because --init-file doesn't support it:
 		# run the first of these files that exists
@@ -35,6 +37,64 @@ fi
 
 if [ -z "$VSCODE_SHELL_INTEGRATION" ]; then
 	builtin return
+fi
+
+__vsc_get_trap() {
+	# 'trap -p DEBUG' outputs a shell command like `trap -- '…shellcode…' DEBUG`.
+	# The terms are quoted literals, but are not guaranteed to be on a single line.
+	# (Consider a trap like $'echo foo\necho \'bar\'').
+	# To parse, we splice those terms into an expression capturing them into an array.
+	# This preserves the quoting of those terms: when we `eval` that expression, they are preserved exactly.
+	# This is different than simply exploding the string, which would split everything on IFS, oblivious to quoting.
+	builtin local -a terms
+	builtin eval "terms=( $(trap -p "${1:-DEBUG}") )"
+	#                    |________________________|
+	#                            |
+	#        \-------------------*--------------------/
+	# terms=( trap  --  '…arbitrary shellcode…'  DEBUG )
+	#        |____||__| |_____________________| |_____|
+	#          |    |            |                |
+	#          0    1            2                3
+	#                            |
+	#                   \--------*----/
+	builtin printf '%s' "${terms[2]:-}"
+}
+
+# The property (P) and command (E) codes embed values which require escaping.
+# Backslashes are doubled. Non-alphanumeric characters are converted to escaped hex.
+__vsc_escape_value() {
+	# Process text byte by byte, not by codepoint.
+	builtin local LC_ALL=C str="${1}" i byte token out=''
+
+	for (( i=0; i < "${#str}"; ++i )); do
+		byte="${str:$i:1}"
+
+		# Escape backslashes and semi-colons
+		if [ "$byte" = "\\" ]; then
+			token="\\\\"
+		elif [ "$byte" = ";" ]; then
+			token="\\x3b"
+		else
+			token="$byte"
+		fi
+
+		out+="$token"
+	done
+
+	builtin printf '%s\n' "${out}"
+}
+
+# Send the IsWindows property if the environment looks like Windows
+if [[ "$(uname -s)" =~ ^CYGWIN*|MINGW*|MSYS* ]]; then
+	builtin printf '\e]633;P;IsWindows=True\a'
+fi
+
+# Allow verifying $BASH_COMMAND doesn't have aliases resolved via history when the right HISTCONTROL
+# configuration is used
+if [[ "$HISTCONTROL" =~ .*(erasedups|ignoreboth|ignoredups).* ]]; then
+	__vsc_history_verify=0
+else
+	__vsc_history_verify=1
 fi
 
 __vsc_initialized=0

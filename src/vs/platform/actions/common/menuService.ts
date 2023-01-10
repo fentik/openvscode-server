@@ -77,8 +77,9 @@ class PersistedMenuHideState {
 		this._disposables.dispose();
 	}
 
-	isHidden(menu: MenuId, commandId: string): boolean {
-		return this._data[menu.id]?.includes(commandId) ?? false;
+	isHidden(menu: MenuId, commandId: string, defaultState: boolean): boolean {
+		const state = this._data[menu.id]?.includes(commandId) ?? false;
+		return defaultState ? state : !state;
 	}
 
 	updateHidden(menu: MenuId, commandId: string, hidden: boolean): void {
@@ -343,6 +344,7 @@ function createMenuHide(menu: MenuId, command: ICommandAction, states: Persisted
 
 	const id = `${menu.id}/${command.id}`;
 	const title = typeof command.title === 'string' ? command.title : command.title.value;
+	const defaultState = isISubmenuItem(command) ? true : !command.isHiddenByDefault;
 
 	const hide = toAction({
 		id,
@@ -353,11 +355,8 @@ function createMenuHide(menu: MenuId, command: ICommandAction, states: Persisted
 	const toggle = toAction({
 		id,
 		label: title,
-		get checked() { return !states.isHidden(menu, command.id); },
-		run() {
-			const newValue = !states.isHidden(menu, command.id);
-			states.updateHidden(menu, command.id, newValue);
-		}
+		get checked() { return !states.isHidden(menu, id, defaultState); },
+		run() { states.updateHidden(menu, id, !this.checked); }
 	});
 
 	return {

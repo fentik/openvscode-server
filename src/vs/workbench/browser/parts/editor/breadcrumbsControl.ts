@@ -9,7 +9,7 @@ import { BreadcrumbsItem, BreadcrumbsWidget, IBreadcrumbsItemEvent } from 'vs/ba
 import { tail } from 'vs/base/common/arrays';
 import { timeout } from 'vs/base/common/async';
 import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { combinedDisposable, DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { combinedDisposable, DisposableStore, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { extUri } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import 'vs/css!./media/breadcrumbscontrol';
@@ -183,6 +183,7 @@ export class BreadcrumbsControl {
 	private readonly _disposables = new DisposableStore();
 	private readonly _breadcrumbsDisposables = new DisposableStore();
 	private readonly _labels: ResourceLabels;
+	private readonly _model = new MutableDisposable<BreadcrumbsModel>();
 	private _breadcrumbsPickerShowing = false;
 	private _breadcrumbsPickerIgnoreOnceItem: BreadcrumbsItem | undefined;
 
@@ -239,6 +240,10 @@ export class BreadcrumbsControl {
 		this.domNode.remove();
 	}
 
+	get model(): BreadcrumbsModel | undefined {
+		return this._model.value;
+	}
+
 	layout(dim: dom.Dimension | undefined): void {
 		this._widget.layout(dim);
 	}
@@ -283,6 +288,7 @@ export class BreadcrumbsControl {
 			fileInfoUri ?? uri,
 			this._editorGroup.activeEditorPane
 		);
+		this._model.value = model;
 
 		this.domNode.classList.toggle('backslash-path', this._labelService.getSeparator(uri.scheme, uri.authority) === '\\');
 
@@ -316,7 +322,7 @@ export class BreadcrumbsControl {
 		updateBreadcrumbs();
 		this._breadcrumbsDisposables.clear();
 		this._breadcrumbsDisposables.add(listener);
-		this._breadcrumbsDisposables.add(model);
+		this._breadcrumbsDisposables.add(toDisposable(() => this._model.clear()));
 		this._breadcrumbsDisposables.add(configListener);
 		this._breadcrumbsDisposables.add(toDisposable(() => this._widget.setItems([])));
 

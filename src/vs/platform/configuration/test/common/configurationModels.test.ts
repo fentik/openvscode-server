@@ -5,11 +5,7 @@
 import * as assert from 'assert';
 import { join } from 'vs/base/common/path';
 import { URI } from 'vs/base/common/uri';
-import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
-import { AllKeysConfigurationChangeEvent, Configuration, ConfigurationChangeEvent, ConfigurationModel, ConfigurationModelParser, mergeChanges } from 'vs/platform/configuration/common/configurationModels';
-import { Extensions, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
-import { DefaultConfigurationModel } from 'vs/platform/configuration/common/configurations';
-import { Registry } from 'vs/platform/registry/common/platform';
+import { Configuration, ConfigurationChangeEvent, ConfigurationModel, ConfigurationModelParser, mergeChanges } from 'vs/platform/configuration/common/configurationModels';
 import { WorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { Workspace } from 'vs/platform/workspace/test/common/testWorkspace';
 
@@ -109,7 +105,7 @@ suite('ConfigurationModel', () => {
 		testObject.setValue('a.b.c', 1);
 
 		assert.deepStrictEqual(testObject.contents, { 'a': { 'b': { 'c': 1 } }, 'f': 1 });
-		assert.deepStrictEqual(testObject.keys, ['a.b.c', 'f']);
+		assert.deepStrictEqual(testObject.keys, ['a.b', 'f', 'a.b.c']);
 	});
 
 	test('removeValue: remove a non existing key', () => {
@@ -229,17 +225,6 @@ suite('ConfigurationModel', () => {
 		const base = new ConfigurationModel({ 'a': { 'b': 1 }, 'f': 1 }, ['a.b', 'f'], [{ identifiers: ['c'], contents: { 'a': { 'd': 1 } }, keys: ['a'] }]);
 		const add = new ConfigurationModel({ 'a': { 'b': 2 } }, ['a.b'], [{ identifiers: ['c'], contents: { 'a': { 'e': 2 } }, keys: ['a'] }]);
 		const result = base.merge(add);
-
-		assert.deepStrictEqual(result.contents, { 'a': { 'b': 2 }, 'f': 1 });
-		assert.deepStrictEqual(result.overrides, [{ identifiers: ['c'], contents: { 'a': { 'd': 1, 'e': 2 } }, keys: ['a'] }]);
-		assert.deepStrictEqual(result.override('c').contents, { 'a': { 'b': 2, 'd': 1, 'e': 2 }, 'f': 1 });
-		assert.deepStrictEqual(result.keys, ['a.b', 'f']);
-	});
-
-	test('merge overrides when frozen', () => {
-		const model1 = new ConfigurationModel({ 'a': { 'b': 1 }, 'f': 1 }, ['a.b', 'f'], [{ identifiers: ['c'], contents: { 'a': { 'd': 1 } }, keys: ['a'] }]).freeze();
-		const model2 = new ConfigurationModel({ 'a': { 'b': 2 } }, ['a.b'], [{ identifiers: ['c'], contents: { 'a': { 'e': 2 } }, keys: ['a'] }]).freeze();
-		const result = new ConfigurationModel().merge(model1, model2);
 
 		assert.deepStrictEqual(result.contents, { 'a': { 'b': 2 }, 'f': 1 });
 		assert.deepStrictEqual(result.overrides, [{ identifiers: ['c'], contents: { 'a': { 'd': 1, 'e': 2 } }, keys: ['a'] }]);
@@ -413,72 +398,6 @@ suite('CustomConfigurationModel', () => {
 		assert.deepStrictEqual(testObject.configurationModel.keys, ['']);
 	});
 
-	test('Test registering the same property again', () => {
-		Registry.as<IConfigurationRegistry>(Extensions.Configuration).registerConfiguration({
-			'id': 'a',
-			'order': 1,
-			'title': 'a',
-			'type': 'object',
-			'properties': {
-				'a': {
-					'description': 'a',
-					'type': 'boolean',
-					'default': true,
-				}
-			}
-		});
-		Registry.as<IConfigurationRegistry>(Extensions.Configuration).registerConfiguration({
-			'id': 'a',
-			'order': 1,
-			'title': 'a',
-			'type': 'object',
-			'properties': {
-				'a': {
-					'description': 'a',
-					'type': 'boolean',
-					'default': false,
-				}
-			}
-		});
-		assert.strictEqual(true, new DefaultConfigurationModel().getValue('a'));
-	});
-});
-
-suite('CustomConfigurationModel', () => {
-
-	test('Default configuration model uses overrides', () => {
-		Registry.as<IConfigurationRegistry>(Extensions.Configuration).registerConfiguration({
-			'id': 'a',
-			'order': 1,
-			'title': 'a',
-			'type': 'object',
-			'properties': {
-				'a': {
-					'description': 'a',
-					'type': 'boolean',
-					'default': false,
-				}
-			}
-		});
-		assert.strictEqual(true, new DefaultConfigurationModel().getValue('a'));
-	});
-
-	test('Default configuration model uses overrides', () => {
-		Registry.as<IConfigurationRegistry>(Extensions.Configuration).registerConfiguration({
-			'id': 'a',
-			'order': 1,
-			'title': 'a',
-			'type': 'object',
-			'properties': {
-				'a': {
-					'description': 'a',
-					'type': 'boolean',
-					'default': false,
-				}
-			}
-		});
-		assert.strictEqual(false, new DefaultConfigurationModel({ a: false }).getValue('a'));
-	});
 });
 
 suite('Configuration', () => {

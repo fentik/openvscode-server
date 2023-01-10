@@ -40,7 +40,14 @@ export interface ICommandAction {
 	icon?: Icon;
 	source?: string;
 	precondition?: ContextKeyExpression;
-	toggled?: ContextKeyExpression | { condition: ContextKeyExpression; icon?: Icon; tooltip?: string; title?: string | ILocalizedString };
+
+	/**
+	 * The action is a toggle action. Define the context key expression that reflects its toggle-state
+	 * or define toggle-info including an icon and a title that goes well with a checkmark.
+	 */
+	toggled?: ContextKeyExpression | ICommandActionToggleInfo;
+
+	isHiddenByDefault?: boolean;
 }
 
 export type ISerializableCommandAction = UriDto<ICommandAction>;
