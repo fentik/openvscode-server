@@ -10,13 +10,13 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { DomEmitter } from 'vs/base/browser/event';
 import { Color } from 'vs/base/common/color';
 import { Event } from 'vs/base/common/event';
-import { IDisposable, toDisposable, dispose, DisposableStore } from 'vs/base/common/lifecycle';
+import { IDisposable, toDisposable, dispose, Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { getDomNodePagePosition, createStyleSheet, createCSSRule, append, $ } from 'vs/base/browser/dom';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { Context } from 'vs/platform/contextkey/browser/contextKeyService';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
-import { RunOnceScheduler } from 'vs/base/common/async';
+import { timeout } from 'vs/base/common/async';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { registerAction2, Action2, MenuRegistry } from 'vs/platform/actions/common/actions';
@@ -27,7 +27,7 @@ import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'v
 import { ILogService } from 'vs/platform/log/common/log';
 import { IWorkingCopyService } from 'vs/workbench/services/workingCopy/common/workingCopyService';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES } from 'vs/workbench/common/actions';
 import { IWorkingCopyBackupService } from 'vs/workbench/services/workingCopy/common/workingCopyBackup';
 
 class InspectContextKeysAction extends Action2 {
@@ -36,7 +36,7 @@ class InspectContextKeysAction extends Action2 {
 		super({
 			id: 'workbench.action.inspectContextKeys',
 			title: { value: localize('inspect context keys', "Inspect Context Keys"), original: 'Inspect Context Keys' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			f1: true
 		});
 	}
@@ -96,7 +96,7 @@ class ToggleScreencastModeAction extends Action2 {
 		super({
 			id: 'workbench.action.toggleScreencastMode',
 			title: { value: localize('toggle screencast mode', "Toggle Screencast Mode"), original: 'Toggle Screencast Mode' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			f1: true
 		});
 	}
@@ -141,13 +141,10 @@ class ToggleScreencastModeAction extends Action2 {
 			mouseMarker.style.top = `${e.clientY - mouseIndicatorSize / 2}px`;
 			mouseMarker.style.left = `${e.clientX - mouseIndicatorSize / 2}px`;
 			mouseMarker.style.display = 'block';
-			mouseMarker.style.transform = `scale(${1})`;
-			mouseMarker.style.transition = 'transform 0.1s';
 
 			const mouseMoveListener = onMouseMove.event(e => {
 				mouseMarker.style.top = `${e.clientY - mouseIndicatorSize / 2}px`;
 				mouseMarker.style.left = `${e.clientX - mouseIndicatorSize / 2}px`;
-				mouseMarker.style.transform = `scale(${.8})`;
 			});
 
 			Event.once(onMouseUp.event)(() => {
@@ -167,7 +164,7 @@ class ToggleScreencastModeAction extends Action2 {
 			keyboardMarker.style.bottom = `${clamp(configurationService.getValue<number>('screencastMode.verticalOffset') || 0, 0, 90)}%`;
 		};
 
-		let keyboardMarkerTimeout!: number;
+		let keyboardMarkerTimeout: number;
 		const updateKeyboardMarkerTimeout = () => {
 			keyboardMarkerTimeout = clamp(configurationService.getValue<number>('screencastMode.keyboardOverlayTimeout') || 800, 500, 5000);
 		};
@@ -199,40 +196,11 @@ class ToggleScreencastModeAction extends Action2 {
 		}));
 
 		const onKeyDown = disposables.add(new DomEmitter(window, 'keydown', true));
-		const onCompositionUpdate = disposables.add(new DomEmitter(window, 'compositionupdate', true));
-		const onCompositionEnd = disposables.add(new DomEmitter(window, 'compositionend', true));
-
+		let keyboardTimeout: IDisposable = Disposable.None;
 		let length = 0;
-		let composing: Element | undefined = undefined;
-
-		const clearKeyboardScheduler = new RunOnceScheduler(() => {
-			keyboardMarker.textContent = '';
-			composing = undefined;
-			length = 0;
-		}, keyboardMarkerTimeout);
-
-		disposables.add(onCompositionUpdate.event(e => {
-			if (e.data) {
-				composing = composing ?? append(keyboardMarker, $('span.key'));
-				composing.textContent = e.data;
-			}
-
-			clearKeyboardScheduler.schedule();
-		}));
-
-		disposables.add(onCompositionEnd.event(e => {
-			composing = undefined;
-		}));
 
 		disposables.add(onKeyDown.event(e => {
-			if (e.key === 'Process') {
-				if (!e.code.includes('Key')) {
-					composing = undefined;
-					clearKeyboardScheduler.cancel();
-				}
-
-				return;
-			}
+			keyboardTimeout.dispose();
 
 			const event = new StandardKeyboardEvent(e);
 			const shortcut = keybindingService.softDispatch(event, event.target);
@@ -262,11 +230,9 @@ class ToggleScreencastModeAction extends Action2 {
 					}
 
 					if (shortcut?.commandId) {
-						const keybindings = keybindingService.lookupKeybindings(shortcut.commandId)
-							.filter(k => k.getLabel()?.endsWith(keyLabel ?? ''));
-
-						if (keybindings.length > 0) {
-							keyLabel = keybindings[keybindings.length - 1].getLabel();
+						const fullKeyLabel = keybindingService.lookupKeybinding(shortcut.commandId);
+						if (fullKeyLabel) {
+							keyLabel = fullKeyLabel.getLabel();
 						}
 					}
 				}
@@ -282,7 +248,13 @@ class ToggleScreencastModeAction extends Action2 {
 				length++;
 			}
 
-			clearKeyboardScheduler.schedule();
+			const promise = timeout(keyboardMarkerTimeout);
+			keyboardTimeout = toDisposable(() => promise.cancel());
+
+			promise.then(() => {
+				keyboardMarker.textContent = '';
+				length = 0;
+			});
 		}));
 
 		ToggleScreencastModeAction.disposable = disposables;
@@ -295,7 +267,7 @@ class LogStorageAction extends Action2 {
 		super({
 			id: 'workbench.action.logStorage',
 			title: { value: localize({ key: 'logStorage', comment: ['A developer only action to log the contents of the storage for the current window.'] }, "Log Storage Database Contents"), original: 'Log Storage Database Contents' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			f1: true
 		});
 	}
@@ -311,7 +283,7 @@ class LogWorkingCopiesAction extends Action2 {
 		super({
 			id: 'workbench.action.logWorkingCopies',
 			title: { value: localize({ key: 'logWorkingCopies', comment: ['A developer only action to log the working copies that exist.'] }, "Log Working Copies"), original: 'Log Working Copies' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			f1: true
 		});
 	}
@@ -384,7 +356,7 @@ configurationRegistry.registerConfiguration({
 		},
 		'screencastMode.onlyKeyboardShortcuts': {
 			type: 'boolean',
-			description: localize('screencastMode.onlyKeyboardShortcuts', "Show only keyboard shortcuts in screencast mode (do not include action names)."),
+			description: localize('screencastMode.onlyKeyboardShortcuts', "Only show keyboard shortcuts in screencast mode."),
 			default: false
 		},
 		'screencastMode.keyboardOverlayTimeout': {

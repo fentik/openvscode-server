@@ -6,7 +6,6 @@
 import Severity from 'vs/base/common/severity';
 import * as strings from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
-import { ILocalizedString } from 'vs/platform/action/common/action';
 import { ExtensionKind } from 'vs/platform/environment/common/environment';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { getRemoteName } from 'vs/platform/remote/common/remoteHosts';
@@ -18,8 +17,8 @@ export const UNDEFINED_PUBLISHER = 'undefined_publisher';
 
 export interface ICommand {
 	command: string;
-	title: string | ILocalizedString;
-	category?: string | ILocalizedString;
+	title: string;
+	category?: string;
 }
 
 export interface IConfigurationProperty {
@@ -96,7 +95,7 @@ export interface IColor {
 	defaults: { light: string; dark: string; highContrast: string };
 }
 
-interface IWebviewEditor {
+export interface IWebviewEditor {
 	readonly viewType: string;
 	readonly priority: string;
 	readonly selector: readonly {
@@ -137,7 +136,6 @@ export interface IWalkthroughStep {
 export interface IWalkthrough {
 	readonly id: string;
 	readonly title: string;
-	readonly icon?: string;
 	readonly description: string;
 	readonly steps: IWalkthroughStep[];
 	readonly featuredFor: string[] | undefined;
@@ -269,10 +267,6 @@ export interface IRelaxedExtensionManifest {
 	description?: string;
 	main?: string;
 	browser?: string;
-	preview?: boolean;
-	// For now this only supports pointing to l10n bundle files
-	// but it will be used for package.l10n.json files in the future
-	l10n?: string;
 	icon?: string;
 	categories?: string[];
 	keywords?: string[];
@@ -329,7 +323,6 @@ export interface IExtension {
 	readonly changelogUrl?: URI;
 	readonly isValid: boolean;
 	readonly validations: readonly [Severity, string][];
-	readonly browserNlsBundleUris?: { [language: string]: URI };
 }
 
 /**
@@ -396,7 +389,6 @@ export interface IRelaxedExtensionDescription extends IRelaxedExtensionManifest 
 	isUserBuiltin: boolean;
 	isUnderDevelopment: boolean;
 	extensionLocation: URI;
-	browserNlsBundleUris?: { [language: string]: URI };
 }
 
 export type IExtensionDescription = Readonly<IRelaxedExtensionDescription>;

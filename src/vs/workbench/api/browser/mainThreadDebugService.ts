@@ -230,15 +230,12 @@ export class MainThreadDebugService implements MainThreadDebugServiceShape, IDeb
 			lifecycleManagedByParent: options.lifecycleManagedByParent,
 			repl: options.repl,
 			compact: options.compact,
+			debugUI: options.debugUI,
 			compoundRoot: parentSession?.compoundRoot,
-			saveBeforeRestart: saveBeforeStart,
-
-			suppressDebugStatusbar: options.suppressDebugStatusbar,
-			suppressDebugToolbar: options.suppressDebugToolbar,
-			suppressDebugView: options.suppressDebugView,
+			saveBeforeStart: saveBeforeStart
 		};
 		try {
-			return this.debugService.startDebugging(launch, nameOrConfig, debugOptions, saveBeforeStart);
+			return this.debugService.startDebugging(launch, nameOrConfig, debugOptions);
 		} catch (err) {
 			throw new ErrorNoTelemetry(err && err.message ? err.message : 'cannot start debugging');
 		}

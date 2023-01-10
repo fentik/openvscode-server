@@ -8,12 +8,13 @@ import * as DOM from 'vs/base/browser/dom';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { Button } from 'vs/base/browser/ui/button/button';
-import { Toggle, unthemedToggleStyles } from 'vs/base/browser/ui/toggle/toggle';
+import { Toggle } from 'vs/base/browser/ui/toggle/toggle';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
 import { IAction } from 'vs/base/common/actions';
 import { disposableTimeout } from 'vs/base/common/async';
 import { Codicon } from 'vs/base/common/codicons';
+import { Color, RGBA } from 'vs/base/common/color';
 import { Emitter, Event } from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
@@ -22,13 +23,112 @@ import { isDefined, isUndefinedOrNull } from 'vs/base/common/types';
 import 'vs/css!./media/settingsWidgets';
 import { localize } from 'vs/nls';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
-import { attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
-import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
+import { foreground, listActiveSelectionBackground, listActiveSelectionForeground, listDropBackground, listHoverBackground, listHoverForeground, listInactiveSelectionBackground, listInactiveSelectionForeground, textLinkActiveForeground, textLinkForeground, textPreformatForeground } from 'vs/platform/theme/common/colorRegistry';
+import { attachButtonStyler, attachInputBoxStyler, attachSelectBoxStyler } from 'vs/platform/theme/common/styler';
+import { IColorTheme, ICssStyleCollector, IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { settingsDiscardIcon, settingsEditIcon, settingsRemoveIcon } from 'vs/workbench/contrib/preferences/browser/preferencesIcons';
-import { settingsSelectBackground, settingsSelectBorder, settingsSelectForeground, settingsSelectListBorder, settingsTextInputBackground, settingsTextInputBorder, settingsTextInputForeground } from 'vs/workbench/contrib/preferences/common/settingsEditorColorRegistry';
-import { defaultButtonStyles, getInputBoxStyle } from 'vs/platform/theme/browser/defaultStyles';
+import { modifiedItemIndicator, settingsCheckboxBackground, settingsCheckboxBorder, settingsCheckboxForeground, settingsHeaderForeground, settingsSelectBackground, settingsSelectBorder, settingsSelectForeground, settingsSelectListBorder, settingsTextInputBackground, settingsTextInputBorder, settingsTextInputForeground } from 'vs/workbench/contrib/preferences/common/settingsEditorColorRegistry';
 
 const $ = DOM.$;
+
+registerThemingParticipant((theme: IColorTheme, collector: ICssStyleCollector) => {
+	const checkboxBackgroundColor = theme.getColor(settingsCheckboxBackground);
+	if (checkboxBackgroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-bool .setting-value-checkbox { background-color: ${checkboxBackgroundColor} !important; }`);
+	}
+
+	const checkboxForegroundColor = theme.getColor(settingsCheckboxForeground);
+	if (checkboxForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-bool .setting-value-checkbox { color: ${checkboxForegroundColor} !important; }`);
+	}
+
+	const checkboxBorderColor = theme.getColor(settingsCheckboxBorder);
+	if (checkboxBorderColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-bool .setting-value-checkbox { border-color: ${checkboxBorderColor} !important; }`);
+	}
+
+	const link = theme.getColor(textLinkForeground);
+	if (link) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a { color: ${link}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a > code { color: ${link}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a { color: ${link}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a > code { color: ${link}; }`);
+		collector.addRule(`.monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a { color: ${link}; }`);
+		collector.addRule(`.monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a > code { color: ${link}; }`);
+
+		const disabledfgColor = new Color(new RGBA(link.rgba.r, link.rgba.g, link.rgba.b, 0.8));
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-untrusted > .setting-item-contents .setting-item-markdown a { color: ${disabledfgColor}; }`);
+	}
+
+	const activeLink = theme.getColor(textLinkActiveForeground);
+	if (activeLink) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a:hover, .settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a:active { color: ${activeLink}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a:hover > code, .settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-trust-description a:active > code { color: ${activeLink}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a:hover, .settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a:active { color: ${activeLink}; }`);
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a:hover > code, .settings-editor > .settings-body .settings-tree-container .setting-item-contents .setting-item-markdown a:active > code { color: ${activeLink}; }`);
+		collector.addRule(`.monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a:hover, .monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a:active { color: ${activeLink}; }`);
+		collector.addRule(`.monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a:hover > code, .monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown a:active > code { color: ${activeLink}; }`);
+	}
+
+	const headerForegroundColor = theme.getColor(settingsHeaderForeground);
+	if (headerForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-header > .settings-header-controls .settings-tabs-widget .action-label.checked { color: ${headerForegroundColor}; border-bottom-color: ${headerForegroundColor}; }`);
+	}
+
+	const foregroundColor = theme.getColor(foreground);
+	if (foregroundColor) {
+		collector.addRule(`.settings-editor > .settings-header > .settings-header-controls .settings-tabs-widget .action-label { color: ${foregroundColor}; }`);
+	}
+
+	// List control
+	const listHoverBackgroundColor = theme.getColor(listHoverBackground);
+	if (listHoverBackgroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row:hover { background-color: ${listHoverBackgroundColor}; }`);
+	}
+
+	const listHoverForegroundColor = theme.getColor(listHoverForeground);
+	if (listHoverForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row:hover { color: ${listHoverForegroundColor}; }`);
+	}
+
+	const listDropBackgroundColor = theme.getColor(listDropBackground);
+	if (listDropBackgroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row.drag-hover { background-color: ${listDropBackgroundColor}; }`);
+	}
+
+	const listSelectBackgroundColor = theme.getColor(listActiveSelectionBackground);
+	if (listSelectBackgroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row.selected:focus { background-color: ${listSelectBackgroundColor}; }`);
+	}
+
+	const listInactiveSelectionBackgroundColor = theme.getColor(listInactiveSelectionBackground);
+	if (listInactiveSelectionBackgroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row.selected:not(:focus) { background-color: ${listInactiveSelectionBackgroundColor}; }`);
+	}
+
+	const listInactiveSelectionForegroundColor = theme.getColor(listInactiveSelectionForeground);
+	if (listInactiveSelectionForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row.selected:not(:focus) { color: ${listInactiveSelectionForegroundColor}; }`);
+	}
+
+	const listSelectForegroundColor = theme.getColor(listActiveSelectionForeground);
+	if (listSelectForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-list .setting-list-row.selected:focus { color: ${listSelectForegroundColor}; }`);
+	}
+
+	const codeTextForegroundColor = theme.getColor(textPreformatForeground);
+	if (codeTextForegroundColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item .setting-item-markdown code { color: ${codeTextForegroundColor} }`);
+		collector.addRule(`.monaco-select-box-dropdown-container > .select-box-details-pane > .select-box-description-markdown code { color: ${codeTextForegroundColor} }`);
+		const disabledfgColor = new Color(new RGBA(codeTextForegroundColor.rgba.r, codeTextForegroundColor.rgba.g, codeTextForegroundColor.rgba.b, 0.8));
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item.setting-item-untrusted > .setting-item-contents .setting-item-description .setting-item-markdown code { color: ${disabledfgColor} }`);
+	}
+
+	const modifiedItemIndicatorColor = theme.getColor(modifiedItemIndicator);
+	if (modifiedItemIndicatorColor) {
+		collector.addRule(`.settings-editor > .settings-body .settings-tree-container .setting-item-contents > .setting-item-modified-indicator { border-color: ${modifiedItemIndicatorColor}; }`);
+	}
+});
 
 type EditKey = 'none' | 'create' | number;
 
@@ -146,6 +246,7 @@ export abstract class AbstractListSettingWidget<TDataItem extends object> extend
 		this.listElement = DOM.append(container, $('div'));
 		this.listElement.setAttribute('role', 'list');
 		this.getContainerClasses().forEach(c => this.listElement.classList.add(c));
+		this.listElement.setAttribute('tabindex', '0');
 		DOM.append(container, this.renderAddButton());
 		this.renderList();
 
@@ -171,12 +272,12 @@ export abstract class AbstractListSettingWidget<TDataItem extends object> extend
 		this.renderList();
 	}
 
-	abstract isItemNew(item: TDataItem): boolean;
 	protected abstract getEmptyItem(): TDataItem;
 	protected abstract getContainerClasses(): string[];
 	protected abstract getActionsForItem(item: TDataItem, idx: number): IAction[];
 	protected abstract renderItem(item: TDataItem, idx: number): RowElementGroup;
 	protected abstract renderEdit(item: TDataItem, idx: number): HTMLElement;
+	protected abstract isItemNew(item: TDataItem): boolean;
 	protected abstract addTooltipsToRow(rowElement: RowElementGroup, item: TDataItem): void;
 	protected abstract getLocalizedStrings(): {
 		deleteActionTooltip: string;
@@ -200,12 +301,6 @@ export abstract class AbstractListSettingWidget<TDataItem extends object> extend
 
 		const newMode = this.model.items.some(item => !!(item.editing && this.isItemNew(item)));
 		this.container.classList.toggle('setting-list-hide-add-button', !this.isAddButtonVisible() || newMode);
-
-		if (this.model.items.length) {
-			this.listElement.tabIndex = 0;
-		} else {
-			this.listElement.removeAttribute('tabIndex');
-		}
 
 		const header = this.renderHeader();
 		const ITEM_HEIGHT = 24;
@@ -289,21 +384,16 @@ export abstract class AbstractListSettingWidget<TDataItem extends object> extend
 			this.listDisposables.add(disposableTimeout(() => rowElement.focus()));
 		}
 
-		this.listDisposables.add(DOM.addDisposableListener(rowElement, 'click', (e) => {
-			// There is a parent list widget, which is the one that holds the list of settings.
-			// Prevent the parent widget from trying to interpret this click event.
-			e.stopPropagation();
-		}));
-
 		return rowElement;
 	}
 
 	private renderAddButton(): HTMLElement {
 		const rowElement = $('.setting-list-new-row');
 
-		const startAddButton = this._register(new Button(rowElement, defaultButtonStyles));
+		const startAddButton = this._register(new Button(rowElement));
 		startAddButton.label = this.getLocalizedStrings().addButtonLabel;
 		startAddButton.element.classList.add('setting-list-addButton');
+		this._register(attachButtonStyler(startAddButton, this.themeService));
 
 		this._register(startAddButton.onDidClick(() => {
 			this.model.setEditKey('create');
@@ -534,7 +624,9 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 		this.listDisposables.add(DOM.addDisposableListener(rowElement, DOM.EventType.DRAG_END, (ev) => {
 			counter = 0;
 			rowElement.classList.remove('drag-hover');
-			ev.dataTransfer?.clearData();
+			if (ev.dataTransfer) {
+				ev.dataTransfer.clearData();
+			}
 			if (this.dragDetails) {
 				this.dragDetails = undefined;
 			}
@@ -619,15 +711,15 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 		let siblingInput: InputBox | undefined;
 		if (!isUndefinedOrNull(item.sibling)) {
 			siblingInput = new InputBox(rowElement, this.contextViewService, {
-				placeholder: this.getLocalizedStrings().siblingInputPlaceholder,
-				inputBoxStyles: getInputBoxStyle({
-					inputBackground: settingsTextInputBackground,
-					inputForeground: settingsTextInputForeground,
-					inputBorder: settingsTextInputBorder
-				})
+				placeholder: this.getLocalizedStrings().siblingInputPlaceholder
 			});
 			siblingInput.element.classList.add('setting-list-siblingInput');
 			this.listDisposables.add(siblingInput);
+			this.listDisposables.add(attachInputBoxStyler(siblingInput, this.themeService, {
+				inputBackground: settingsTextInputBackground,
+				inputForeground: settingsTextInputForeground,
+				inputBorder: settingsTextInputBorder
+			}));
 			siblingInput.value = item.sibling;
 
 			this.listDisposables.add(
@@ -637,10 +729,11 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 			valueInput.element.classList.add('no-sibling');
 		}
 
-		const okButton = this._register(new Button(rowElement, defaultButtonStyles));
+		const okButton = this._register(new Button(rowElement));
 		okButton.label = localize('okButton', "OK");
 		okButton.element.classList.add('setting-list-ok-button');
 
+		this.listDisposables.add(attachButtonStyler(okButton, this.themeService));
 		this.listDisposables.add(okButton.onDidClick(() => {
 			if (item.value.type === 'string') {
 				this.handleItemChange(item, updatedInputBoxItem(), idx);
@@ -649,10 +742,11 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 			}
 		}));
 
-		const cancelButton = this._register(new Button(rowElement, { secondary: true, ...defaultButtonStyles }));
+		const cancelButton = this._register(new Button(rowElement, { secondary: true }));
 		cancelButton.label = localize('cancelButton', "Cancel");
 		cancelButton.element.classList.add('setting-list-cancel-button');
 
+		this.listDisposables.add(attachButtonStyler(cancelButton, this.themeService));
 		this.listDisposables.add(cancelButton.onDidClick(() => this.cancelEdit()));
 
 		this.listDisposables.add(
@@ -667,7 +761,7 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 		return rowElement;
 	}
 
-	override isItemNew(item: IListDataItem): boolean {
+	protected isItemNew(item: IListDataItem): boolean {
 		return item.value.data === '';
 	}
 
@@ -693,15 +787,15 @@ export class ListSettingWidget extends AbstractListSettingWidget<IListDataItem> 
 
 	private renderInputBox(value: ObjectValue, rowElement: HTMLElement): InputBox {
 		const valueInput = new InputBox(rowElement, this.contextViewService, {
-			placeholder: this.getLocalizedStrings().inputPlaceholder,
-			inputBoxStyles: getInputBoxStyle({
-				inputBackground: settingsTextInputBackground,
-				inputForeground: settingsTextInputForeground,
-				inputBorder: settingsTextInputBorder
-			})
+			placeholder: this.getLocalizedStrings().inputPlaceholder
 		});
 
 		valueInput.element.classList.add('setting-list-valueInput');
+		this.listDisposables.add(attachInputBoxStyler(valueInput, this.themeService, {
+			inputBackground: settingsTextInputBackground,
+			inputForeground: settingsTextInputForeground,
+			inputBorder: settingsTextInputBorder
+		}));
 		this.listDisposables.add(valueInput);
 		valueInput.value = value.data.toString();
 
@@ -827,7 +921,7 @@ export class ObjectSettingDropdownWidget extends AbstractListSettingWidget<IObje
 		super.setValue(listData);
 	}
 
-	override isItemNew(item: IObjectDataItem): boolean {
+	isItemNew(item: IObjectDataItem): boolean {
 		return item.key.data === '' && item.value.data === '';
 	}
 
@@ -973,17 +1067,19 @@ export class ObjectSettingDropdownWidget extends AbstractListSettingWidget<IObje
 
 		rowElement.append(keyElement, valueContainer);
 
-		const okButton = this._register(new Button(rowElement, defaultButtonStyles));
+		const okButton = this._register(new Button(rowElement));
 		okButton.enabled = changedItem.key.data !== '';
 		okButton.label = localize('okButton', "OK");
 		okButton.element.classList.add('setting-list-ok-button');
 
+		this.listDisposables.add(attachButtonStyler(okButton, this.themeService));
 		this.listDisposables.add(okButton.onDidClick(() => this.handleItemChange(item, changedItem, idx)));
 
-		const cancelButton = this._register(new Button(rowElement, { secondary: true, ...defaultButtonStyles }));
+		const cancelButton = this._register(new Button(rowElement, { secondary: true }));
 		cancelButton.label = localize('cancelButton', "Cancel");
 		cancelButton.element.classList.add('setting-list-cancel-button');
 
+		this.listDisposables.add(attachButtonStyler(cancelButton, this.themeService));
 		this.listDisposables.add(cancelButton.onDidClick(() => this.cancelEdit()));
 
 		this.listDisposables.add(
@@ -1031,15 +1127,15 @@ export class ObjectSettingDropdownWidget extends AbstractListSettingWidget<IObje
 			placeholder: isKey
 				? localize('objectKeyInputPlaceholder', "Key")
 				: localize('objectValueInputPlaceholder', "Value"),
-			inputBoxStyles: getInputBoxStyle({
-				inputBackground: settingsTextInputBackground,
-				inputForeground: settingsTextInputForeground,
-				inputBorder: settingsTextInputBorder
-			})
 		});
 
 		inputBox.element.classList.add('setting-list-object-input');
 
+		this.listDisposables.add(attachInputBoxStyler(inputBox, this.themeService, {
+			inputBackground: settingsTextInputBackground,
+			inputForeground: settingsTextInputForeground,
+			inputBorder: settingsTextInputBorder
+		}));
 		this.listDisposables.add(inputBox);
 		inputBox.value = keyOrValue.data;
 
@@ -1179,7 +1275,7 @@ export class ObjectSettingCheckboxWidget extends AbstractListSettingWidget<IObje
 		super.setValue(listData);
 	}
 
-	override isItemNew(item: IObjectDataItem): boolean {
+	isItemNew(item: IObjectDataItem): boolean {
 		return !item.key.data && !item.value.data;
 	}
 
@@ -1261,8 +1357,7 @@ export class ObjectSettingCheckboxWidget extends AbstractListSettingWidget<IObje
 			icon: Codicon.check,
 			actionClassName: 'setting-value-checkbox',
 			isChecked: value,
-			title: checkboxDescription,
-			...unthemedToggleStyles
+			title: checkboxDescription
 		});
 
 		this.listDisposables.add(checkbox);

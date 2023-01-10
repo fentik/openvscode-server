@@ -63,7 +63,7 @@ class MockMainThreadSearch implements MainThreadSearchShape {
 
 let mockPFS: Partial<typeof pfs>;
 
-function extensionResultIsMatch(data: vscode.TextSearchResult): data is vscode.TextSearchMatch {
+export function extensionResultIsMatch(data: vscode.TextSearchResult): data is vscode.TextSearchMatch {
 	return !!(<vscode.TextSearchMatch>data).preview;
 }
 

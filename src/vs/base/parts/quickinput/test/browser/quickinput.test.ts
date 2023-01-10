@@ -4,15 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { unthemedInboxStyles } from 'vs/base/browser/ui/inputbox/inputBox';
-import { unthemedButtonStyles } from 'vs/base/browser/ui/button/button';
 import { IListRenderer, IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IListOptions, List } from 'vs/base/browser/ui/list/listWidget';
-import { unthemedToggleStyles } from 'vs/base/browser/ui/toggle/toggle';
 import { raceTimeout } from 'vs/base/common/async';
 import { QuickInputController } from 'vs/base/parts/quickinput/browser/quickInput';
 import { IQuickPick, IQuickPickItem } from 'vs/base/parts/quickinput/common/quickInput';
-import { unthemedCountStyles } from 'vs/base/browser/ui/countBadge/countBadge';
 
 // Sets up an `onShow` listener to allow us to wait until the quick pick is shown (useful when triggering an `accept()` right after launching a quick pick)
 // kick this off before you launch the picker and then await the promise returned after you launch the picker.
@@ -33,7 +29,7 @@ suite('QuickInput', () => { // https://github.com/microsoft/vscode/issues/147543
 	let fixture: HTMLElement, controller: QuickInputController, quickpick: IQuickPick<IQuickPickItem>;
 
 	function getScrollTop(): number {
-		return quickpick.scrollTop;
+		return (quickpick as any).scrollTop;
 	}
 
 	setup(() => {
@@ -43,7 +39,7 @@ suite('QuickInput', () => { // https://github.com/microsoft/vscode/issues/147543
 		controller = new QuickInputController({
 			container: fixture,
 			idPrefix: 'testQuickInput',
-			ignoreFocusOut() { return true; },
+			ignoreFocusOut() { return false; },
 			isScreenReaderOptimized() { return false; },
 			returnFocus() { },
 			backKeybindingLabel() { return undefined; },
@@ -56,10 +52,9 @@ suite('QuickInput', () => { // https://github.com/microsoft/vscode/issues/147543
 				options: IListOptions<T>,
 			) => new List<T>(user, container, delegate, renderers, options),
 			styles: {
-				button: unthemedButtonStyles,
-				countBadge: unthemedCountStyles,
-				inputBox: unthemedInboxStyles,
-				toggle: unthemedToggleStyles,
+				button: {},
+				countBadge: {},
+				inputBox: {},
 				keybindingLabel: {},
 				list: {},
 				progressBar: {},
@@ -85,7 +80,7 @@ suite('QuickInput', () => { // https://github.com/microsoft/vscode/issues/147543
 		await wait;
 
 		controller.accept();
-		const pick = await raceTimeout(pickPromise, 2000);
+		const pick = await pickPromise;
 
 		assert.strictEqual(pick, item);
 	});
@@ -109,7 +104,7 @@ suite('QuickInput', () => { // https://github.com/microsoft/vscode/issues/147543
 		await wait;
 
 		controller.accept();
-		const value = await raceTimeout(inputPromise, 2000);
+		const value = await inputPromise;
 
 		assert.strictEqual(value, 'foo');
 	});

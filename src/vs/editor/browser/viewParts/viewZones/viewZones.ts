@@ -14,7 +14,7 @@ import * as viewEvents from 'vs/editor/common/viewEvents';
 import { IEditorWhitespace, IViewWhitespaceViewportData, IWhitespaceChangeAccessor } from 'vs/editor/common/viewModel';
 import { EditorOption } from 'vs/editor/common/config/editorOptions';
 
-interface IMyViewZone {
+export interface IMyViewZone {
 	whitespaceId: string;
 	delegate: IViewZone;
 	isInHiddenArea: boolean;

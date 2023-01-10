@@ -14,13 +14,11 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
 import { TestStorageService } from 'vs/workbench/test/common/workbenchTestServices';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 
 class TestKeyboardMapperFactory extends BrowserKeyboardMapperFactoryBase {
-	constructor(configurationService: IConfigurationService, notificationService: INotificationService, storageService: IStorageService, commandService: ICommandService) {
+	constructor(notificationService: INotificationService, storageService: IStorageService, commandService: ICommandService) {
 		// super(notificationService, storageService, commandService);
-		super(configurationService);
+		super();
 
 		const keymapInfos: IKeymapInfo[] = KeyboardLayoutContribution.INSTANCE.layoutInfos;
 		this._keymapInfos.push(...keymapInfos.map(info => (new KeymapInfo(info.layout, info.secondaryLayouts, info.mapping, info.isUserKeyboardLayout))));
@@ -38,10 +36,9 @@ suite('keyboard layout loader', () => {
 	const instantiationService: TestInstantiationService = new TestInstantiationService();
 	const notitifcationService = instantiationService.stub(INotificationService, new TestNotificationService());
 	const storageService = instantiationService.stub(IStorageService, new TestStorageService());
-	const configurationService = instantiationService.stub(IConfigurationService, new TestConfigurationService());
 
 	const commandService = instantiationService.stub(ICommandService, {});
-	const instance = new TestKeyboardMapperFactory(configurationService, notitifcationService, storageService, commandService);
+	const instance = new TestKeyboardMapperFactory(notitifcationService, storageService, commandService);
 
 	test('load default US keyboard layout', () => {
 		assert.notStrictEqual(instance.activeKeyboardLayout, null);

@@ -9,7 +9,6 @@
 	right: 6px;
 	padding: 1em;
 	cursor: default;
-	border-radius: 4px;
 }
 
 .monaco-workbench .feedback-form h2 {
@@ -52,7 +51,6 @@
 
 .monaco-workbench .feedback-form .content .channels a {
 	padding: 2px 0;
-	color: var(--vscode-textLink-foreground, var(--vscode-contrastBorder));
 }
 
 .monaco-workbench .feedback-form .content .channels a:hover {
@@ -114,10 +112,6 @@
 
 .monaco-workbench .feedback-form .sentiment:hover {
 	background-color: #eaeaea;
-}
-
-.monaco-workbench .feedback-form .sentiment.checked {
-	border: 1px solid var(--vscode-inputOption-activeBorder);
 }
 
 /* Theming */

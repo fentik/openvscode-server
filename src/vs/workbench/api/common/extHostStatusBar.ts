@@ -43,8 +43,7 @@ export class ExtHostStatusBarEntry implements vscode.StatusBarItem {
 	private _name?: string;
 	private _color?: string | ThemeColor;
 	private _backgroundColor?: ThemeColor;
-	private _latestCommandRegistration?: DisposableStore;
-	private readonly _staleCommandRegistrations = new DisposableStore();
+	private readonly _internalCommandRegistration = new DisposableStore();
 	private _command?: {
 		readonly fromApi: string | vscode.Command;
 		readonly internal: ICommandDto;
@@ -163,19 +162,16 @@ export class ExtHostStatusBarEntry implements vscode.StatusBarItem {
 			return;
 		}
 
-		if (this._latestCommandRegistration) {
-			this._staleCommandRegistrations.add(this._latestCommandRegistration);
-		}
-		this._latestCommandRegistration = new DisposableStore();
+		this._internalCommandRegistration.clear();
 		if (typeof command === 'string') {
 			this._command = {
 				fromApi: command,
-				internal: this.#commands.toInternal({ title: '', command }, this._latestCommandRegistration),
+				internal: this.#commands.toInternal({ title: '', command }, this._internalCommandRegistration),
 			};
 		} else if (command) {
 			this._command = {
 				fromApi: command,
-				internal: this.#commands.toInternal(command, this._latestCommandRegistration),
+				internal: this.#commands.toInternal(command, this._internalCommandRegistration),
 			};
 		} else {
 			this._command = undefined;
@@ -244,9 +240,6 @@ export class ExtHostStatusBarEntry implements vscode.StatusBarItem {
 			this.#proxy.$setEntry(this._entryId, id, name, this._text, tooltip, this._command?.internal, color,
 				this._backgroundColor, this._alignment === ExtHostStatusBarAlignment.Left,
 				this._priority, this._accessibilityInformation);
-
-			// clean-up state commands _after_ updating the UI
-			this._staleCommandRegistrations.clear();
 		}, 0);
 	}
 

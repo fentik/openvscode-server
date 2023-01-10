@@ -4,18 +4,18 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IKeyboardLayoutInfo, IKeyboardLayoutService, IKeyboardMapping, ILinuxKeyboardLayoutInfo, IMacKeyboardLayoutInfo, IMacLinuxKeyboardMapping, IWindowsKeyboardLayoutInfo, IWindowsKeyboardMapping } from 'vs/platform/keyboardLayout/common/keyboardLayout';
+import { IKeyboardLayoutInfo, IKeyboardLayoutService, IKeyboardMapping, ILinuxKeyboardLayoutInfo, IMacKeyboardLayoutInfo, IMacLinuxKeyboardMapping, IWindowsKeyboardLayoutInfo, IWindowsKeyboardMapping, macLinuxKeyboardMappingEquals, windowsKeyboardMappingEquals } from 'vs/platform/keyboardLayout/common/keyboardLayout';
 import { Emitter } from 'vs/base/common/event';
 import { OperatingSystem, OS } from 'vs/base/common/platform';
 import { CachedKeyboardMapper, IKeyboardMapper } from 'vs/platform/keyboardLayout/common/keyboardMapper';
 import { WindowsKeyboardMapper } from 'vs/workbench/services/keybinding/common/windowsKeyboardMapper';
-import { FallbackKeyboardMapper } from 'vs/workbench/services/keybinding/common/fallbackKeyboardMapper';
+import { MacLinuxFallbackKeyboardMapper } from 'vs/workbench/services/keybinding/common/macLinuxFallbackKeyboardMapper';
 import { MacLinuxKeyboardMapper } from 'vs/workbench/services/keybinding/common/macLinuxKeyboardMapper';
-import { DispatchConfig, readKeyboardConfig } from 'vs/platform/keyboardLayout/common/keyboardConfig';
+import { DispatchConfig } from 'vs/platform/keyboardLayout/common/dispatchConfig';
 import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { INativeKeyboardLayoutService } from 'vs/workbench/services/keybinding/electron-sandbox/nativeKeyboardLayoutService';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { IMainProcessService } from 'vs/platform/ipc/electron-sandbox/services';
+import { INativeKeyboardLayoutService } from 'vs/platform/keyboardLayout/common/keyboardLayoutService';
+import { ProxyChannel } from 'vs/base/parts/ipc/common/ipc';
 
 export class KeyboardLayoutService extends Disposable implements IKeyboardLayoutService {
 
@@ -24,48 +24,67 @@ export class KeyboardLayoutService extends Disposable implements IKeyboardLayout
 	private readonly _onDidChangeKeyboardLayout = this._register(new Emitter<void>());
 	readonly onDidChangeKeyboardLayout = this._onDidChangeKeyboardLayout.event;
 
-	private _keyboardMapper: IKeyboardMapper | null;
+	private readonly _keyboardLayoutService: INativeKeyboardLayoutService;
+	private _initPromise: Promise<void> | null;
+	private _keyboardMapping: IKeyboardMapping | null;
+	private _keyboardLayoutInfo: IKeyboardLayoutInfo | null;
+	private _keyboardMapper: IKeyboardMapper;
 
 	constructor(
-		@INativeKeyboardLayoutService private readonly _nativeKeyboardLayoutService: INativeKeyboardLayoutService,
-		@IConfigurationService private readonly _configurationService: IConfigurationService
+		@IMainProcessService mainProcessService: IMainProcessService
 	) {
 		super();
-		this._keyboardMapper = null;
+		this._keyboardLayoutService = ProxyChannel.toService<INativeKeyboardLayoutService>(mainProcessService.getChannel('keyboardLayout'));
+		this._initPromise = null;
+		this._keyboardMapping = null;
+		this._keyboardLayoutInfo = null;
+		this._keyboardMapper = new MacLinuxFallbackKeyboardMapper(OS);
 
-		this._register(this._nativeKeyboardLayoutService.onDidChangeKeyboardLayout(async () => {
-			this._keyboardMapper = null;
+		this._register(this._keyboardLayoutService.onDidChangeKeyboardLayout(async ({ keyboardLayoutInfo, keyboardMapping }) => {
+			await this.initialize();
+			if (keyboardMappingEquals(this._keyboardMapping, keyboardMapping)) {
+				// the mappings are equal
+				return;
+			}
+
+			this._keyboardMapping = keyboardMapping;
+			this._keyboardLayoutInfo = keyboardLayoutInfo;
+			this._keyboardMapper = new CachedKeyboardMapper(createKeyboardMapper(this._keyboardLayoutInfo, this._keyboardMapping));
 			this._onDidChangeKeyboardLayout.fire();
 		}));
+	}
 
-		this._register(_configurationService.onDidChangeConfiguration(async (e) => {
-			if (e.affectsConfiguration('keyboard')) {
-				this._keyboardMapper = null;
-				this._onDidChangeKeyboardLayout.fire();
-			}
-		}));
+	public initialize(): Promise<void> {
+		if (!this._initPromise) {
+			this._initPromise = this._doInitialize();
+		}
+		return this._initPromise;
+	}
+
+	private async _doInitialize(): Promise<void> {
+		const keyboardLayoutData = await this._keyboardLayoutService.getKeyboardLayoutData();
+		const { keyboardLayoutInfo, keyboardMapping } = keyboardLayoutData;
+		this._keyboardMapping = keyboardMapping;
+		this._keyboardLayoutInfo = keyboardLayoutInfo;
+		this._keyboardMapper = new CachedKeyboardMapper(createKeyboardMapper(this._keyboardLayoutInfo, this._keyboardMapping));
 	}
 
 	public getRawKeyboardMapping(): IKeyboardMapping | null {
-		return this._nativeKeyboardLayoutService.getRawKeyboardMapping();
+		return this._keyboardMapping;
 	}
 
 	public getCurrentKeyboardLayout(): IKeyboardLayoutInfo | null {
-		return this._nativeKeyboardLayoutService.getCurrentKeyboardLayout();
+		return this._keyboardLayoutInfo;
 	}
 
 	public getAllKeyboardLayouts(): IKeyboardLayoutInfo[] {
 		return [];
 	}
 
-	public getKeyboardMapper(): IKeyboardMapper {
-		const config = readKeyboardConfig(this._configurationService);
-		if (config.dispatch === DispatchConfig.KeyCode) {
+	public getKeyboardMapper(dispatchConfig: DispatchConfig): IKeyboardMapper {
+		if (dispatchConfig === DispatchConfig.KeyCode) {
 			// Forcefully set to use keyCode
-			return new FallbackKeyboardMapper(config.mapAltGrToCtrlAlt, OS);
-		}
-		if (!this._keyboardMapper) {
-			this._keyboardMapper = new CachedKeyboardMapper(createKeyboardMapper(this.getCurrentKeyboardLayout(), this.getRawKeyboardMapping(), config.mapAltGrToCtrlAlt));
+			return new MacLinuxFallbackKeyboardMapper(OS);
 		}
 		return this._keyboardMapper;
 	}
@@ -75,26 +94,34 @@ export class KeyboardLayoutService extends Disposable implements IKeyboardLayout
 	}
 }
 
-function createKeyboardMapper(layoutInfo: IKeyboardLayoutInfo | null, rawMapping: IKeyboardMapping | null, mapAltGrToCtrlAlt: boolean): IKeyboardMapper {
+function keyboardMappingEquals(a: IKeyboardMapping | null, b: IKeyboardMapping | null): boolean {
+	if (OS === OperatingSystem.Windows) {
+		return windowsKeyboardMappingEquals(<IWindowsKeyboardMapping | null>a, <IWindowsKeyboardMapping | null>b);
+	}
+
+	return macLinuxKeyboardMappingEquals(<IMacLinuxKeyboardMapping | null>a, <IMacLinuxKeyboardMapping | null>b);
+}
+
+function createKeyboardMapper(layoutInfo: IKeyboardLayoutInfo | null, rawMapping: IKeyboardMapping | null): IKeyboardMapper {
 	const _isUSStandard = isUSStandard(layoutInfo);
 	if (OS === OperatingSystem.Windows) {
-		return new WindowsKeyboardMapper(_isUSStandard, <IWindowsKeyboardMapping>rawMapping, mapAltGrToCtrlAlt);
+		return new WindowsKeyboardMapper(_isUSStandard, <IWindowsKeyboardMapping>rawMapping);
 	}
 
 	if (!rawMapping || Object.keys(rawMapping).length === 0) {
 		// Looks like reading the mappings failed (most likely Mac + Japanese/Chinese keyboard layouts)
-		return new FallbackKeyboardMapper(mapAltGrToCtrlAlt, OS);
+		return new MacLinuxFallbackKeyboardMapper(OS);
 	}
 
 	if (OS === OperatingSystem.Macintosh) {
 		const kbInfo = <IMacKeyboardLayoutInfo>layoutInfo;
 		if (kbInfo.id === 'com.apple.keylayout.DVORAK-QWERTYCMD') {
 			// Use keyCode based dispatching for DVORAK - QWERTY ⌘
-			return new FallbackKeyboardMapper(mapAltGrToCtrlAlt, OS);
+			return new MacLinuxFallbackKeyboardMapper(OS);
 		}
 	}
 
-	return new MacLinuxKeyboardMapper(_isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, mapAltGrToCtrlAlt, OS);
+	return new MacLinuxKeyboardMapper(_isUSStandard, <IMacLinuxKeyboardMapping>rawMapping, OS);
 }
 
 function isUSStandard(_kbInfo: IKeyboardLayoutInfo | null): boolean {
@@ -120,5 +147,3 @@ function isUSStandard(_kbInfo: IKeyboardLayoutInfo | null): boolean {
 
 	return false;
 }
-
-registerSingleton(IKeyboardLayoutService, KeyboardLayoutService, InstantiationType.Delayed);

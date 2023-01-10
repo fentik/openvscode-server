@@ -14,7 +14,7 @@ import Severity from 'vs/base/common/severity';
 import { withNullAsUndefined } from 'vs/base/common/types';
 import { localize } from 'vs/nls';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
@@ -55,10 +55,10 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 		this.options = options;
 	}
 
-	protected async _getPicks(filter: string, _disposables: DisposableStore, token: CancellationToken): Promise<Array<ICommandQuickPick | IQuickPickSeparator>> {
+	protected async _getPicks(filter: string, disposables: DisposableStore, token: CancellationToken): Promise<Array<ICommandQuickPick | IQuickPickSeparator>> {
 
 		// Ask subclass for all command picks
-		const allCommandPicks = await this.getCommandPicks(token);
+		const allCommandPicks = await this.getCommandPicks(disposables, token);
 
 		if (token.isCancellationRequested) {
 			return [];
@@ -176,7 +176,7 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 	/**
 	 * Subclasses to provide the actual command entries.
 	 */
-	protected abstract getCommandPicks(token: CancellationToken): Promise<Array<ICommandQuickPick>>;
+	protected abstract getCommandPicks(disposables: DisposableStore, token: CancellationToken): Promise<Array<ICommandQuickPick>>;
 }
 
 interface ISerializedCommandHistory {
@@ -218,14 +218,10 @@ export class CommandsHistory extends Disposable {
 	}
 
 	private registerListeners(): void {
-		this._register(this.configurationService.onDidChangeConfiguration(e => this.updateConfiguration(e)));
+		this._register(this.configurationService.onDidChangeConfiguration(() => this.updateConfiguration()));
 	}
 
-	private updateConfiguration(e?: IConfigurationChangeEvent): void {
-		if (e && !e.affectsConfiguration('workbench.commandPalette.history')) {
-			return;
-		}
-
+	private updateConfiguration(): void {
 		this.configuredCommandsHistoryLength = CommandsHistory.getConfiguredCommandHistoryLength(this.configurationService);
 
 		if (CommandsHistory.cache && CommandsHistory.cache.limit !== this.configuredCommandsHistoryLength) {

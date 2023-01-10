@@ -52,20 +52,10 @@ export type Entry = File | Directory;
 
 export class InMemoryFileSystemProvider extends Disposable implements IFileSystemProviderWithFileReadWriteCapability {
 
-	private _onDidChangeCapabilities = this._register(new Emitter<void>());
-	readonly onDidChangeCapabilities = this._onDidChangeCapabilities.event;
-
-	private _capabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive;
-	get capabilities(): FileSystemProviderCapabilities { return this._capabilities; }
-
-	setReadOnly(readonly: boolean) {
-		const isReadonly = !!(this._capabilities & FileSystemProviderCapabilities.Readonly);
-		if (readonly !== isReadonly) {
-			this._capabilities = readonly ? FileSystemProviderCapabilities.Readonly | FileSystemProviderCapabilities.PathCaseSensitive | FileSystemProviderCapabilities.FileReadWrite
-				: FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.PathCaseSensitive;
-			this._onDidChangeCapabilities.fire();
-		}
-	}
+	readonly capabilities: FileSystemProviderCapabilities =
+		FileSystemProviderCapabilities.FileReadWrite
+		| FileSystemProviderCapabilities.PathCaseSensitive;
+	readonly onDidChangeCapabilities: Event<void> = Event.None;
 
 	root = new Directory('');
 

@@ -7,7 +7,7 @@ import { localize } from 'vs/nls';
 import { Action2, MenuId, registerAction2 } from 'vs/platform/actions/common/actions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES, } from 'vs/workbench/common/actions';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 
 class ToggleRenderWhitespaceAction extends Action2 {
@@ -22,13 +22,13 @@ class ToggleRenderWhitespaceAction extends Action2 {
 				mnemonicTitle: localize({ key: 'miToggleRenderWhitespace', comment: ['&& denotes a mnemonic'] }, "&&Render Whitespace"),
 				original: 'Toggle Render Whitespace'
 			},
-			category: Categories.View,
+			category: CATEGORIES.View,
 			f1: true,
 			toggled: ContextKeyExpr.notEquals('config.editor.renderWhitespace', 'none'),
 			menu: {
-				id: MenuId.MenubarAppearanceMenu,
-				group: '4_editor',
-				order: 3
+				id: MenuId.MenubarViewMenu,
+				group: '5_editor',
+				order: 4
 			}
 		});
 	}

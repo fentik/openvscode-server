@@ -6,8 +6,9 @@
 import { IMenuService, registerAction2 } from 'vs/platform/actions/common/actions';
 import { MenuHiddenStatesReset } from 'vs/platform/actions/common/menuResetAction';
 import { MenuService } from 'vs/platform/actions/common/menuService';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 
-registerSingleton(IMenuService, MenuService, InstantiationType.Delayed);
+
+registerSingleton(IMenuService, MenuService, true);
 
 registerAction2(MenuHiddenStatesReset);

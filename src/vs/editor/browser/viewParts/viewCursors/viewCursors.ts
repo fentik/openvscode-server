@@ -16,7 +16,6 @@ import { ViewContext } from 'vs/editor/common/viewModel/viewContext';
 import * as viewEvents from 'vs/editor/common/viewEvents';
 import { registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { isHighContrast } from 'vs/platform/theme/common/theme';
-import { CursorChangeReason } from 'vs/editor/common/cursorEvents';
 
 export class ViewCursors extends ViewPart {
 
@@ -25,7 +24,7 @@ export class ViewCursors extends ViewPart {
 	private _readOnly: boolean;
 	private _cursorBlinking: TextEditorCursorBlinkingStyle;
 	private _cursorStyle: TextEditorCursorStyle;
-	private _cursorSmoothCaretAnimation: 'off' | 'explicit' | 'on';
+	private _cursorSmoothCaretAnimation: boolean;
 	private _selectionIsEmpty: boolean;
 	private _isComposingInput: boolean;
 
@@ -114,12 +113,8 @@ export class ViewCursors extends ViewPart {
 		}
 		return true;
 	}
-	private _onCursorPositionChanged(position: Position, secondaryPositions: Position[], reason: CursorChangeReason): void {
-		const pauseAnimation = (
-			this._secondaryCursors.length !== secondaryPositions.length
-			|| (this._cursorSmoothCaretAnimation === 'explicit' && reason !== CursorChangeReason.Explicit)
-		);
-		this._primaryCursor.onCursorPositionChanged(position, pauseAnimation);
+	private _onCursorPositionChanged(position: Position, secondaryPositions: Position[]): void {
+		this._primaryCursor.onCursorPositionChanged(position);
 		this._updateBlinking();
 
 		if (this._secondaryCursors.length < secondaryPositions.length) {
@@ -140,7 +135,7 @@ export class ViewCursors extends ViewPart {
 		}
 
 		for (let i = 0; i < secondaryPositions.length; i++) {
-			this._secondaryCursors[i].onCursorPositionChanged(secondaryPositions[i], pauseAnimation);
+			this._secondaryCursors[i].onCursorPositionChanged(secondaryPositions[i]);
 		}
 
 	}
@@ -149,7 +144,7 @@ export class ViewCursors extends ViewPart {
 		for (let i = 0, len = e.selections.length; i < len; i++) {
 			positions[i] = e.selections[i].getPosition();
 		}
-		this._onCursorPositionChanged(positions[0], positions.slice(1), e.reason);
+		this._onCursorPositionChanged(positions[0], positions.slice(1));
 
 		const selectionIsEmpty = e.selections[0].isEmpty();
 		if (this._selectionIsEmpty !== selectionIsEmpty) {
@@ -318,7 +313,7 @@ export class ViewCursors extends ViewPart {
 		} else {
 			result += ' cursor-solid';
 		}
-		if (this._cursorSmoothCaretAnimation === 'on' || this._cursorSmoothCaretAnimation === 'explicit') {
+		if (this._cursorSmoothCaretAnimation) {
 			result += ' cursor-smooth-caret-animation';
 		}
 		return result;
@@ -380,6 +375,7 @@ registerThemingParticipant((theme, collector) => {
 		if (!caretBackground) {
 			caretBackground = caret.opposite();
 		}
+		collector.addRule(`.monaco-editor .inputarea.ime-input { caret-color: ${caret}; }`);
 		collector.addRule(`.monaco-editor .cursors-layer .cursor { background-color: ${caret}; border-color: ${caret}; color: ${caretBackground}; }`);
 		if (isHighContrast(theme.type)) {
 			collector.addRule(`.monaco-editor .cursors-layer.has-selection .cursor { border-left: 1px solid ${caretBackground}; border-right: 1px solid ${caretBackground}; }`);

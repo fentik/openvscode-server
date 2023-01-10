@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { $ } from 'vs/base/browser/dom';
-import { IBoundarySashes, Orientation, Sash } from 'vs/base/browser/ui/sash/sash';
+import { Orientation, Sash } from 'vs/base/browser/ui/sash/sash';
 import { DistributeSizing, ISplitViewStyles, IView as ISplitView, LayoutPriority, Sizing, SplitView } from 'vs/base/browser/ui/splitview/splitview';
 import { equals as arrayEquals, tail2 as tail } from 'vs/base/common/arrays';
 import { Color } from 'vs/base/common/color';
@@ -33,6 +33,13 @@ interface IRelativeBoundarySashes {
 	readonly end?: Sash;
 	readonly orthogonalStart?: Sash;
 	readonly orthogonalEnd?: Sash;
+}
+
+export interface IBoundarySashes {
+	readonly top?: Sash;
+	readonly right?: Sash;
+	readonly bottom?: Sash;
+	readonly left?: Sash;
 }
 
 /**
@@ -80,14 +87,6 @@ export interface IView {
 	 * @remarks Only used when `proportionalLayout` is false.
 	 */
 	readonly priority?: LayoutPriority;
-
-	/**
-	 * If the {@link GridView} supports proportional layout,
-	 * this property allows for finer control over the proportional layout algorithm, per view.
-	 *
-	 * @defaultValue `true`
-	 */
-	readonly proportionalLayout?: boolean;
 
 	/**
 	 * Whether the view will snap whenever the user reaches its minimum size or
@@ -256,12 +255,8 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 	private _orthogonalSize: number;
 	get orthogonalSize(): number { return this._orthogonalSize; }
 
-	private _absoluteOffset: number = 0;
-	get absoluteOffset(): number { return this._absoluteOffset; }
-
-	private _absoluteOrthogonalOffset: number = 0;
-	get absoluteOrthogonalOffset(): number { return this._absoluteOrthogonalOffset; }
-
+	private absoluteOffset: number = 0;
+	private absoluteOrthogonalOffset: number = 0;
 	private absoluteOrthogonalSize: number = 0;
 
 	private _styles: IGridViewStyles;
@@ -276,11 +271,11 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 	}
 
 	get top(): number {
-		return this.orientation === Orientation.HORIZONTAL ? this._absoluteOffset : this._absoluteOrthogonalOffset;
+		return this.orientation === Orientation.HORIZONTAL ? this.absoluteOffset : this.absoluteOrthogonalOffset;
 	}
 
 	get left(): number {
-		return this.orientation === Orientation.HORIZONTAL ? this._absoluteOrthogonalOffset : this._absoluteOffset;
+		return this.orientation === Orientation.HORIZONTAL ? this.absoluteOrthogonalOffset : this.absoluteOffset;
 	}
 
 	get minimumSize(): number {
@@ -305,14 +300,6 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 		}
 
 		return LayoutPriority.Normal;
-	}
-
-	get proportionalLayout(): boolean {
-		if (this.children.length === 0) {
-			return true;
-		}
-
-		return this.children.every(c => c.proportionalLayout);
 	}
 
 	get minimumOrthogonalSize(): number {
@@ -397,7 +384,7 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 		readonly orientation: Orientation,
 		readonly layoutController: LayoutController,
 		styles: IGridViewStyles,
-		readonly splitviewProportionalLayout: boolean,
+		readonly proportionalLayout: boolean,
 		size: number = 0,
 		orthogonalSize: number = 0,
 		edgeSnapping: boolean = false,
@@ -411,7 +398,7 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 
 		if (!childDescriptors) {
 			// Normal behavior, we have no children yet, just set up the splitview
-			this.splitview = new SplitView(this.element, { orientation, styles, proportionalLayout: splitviewProportionalLayout });
+			this.splitview = new SplitView(this.element, { orientation, styles, proportionalLayout });
 			this.splitview.layout(size, { orthogonalSize, absoluteOffset: 0, absoluteOrthogonalOffset: 0, absoluteSize: size, absoluteOrthogonalSize: orthogonalSize });
 		} else {
 			// Reconstruction behavior, we want to reconstruct a splitview
@@ -426,7 +413,7 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 				size: this.orthogonalSize
 			};
 
-			const options = { proportionalLayout: splitviewProportionalLayout, orientation, styles };
+			const options = { proportionalLayout, orientation, styles };
 
 			this.children = childDescriptors.map(c => c.node);
 			this.splitview = new SplitView(this.element, { ...options, descriptor });
@@ -473,14 +460,14 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 		// branch nodes should flip the normal/orthogonal directions
 		this._size = ctx.orthogonalSize;
 		this._orthogonalSize = size;
-		this._absoluteOffset = ctx.absoluteOffset + offset;
-		this._absoluteOrthogonalOffset = ctx.absoluteOrthogonalOffset;
+		this.absoluteOffset = ctx.absoluteOffset + offset;
+		this.absoluteOrthogonalOffset = ctx.absoluteOrthogonalOffset;
 		this.absoluteOrthogonalSize = ctx.absoluteOrthogonalSize;
 
 		this.splitview.layout(ctx.orthogonalSize, {
 			orthogonalSize: size,
-			absoluteOffset: this._absoluteOrthogonalOffset,
-			absoluteOrthogonalOffset: this._absoluteOffset,
+			absoluteOffset: this.absoluteOrthogonalOffset,
+			absoluteOrthogonalOffset: this.absoluteOffset,
 			absoluteSize: ctx.absoluteOrthogonalSize,
 			absoluteOrthogonalSize: ctx.absoluteSize
 		});
@@ -718,8 +705,8 @@ class BranchNode implements ISplitView<ILayoutContext>, IDisposable {
 	}
 
 	private updateSplitviewEdgeSnappingEnablement(): void {
-		this.splitview.startSnappingEnabled = this._edgeSnapping || this._absoluteOrthogonalOffset > 0;
-		this.splitview.endSnappingEnabled = this._edgeSnapping || this._absoluteOrthogonalOffset + this._size < this.absoluteOrthogonalSize;
+		this.splitview.startSnappingEnabled = this._edgeSnapping || this.absoluteOrthogonalOffset > 0;
+		this.splitview.endSnappingEnabled = this._edgeSnapping || this.absoluteOrthogonalOffset + this._size < this.absoluteOrthogonalSize;
 	}
 
 	dispose(): void {
@@ -857,10 +844,6 @@ class LeafNode implements ISplitView<ILayoutContext>, IDisposable {
 		return this.view.priority;
 	}
 
-	get proportionalLayout(): boolean {
-		return this.view.proportionalLayout ?? true;
-	}
-
 	get snap(): boolean | undefined {
 		return this.view.snap;
 	}
@@ -933,7 +916,7 @@ export interface INodeDescriptor {
 
 function flipNode<T extends Node>(node: T, size: number, orthogonalSize: number): T {
 	if (node instanceof BranchNode) {
-		const result = new BranchNode(orthogonal(node.orientation), node.layoutController, node.styles, node.splitviewProportionalLayout, size, orthogonalSize, node.edgeSnapping);
+		const result = new BranchNode(orthogonal(node.orientation), node.layoutController, node.styles, node.proportionalLayout, size, orthogonalSize, node.edgeSnapping);
 
 		let totalSize = 0;
 
@@ -1114,9 +1097,9 @@ export class GridView implements IDisposable {
 			return;
 		}
 
-		const { size, orthogonalSize, absoluteOffset, absoluteOrthogonalOffset } = this._root;
+		const { size, orthogonalSize } = this._root;
 		this.root = flipNode(this._root, orthogonalSize, size);
-		this.root.layout(size, 0, { orthogonalSize, absoluteOffset: absoluteOrthogonalOffset, absoluteOrthogonalOffset: absoluteOffset, absoluteSize: size, absoluteOrthogonalSize: orthogonalSize });
+		this.root.layout(size, 0, { orthogonalSize, absoluteOffset: 0, absoluteOrthogonalOffset: 0, absoluteSize: size, absoluteOrthogonalSize: orthogonalSize });
 		this.boundarySashes = this.boundarySashes;
 	}
 
@@ -1170,7 +1153,7 @@ export class GridView implements IDisposable {
 		this.layoutController.isLayoutEnabled = true;
 
 		const [size, orthogonalSize, offset, orthogonalOffset] = this.root.orientation === Orientation.HORIZONTAL ? [height, width, top, left] : [width, height, left, top];
-		this.root.layout(size, 0, { orthogonalSize, absoluteOffset: offset, absoluteOrthogonalOffset: orthogonalOffset, absoluteSize: size, absoluteOrthogonalSize: orthogonalSize });
+		this.root.layout(size, offset, { orthogonalSize, absoluteOffset: offset, absoluteOrthogonalOffset: orthogonalOffset, absoluteSize: size, absoluteOrthogonalSize: orthogonalSize });
 	}
 
 	/**

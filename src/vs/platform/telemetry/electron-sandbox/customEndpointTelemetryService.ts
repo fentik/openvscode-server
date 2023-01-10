@@ -6,4 +6,4 @@
 import { registerSharedProcessRemoteService } from 'vs/platform/ipc/electron-sandbox/services';
 import { ICustomEndpointTelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
-registerSharedProcessRemoteService(ICustomEndpointTelemetryService, 'customEndpointTelemetry');
+registerSharedProcessRemoteService(ICustomEndpointTelemetryService, 'customEndpointTelemetry', { supportsDelayedInstantiation: true });

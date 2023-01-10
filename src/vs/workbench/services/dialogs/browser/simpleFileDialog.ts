@@ -100,12 +100,7 @@ enum UpdateResult {
 
 export const RemoteFileDialogContext = new RawContextKey<boolean>('remoteFileDialogVisible', false);
 
-export interface ISimpleFileDialog {
-	showOpenDialog(options: IOpenDialogOptions): Promise<URI | undefined>;
-	showSaveDialog(options: ISaveDialogOptions): Promise<URI | undefined>;
-}
-
-export class SimpleFileDialog implements ISimpleFileDialog {
+export class SimpleFileDialog {
 	private options!: IOpenDialogOptions;
 	private currentFolder!: URI;
 	private filePickBox!: IQuickPick<FileQuickPickItem>;
@@ -559,16 +554,6 @@ export class SimpleFileDialog implements ISimpleFileDialog {
 		return this.remoteUriFrom(value);
 	}
 
-	private tryAddTrailingSeparatorToDirectory(uri: URI, stat: IFileStatWithPartialMetadata): URI {
-		if (stat.isDirectory) {
-			// At this point we know it's a directory and can add the trailing path separator
-			if (!this.endsWithSlash(uri.path)) {
-				return resources.addTrailingPathSeparator(uri);
-			}
-		}
-		return uri;
-	}
-
 	private async tryUpdateItems(value: string, valueUri: URI): Promise<UpdateResult> {
 		if ((value.length > 0) && (value[0] === '~')) {
 			const newDir = this.tildaReplace(value);
@@ -585,7 +570,6 @@ export class SimpleFileDialog implements ISimpleFileDialog {
 				// do nothing
 			}
 			if (stat && stat.isDirectory && (resources.basename(valueUri) !== '.') && this.endsWithSlash(value)) {
-				valueUri = this.tryAddTrailingSeparatorToDirectory(valueUri, stat);
 				return await this.updateItems(valueUri) ? UpdateResult.UpdatedWithTrailing : UpdateResult.Updated;
 			} else if (this.endsWithSlash(value)) {
 				// The input box contains a path that doesn't exist on the system.
@@ -609,7 +593,10 @@ export class SimpleFileDialog implements ISimpleFileDialog {
 					}
 					if (statWithoutTrailing && statWithoutTrailing.isDirectory) {
 						this.badPath = undefined;
-						inputUriDirname = this.tryAddTrailingSeparatorToDirectory(inputUriDirname, statWithoutTrailing);
+						// At this point we know it's a directory and can add the trailing path separator
+						if (!this.endsWithSlash(inputUriDirname.path)) {
+							inputUriDirname = resources.addTrailingPathSeparator(inputUriDirname);
+						}
 						return await this.updateItems(inputUriDirname, false, resources.basename(valueUri)) ? UpdateResult.UpdatedWithTrailing : UpdateResult.Updated;
 					}
 				}
@@ -816,11 +803,8 @@ export class SimpleFileDialog implements ISimpleFileDialog {
 				// Filename not allowed
 				this.filePickBox.validationMessage = nls.localize('remoteFileDialog.validateBadFilename', 'Please enter a valid file name.');
 				return Promise.resolve(false);
-			} else if (!statDirname) {
+			} else if (!statDirname || !statDirname.isDirectory) {
 				// Folder to save in doesn't exist
-				const message = nls.localize('remoteFileDialog.validateCreateDirectory', 'The folder {0} does not exist. Would you like to create it?', resources.basename(resources.dirname(uri)));
-				return this.yesNoPrompt(uri, message);
-			} else if (!statDirname.isDirectory) {
 				this.filePickBox.validationMessage = nls.localize('remoteFileDialog.validateNonexistentDir', 'Please enter a path that exists.');
 				return Promise.resolve(false);
 			}

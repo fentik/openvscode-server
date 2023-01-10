@@ -9,14 +9,13 @@ import { EDITOR_FONT_DEFAULTS, IEditorOptions } from 'vs/editor/common/config/ed
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import * as colorRegistry from 'vs/platform/theme/common/colorRegistry';
 import { ColorScheme } from 'vs/platform/theme/common/theme';
-import { IWorkbenchThemeService, IWorkbenchColorTheme } from 'vs/workbench/services/themes/common/workbenchThemeService';
+import { IColorTheme, IThemeService } from 'vs/platform/theme/common/themeService';
 import { DEFAULT_FONT_FAMILY } from 'vs/workbench/browser/style';
 import { WebviewStyles } from 'vs/workbench/contrib/webview/browser/webview';
 
 interface WebviewThemeData {
 	readonly activeTheme: string;
 	readonly themeLabel: string;
-	readonly themeId: string;
 	readonly styles: Readonly<WebviewStyles>;
 }
 
@@ -28,24 +27,24 @@ export class WebviewThemeDataProvider extends Disposable {
 	public readonly onThemeDataChanged = this._onThemeDataChanged.event;
 
 	constructor(
-		@IWorkbenchThemeService private readonly _themeService: IWorkbenchThemeService,
+		@IThemeService private readonly _themeService: IThemeService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 	) {
 		super();
 
 		this._register(this._themeService.onDidColorThemeChange(() => {
-			this._reset();
+			this.reset();
 		}));
 
 		const webviewConfigurationKeys = ['editor.fontFamily', 'editor.fontWeight', 'editor.fontSize'];
 		this._register(this._configurationService.onDidChangeConfiguration(e => {
 			if (webviewConfigurationKeys.some(key => e.affectsConfiguration(key))) {
-				this._reset();
+				this.reset();
 			}
 		}));
 	}
 
-	public getTheme(): IWorkbenchColorTheme {
+	public getTheme(): IColorTheme {
 		return this._themeService.getColorTheme();
 	}
 
@@ -76,13 +75,13 @@ export class WebviewThemeDataProvider extends Disposable {
 			};
 
 			const activeTheme = ApiThemeClassName.fromTheme(theme);
-			this._cachedWebViewThemeData = { styles, activeTheme, themeLabel: theme.label, themeId: theme.settingsId };
+			this._cachedWebViewThemeData = { styles, activeTheme, themeLabel: theme.label, };
 		}
 
 		return this._cachedWebViewThemeData;
 	}
 
-	private _reset() {
+	private reset() {
 		this._cachedWebViewThemeData = undefined;
 		this._onThemeDataChanged.fire();
 	}
@@ -96,7 +95,7 @@ enum ApiThemeClassName {
 }
 
 namespace ApiThemeClassName {
-	export function fromTheme(theme: IWorkbenchColorTheme): ApiThemeClassName {
+	export function fromTheme(theme: IColorTheme): ApiThemeClassName {
 		switch (theme.type) {
 			case ColorScheme.LIGHT: return ApiThemeClassName.light;
 			case ColorScheme.DARK: return ApiThemeClassName.dark;

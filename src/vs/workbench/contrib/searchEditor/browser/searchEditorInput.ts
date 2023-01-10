@@ -72,8 +72,6 @@ export class SearchEditorInput extends EditorInput {
 
 	private dirty: boolean = false;
 
-	private lastLabel: string | undefined;
-
 	private readonly _onDidChangeContent = this._register(new Emitter<void>());
 	readonly onDidChangeContent: Event<void> = this._onDidChangeContent.event;
 
@@ -160,9 +158,9 @@ export class SearchEditorInput extends EditorInput {
 		this.configChangeListenerDisposable?.dispose();
 		if (!this.isDisposed()) {
 			this.configChangeListenerDisposable = model.onConfigDidUpdate(() => {
-				if (this.lastLabel !== this.getName()) {
+				const oldName = this.getName();
+				if (oldName !== this.getName()) {
 					this._onDidChangeLabel.fire();
-					this.lastLabel = this.getName();
 				}
 				this.memento.getMemento(StorageScope.WORKSPACE, StorageTarget.MACHINE).searchConfig = model.config;
 			});
@@ -172,11 +170,11 @@ export class SearchEditorInput extends EditorInput {
 
 	async resolveModels() {
 		return this.model.resolve().then(data => {
+			const oldName = this.getName();
 			this._cachedResultsModel = data.resultsModel;
 			this._cachedConfigurationModel = data.configurationModel;
-			if (this.lastLabel !== this.getName()) {
+			if (oldName !== this.getName()) {
 				this._onDidChangeLabel.fire();
-				this.lastLabel = this.getName();
 			}
 			this.registerConfigChangeListeners(data.configurationModel);
 			return data;
@@ -186,13 +184,7 @@ export class SearchEditorInput extends EditorInput {
 	override async saveAs(group: GroupIdentifier, options?: ITextFileSaveOptions): Promise<EditorInput | undefined> {
 		const path = await this.fileDialogService.pickFileToSave(await this.suggestFileName(), options?.availableFileSystems);
 		if (path) {
-			this.telemetryService.publicLog2<
-				{},
-				{
-					owner: 'roblourens';
-					comment: 'Fired when a search editor is saved';
-				}>
-				('searchEditor/saveSearchResults');
+			this.telemetryService.publicLog2<{}, { owner: 'roblourens' }>('searchEditor/saveSearchResults');
 			const toWrite = await this.serializeForDisk();
 			if (await this.textFileService.create([{ resource: path, value: toWrite, options: { overwrite: true } }])) {
 				this.setDirty(false);

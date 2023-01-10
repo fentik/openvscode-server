@@ -19,7 +19,7 @@ import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { IS_NEW_KEY } from 'vs/platform/storage/common/storage';
 import { IUserDataProfile, IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { currentSessionDateStorageKey, firstSessionDateStorageKey, lastSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
-import { isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier, IAnyWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
+import { IEmptyWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 
 export interface IStorageMainOptions {
 
@@ -27,7 +27,7 @@ export interface IStorageMainOptions {
 	 * If enabled, storage will not persist to disk
 	 * but into memory.
 	 */
-	readonly useInMemoryStorage?: boolean;
+	useInMemoryStorage?: boolean;
 }
 
 /**
@@ -64,11 +64,6 @@ export interface IStorageMain extends IDisposable {
 	readonly storage: IStorage;
 
 	/**
-	 * The file path of the underlying storage file if any.
-	 */
-	readonly path: string | undefined;
-
-	/**
 	 * Required call to ensure the service can be used.
 	 */
 	init(): Promise<void>;
@@ -92,18 +87,13 @@ export interface IStorageMain extends IDisposable {
 	delete(key: string): void;
 
 	/**
-	 * Whether the storage is using in-memory persistence or not.
-	 */
-	isInMemory(): boolean;
-
-	/**
 	 * Close the storage connection.
 	 */
 	close(): Promise<void>;
 }
 
 export interface IStorageChangeEvent {
-	readonly key: string;
+	key: string;
 }
 
 abstract class BaseStorageMain extends Disposable implements IStorageMain {
@@ -116,7 +106,7 @@ abstract class BaseStorageMain extends Disposable implements IStorageMain {
 	private readonly _onDidCloseStorage = this._register(new Emitter<void>());
 	readonly onDidCloseStorage = this._onDidCloseStorage.event;
 
-	private _storage = new Storage(new InMemoryStorageDatabase(), { hint: StorageHint.STORAGE_IN_MEMORY }); // storage is in-memory until initialized
+	private _storage: IStorage = new Storage(new InMemoryStorageDatabase()); // storage is in-memory until initialized
 	get storage(): IStorage { return this._storage; }
 
 	abstract get path(): string | undefined;
@@ -133,10 +123,6 @@ abstract class BaseStorageMain extends Disposable implements IStorageMain {
 		private readonly fileService: IFileService
 	) {
 		super();
-	}
-
-	isInMemory(): boolean {
-		return this._storage.isInMemory();
 	}
 
 	init(): Promise<void> {
@@ -197,7 +183,7 @@ abstract class BaseStorageMain extends Disposable implements IStorageMain {
 		return storage.init();
 	}
 
-	protected abstract doCreate(): Promise<Storage>;
+	protected abstract doCreate(): Promise<IStorage>;
 
 	get items(): Map<string, string> { return this._storage.items; }
 
@@ -290,10 +276,10 @@ class BaseProfileAwareStorageMain extends BaseStorageMain {
 		super(logService, fileService);
 	}
 
-	protected async doCreate(): Promise<Storage> {
+	protected async doCreate(): Promise<IStorage> {
 		return new Storage(new SQLiteStorageDatabase(this.path ?? SQLiteStorageDatabase.IN_MEMORY_PATH, {
 			logging: this.createLoggingOptions()
-		}), !this.path ? { hint: StorageHint.STORAGE_IN_MEMORY } : undefined);
+		}));
 	}
 }
 
@@ -359,7 +345,7 @@ export class WorkspaceStorageMain extends BaseStorageMain {
 	}
 
 	constructor(
-		private workspace: IAnyWorkspaceIdentifier,
+		private workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | IEmptyWorkspaceIdentifier,
 		private readonly options: IStorageMainOptions,
 		logService: ILogService,
 		private readonly environmentService: IEnvironmentService,
@@ -368,12 +354,12 @@ export class WorkspaceStorageMain extends BaseStorageMain {
 		super(logService, fileService);
 	}
 
-	protected async doCreate(): Promise<Storage> {
+	protected async doCreate(): Promise<IStorage> {
 		const { storageFilePath, wasCreated } = await this.prepareWorkspaceStorageFolder();
 
 		return new Storage(new SQLiteStorageDatabase(storageFilePath, {
 			logging: this.createLoggingOptions()
-		}), { hint: this.options.useInMemoryStorage ? StorageHint.STORAGE_IN_MEMORY : wasCreated ? StorageHint.STORAGE_DOES_NOT_EXIST : undefined });
+		}), { hint: wasCreated ? StorageHint.STORAGE_DOES_NOT_EXIST : undefined });
 	}
 
 	private async prepareWorkspaceStorageFolder(): Promise<{ storageFilePath: string; wasCreated: boolean }> {
@@ -429,7 +415,7 @@ export class InMemoryStorageMain extends BaseStorageMain {
 		return undefined; // in-memory has no path
 	}
 
-	protected async doCreate(): Promise<Storage> {
-		return new Storage(new InMemoryStorageDatabase(), { hint: StorageHint.STORAGE_IN_MEMORY });
+	protected async doCreate(): Promise<IStorage> {
+		return new Storage(new InMemoryStorageDatabase());
 	}
 }

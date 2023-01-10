@@ -68,6 +68,11 @@ function getVisibleCells(cells: CellViewModel[], hiddenRanges: ICellRange[]) {
 	return result;
 }
 
+export interface IFocusNextPreviousDelegate {
+	onFocusNext(applyFocusNext: () => void): void;
+	onFocusPrevious(applyFocusPrevious: () => void): void;
+}
+
 export const NOTEBOOK_WEBVIEW_BOUNDARY = 5000;
 
 function validateWebviewBoundary(element: HTMLElement) {
@@ -142,6 +147,7 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 
 	constructor(
 		private listUser: string,
+		parentContainer: HTMLElement,
 		container: HTMLElement,
 		viewContext: ViewContext,
 		delegate: IListVirtualDelegate<CellViewModel>,
@@ -481,7 +487,7 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 		this._updateElementsInWebview(viewDiffs);
 	}
 
-	splice2(start: number, deleteCount: number, elements: readonly CellViewModel[] = []): void {
+	splice2(start: number, deleteCount: number, elements: CellViewModel[] = []): void {
 		// we need to convert start and delete count based on hidden ranges
 		if (start < 0 || start > this.view.length) {
 			return;
@@ -933,11 +939,7 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 	}
 
 	triggerScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent) {
-		this.view.delegateScrollFromMouseWheelEvent(browserEvent);
-	}
-
-	delegateVerticalScrollbarPointerDown(browserEvent: PointerEvent) {
-		this.view.delegateVerticalScrollbarPointerDown(browserEvent);
+		this.view.triggerScrollFromMouseWheelEvent(browserEvent);
 	}
 
 	isElementAboveViewport(index: number) {
@@ -947,7 +949,7 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 		return elementBottom < this.scrollTop;
 	}
 
-	updateElementHeight2(element: ICellViewModel, size: number, anchorElementIndex: number | null = null): void {
+	updateElementHeight2(element: ICellViewModel, size: number): void {
 		const index = this._getViewIndexUpperBound(element);
 		if (index === undefined || index < 0 || index >= this.length) {
 			return;
@@ -972,30 +974,29 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 					}
 				});
 			}
-			this.view.updateElementHeight(index, size, anchorElementIndex);
+			this.view.updateElementHeight(index, size, null);
 			return;
-		}
-
-		if (anchorElementIndex !== null) {
-			return this.view.updateElementHeight(index, size, anchorElementIndex);
 		}
 
 		const focused = this.getFocus();
 		if (!focused.length) {
-			return this.view.updateElementHeight(index, size, null);
+			this.view.updateElementHeight(index, size, null);
+			return;
 		}
 
 		const focus = focused[0];
 
 		if (focus <= index) {
-			return this.view.updateElementHeight(index, size, focus);
+			this.view.updateElementHeight(index, size, focus);
+			return;
 		}
 
 		// the `element` is in the viewport, it's very often that the height update is triggerred by user interaction (collapse, run cell)
 		// then we should make sure that the `element`'s visual view position doesn't change.
 
 		if (this.view.elementTop(index) >= this.view.scrollTop) {
-			return this.view.updateElementHeight(index, size, index);
+			this.view.updateElementHeight(index, size, index);
+			return;
 		}
 
 		this.view.updateElementHeight(index, size, focus);
@@ -1048,15 +1049,6 @@ export class NotebookCellList extends WorkbenchList<CellViewModel> implements ID
 		const scrollTop = this.getViewScrollTop();
 		const wrapperBottom = this.getViewScrollBottom();
 		const positionOffset = element.getPositionScrollTopOffset(range.startLineNumber, range.startColumn);
-		const elementOriginalHeight = this.view.elementHeight(viewIndex);
-		if (positionOffset >= elementOriginalHeight) {
-			// we are revealing a range that is beyond current element height
-			// if we don't update the element height now, and directly `setTop` to reveal the range
-			// the element might be scrolled out of view
-			// next frame, when we update the element height, the element will never be scrolled back into view
-			const newTotalHeight = element.layoutInfo.totalHeight;
-			this.updateElementHeight(viewIndex, newTotalHeight);
-		}
 		const elementTop = this.view.elementTop(viewIndex);
 		const positionTop = elementTop + positionOffset;
 

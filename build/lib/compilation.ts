@@ -17,15 +17,12 @@ import * as os from 'os';
 import ts = require('typescript');
 import * as File from 'vinyl';
 import * as task from './task';
-import { Mangler } from './mangleTypeScript';
-import { RawSourceMap } from 'source-map';
+
 const watch = require('./watch');
+
 const packageJson = require('../../package.json');
 const productJson = require('../../product.json');
 const replace = require('gulp-replace');
-
-
-// --- gulp-tsb: compile and transpile --------------------------------
 
 const reporter = createReporter();
 
@@ -44,7 +41,7 @@ function getTypeScriptCompilerOptions(src: string): ts.CompilerOptions {
 	return options;
 }
 
-function createCompile(src: string, build: boolean, emitError: boolean, transpileOnly: boolean | { swc: boolean }) {
+function createCompile(src: string, build: boolean, emitError: boolean, transpileOnly: boolean) {
 	const tsb = require('./tsb') as typeof import('./tsb');
 	const sourcemaps = require('gulp-sourcemaps') as typeof import('gulp-sourcemaps');
 
@@ -55,18 +52,13 @@ function createCompile(src: string, build: boolean, emitError: boolean, transpil
 		overrideOptions.inlineSourceMap = true;
 	}
 
-	const compilation = tsb.create(projectPath, overrideOptions, {
-		verbose: false,
-		transpileOnly: Boolean(transpileOnly),
-		transpileWithSwc: typeof transpileOnly !== 'boolean' && transpileOnly.swc
-	}, err => reporter(err));
+	const compilation = tsb.create(projectPath, overrideOptions, { verbose: false, transpileOnly }, err => reporter(err));
 
 	function pipeline(token?: util.ICancellationToken) {
 		const bom = require('gulp-bom') as typeof import('gulp-bom');
 
+		const utf8Filter = util.filter(data => /(\/|\\)test(\/|\\).*utf8/.test(data.path));
 		const tsFilter = util.filter(data => /\.ts$/.test(data.path));
-		const isUtf8Test = (f: File) => /(\/|\\)test(\/|\\).*utf8/.test(f.path);
-		const isRuntimeJs = (f: File) => f.path.endsWith('.js') && !f.path.includes('fixtures');
 		const noDeclarationsFilter = util.filter(data => !(/\.d\.ts$/.test(data.path)));
 
 		const productJsFilter = util.filter(data => !build && data.path.endsWith('vs/platform/product/common/product.ts'));
@@ -83,19 +75,20 @@ function createCompile(src: string, build: boolean, emitError: boolean, transpil
 			.pipe(productJsFilter)
 			.pipe(replace(/{\s*\/\*BUILD->INSERT_PRODUCT_CONFIGURATION\*\/\s*}/, productConfiguration, { skipBinary: true }))
 			.pipe(productJsFilter.restore)
-			.pipe(util.$if(isUtf8Test, bom())) // this is required to preserve BOM in test files that loose it otherwise
-			.pipe(util.$if(!build && isRuntimeJs, util.appendOwnPathSourceURL()))
+			.pipe(utf8Filter)
+			.pipe(bom()) // this is required to preserve BOM in test files that loose it otherwise
+			.pipe(utf8Filter.restore)
 			.pipe(tsFilter)
 			.pipe(util.loadSourcemaps())
 			.pipe(compilation(token))
 			.pipe(noDeclarationsFilter)
-			.pipe(util.$if(build, nls.nls()))
+			.pipe(build ? nls.nls() : es.through())
 			.pipe(noDeclarationsFilter.restore)
-			.pipe(util.$if(!transpileOnly, sourcemaps.write('.', {
+			.pipe(transpileOnly ? es.through() : sourcemaps.write('.', {
 				addComment: false,
 				includeContent: !!build,
 				sourceRoot: overrideOptions.sourceRoot
-			})))
+			}))
 			.pipe(tsFilter.restore)
 			.pipe(reporter.end(!!emitError));
 
@@ -104,15 +97,14 @@ function createCompile(src: string, build: boolean, emitError: boolean, transpil
 	pipeline.tsProjectSrc = () => {
 		return compilation.src({ base: src });
 	};
-	pipeline.projectPath = projectPath;
 	return pipeline;
 }
 
-export function transpileTask(src: string, out: string, swc: boolean): () => NodeJS.ReadWriteStream {
+export function transpileTask(src: string, out: string): () => NodeJS.ReadWriteStream {
 
 	return function () {
 
-		const transpile = createCompile(src, false, true, { swc });
+		const transpile = createCompile(src, false, true, true);
 		const srcPipe = gulp.src(`${src}/**`, { base: `${src}` });
 
 		return srcPipe
@@ -136,28 +128,7 @@ export function compileTask(src: string, out: string, build: boolean): () => Nod
 			generator.execute();
 		}
 
-		// mangle: TypeScript to TypeScript
-		let mangleStream = es.through();
-		if (build) {
-			let ts2tsMangler = new Mangler(compile.projectPath, (...data) => fancyLog(ansiColors.blue('[mangler]'), ...data));
-			const newContentsByFileName = ts2tsMangler.computeNewFileContents();
-			mangleStream = es.through(function write(data: File & { sourceMap?: RawSourceMap }) {
-				const newContents = newContentsByFileName.get(data.path);
-				if (newContents !== undefined) {
-					data.contents = Buffer.from(newContents.out);
-					data.sourceMap = newContents.sourceMap && JSON.parse(newContents.sourceMap);
-				}
-				this.push(data);
-			}, function end() {
-				this.push(null);
-				// free resources
-				newContentsByFileName.clear();
-				(<any>ts2tsMangler) = undefined;
-			});
-		}
-
 		return srcPipe
-			.pipe(mangleStream)
 			.pipe(generator.stream)
 			.pipe(compile())
 			.pipe(gulp.dest(out));
@@ -305,7 +276,7 @@ function generateApiProposalNames() {
 				'// THIS IS A GENERATED FILE. DO NOT EDIT DIRECTLY.',
 				'',
 				'export const allApiProposals = Object.freeze({',
-				`${names.map(name => `\t${name}: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.${name}.d.ts'`).join(`,${eol}`)}`,
+				`${names.map(name => `\t${name}: 'https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.${name}.d.ts'`).join(`,${os.EOL}`)}`,
 				'});',
 				'export type ApiProposalName = keyof typeof allApiProposals;',
 				'',

@@ -28,7 +28,6 @@ import { AmbiguousRunTestsRequest, IMainThreadTestController, ITestService } fro
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { getTestingConfiguration, TestingConfigKeys } from 'vs/workbench/contrib/testing/common/configuration';
-import { isDefined } from 'vs/base/common/types';
 
 export class TestService extends Disposable implements ITestService {
 	declare readonly _serviceBrand: undefined;
@@ -41,8 +40,6 @@ export class TestService extends Disposable implements ITestService {
 	private readonly providerCount: IContextKey<number>;
 	private readonly canRefreshTests: IContextKey<boolean>;
 	private readonly isRefreshingTests: IContextKey<boolean>;
-	private readonly activeEditorHasTests: IContextKey<boolean>;
-
 	/**
 	 * Cancellation for runs requested by the user being managed by the UI.
 	 * Test runs initiated by extensions are not included here.
@@ -99,9 +96,6 @@ export class TestService extends Disposable implements ITestService {
 		this.providerCount = TestingContextKeys.providerCount.bindTo(contextKeyService);
 		this.canRefreshTests = TestingContextKeys.canRefreshTests.bindTo(contextKeyService);
 		this.isRefreshingTests = TestingContextKeys.isRefreshingTests.bindTo(contextKeyService);
-		this.activeEditorHasTests = TestingContextKeys.activeEditorHasTests.bindTo(contextKeyService);
-
-		this._register(editorService.onDidActiveEditorChange(() => this.updateEditorContextKeys()));
 	}
 
 	/**
@@ -133,7 +127,7 @@ export class TestService extends Disposable implements ITestService {
 		const resolved: ResolvedTestRunRequest = {
 			targets: [],
 			exclude: req.exclude?.map(t => t.item.extId),
-			continuous: req.continuous,
+			isAutoRun: req.isAutoRun,
 		};
 
 		// First, try to run the tests using the default run profiles...
@@ -178,41 +172,6 @@ export class TestService extends Disposable implements ITestService {
 		return this.runResolvedTests(resolved, token);
 	}
 
-	/** @inheritdoc */
-	public async startContinuousRun(req: ResolvedTestRunRequest, token: CancellationToken) {
-		if (!req.exclude) {
-			req.exclude = [...this.excluded.all];
-		}
-
-		const trust = await this.workspaceTrustRequestService.requestWorkspaceTrust({
-			message: localize('testTrust', "Running tests may execute code in your workspace."),
-		});
-
-		if (!trust) {
-			return;
-		}
-
-		const byController = groupBy(req.targets, (a, b) => a.controllerId.localeCompare(b.controllerId));
-		const requests = byController.map(
-			group => this.testControllers.get(group[0].controllerId)?.startContinuousRun(
-				group.map(controlReq => ({
-					excludeExtIds: req.exclude!.filter(t => !controlReq.testIds.includes(t)),
-					profileId: controlReq.profileId,
-					controllerId: controlReq.controllerId,
-					testIds: controlReq.testIds,
-				})),
-				token,
-			).then(result => {
-				const errs = result.map(r => r.error).filter(isDefined);
-				if (errs.length) {
-					this.notificationService.error(localize('testError', 'An error occurred attempting to run tests: {0}', errs.join(' ')));
-				}
-			})
-		);
-
-		await Promise.all(requests);
-	}
-
 	/**
 	 * @inheritdoc
 	 */
@@ -235,22 +194,18 @@ export class TestService extends Disposable implements ITestService {
 			const cancelSource = new CancellationTokenSource(token);
 			this.uiRunningTests.set(result.id, cancelSource);
 
-			const byController = groupBy(req.targets, (a, b) => a.controllerId.localeCompare(b.controllerId));
-			const requests = byController.map(
-				group => this.testControllers.get(group[0].controllerId)?.runTests(
-					group.map(controlReq => ({
+			const requests = req.targets.map(
+				group => this.testControllers.get(group.controllerId)?.runTests(
+					{
 						runId: result.id,
-						excludeExtIds: req.exclude!.filter(t => !controlReq.testIds.includes(t)),
-						profileId: controlReq.profileId,
-						controllerId: controlReq.controllerId,
-						testIds: controlReq.testIds,
-					})),
+						excludeExtIds: req.exclude!.filter(t => !group.testIds.includes(t)),
+						profileId: group.profileId,
+						controllerId: group.controllerId,
+						testIds: group.testIds,
+					},
 					cancelSource.token,
-				).then(result => {
-					const errs = result.map(r => r.error).filter(isDefined);
-					if (errs.length) {
-						this.notificationService.error(localize('testError', 'An error occurred attempting to run tests: {0}', errs.join(' ')));
-					}
+				).catch(err => {
+					this.notificationService.error(localize('testError', 'An error occurred attempting to run tests: {0}', err.message));
 				})
 			);
 			await this.saveAllBeforeTest(req);
@@ -268,7 +223,6 @@ export class TestService extends Disposable implements ITestService {
 	public publishDiff(_controllerId: string, diff: TestsDiff) {
 		this.willProcessDiffEmitter.fire(diff);
 		this.collection.apply(diff);
-		this.updateEditorContextKeys();
 		this.didProcessDiffEmitter.fire(diff);
 	}
 
@@ -277,18 +231,6 @@ export class TestService extends Disposable implements ITestService {
 	 */
 	public getTestController(id: string) {
 		return this.testControllers.get(id);
-	}
-
-	/**
-	 * @inheritdoc
-	 */
-	public async syncTests(): Promise<void> {
-		const cts = new CancellationTokenSource();
-		try {
-			await Promise.all([...this.testControllers.values()].map(c => c.syncTests(cts.token)));
-		} finally {
-			cts.dispose(true);
-		}
 	}
 
 	/**
@@ -308,7 +250,7 @@ export class TestService extends Disposable implements ITestService {
 		} finally {
 			this.testRefreshCancellations.delete(cts);
 			this.isRefreshingTests.set(this.testRefreshCancellations.size > 0);
-			cts.dispose(true);
+			cts.dispose();
 		}
 	}
 
@@ -354,20 +296,11 @@ export class TestService extends Disposable implements ITestService {
 		return disposable;
 	}
 
-	private updateEditorContextKeys() {
-		const uri = this.editorService.activeEditor?.resource;
-		if (uri) {
-			this.activeEditorHasTests.set(!Iterable.isEmpty(this.collection.getNodeByUrl(uri)));
-		} else {
-			this.activeEditorHasTests.set(false);
-		}
-	}
-
 	private async saveAllBeforeTest(req: ResolvedTestRunRequest, configurationService: IConfigurationService = this.configurationService, editorService: IEditorService = this.editorService): Promise<void> {
 		if (req.isUiTriggered === false) {
 			return;
 		}
-		const saveBeforeTest = getTestingConfiguration(this.configurationService, TestingConfigKeys.SaveBeforeTest);
+		const saveBeforeTest: boolean = getTestingConfiguration(this.configurationService, TestingConfigKeys.SaveBeforeTest);
 		if (saveBeforeTest) {
 			await editorService.saveAll();
 		}

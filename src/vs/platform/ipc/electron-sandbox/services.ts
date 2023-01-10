@@ -6,33 +6,36 @@
 import { IChannel, IServerChannel, ProxyChannel } from 'vs/base/parts/ipc/common/ipc';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { createDecorator, IInstantiationService, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
+import { createDecorator, ServiceIdentifier } from 'vs/platform/instantiation/common/instantiation';
 
-type ChannelClientCtor<T> = { new(channel: IChannel, ...args: any[]): T };
+type ChannelClientCtor<T> = { new(channel: IChannel): T };
 type Remote = { getChannel(channelName: string): IChannel };
 
 abstract class RemoteServiceStub<T extends object> {
 	constructor(
 		channelName: string,
 		options: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions | undefined,
-		remote: Remote,
-		instantiationService: IInstantiationService
+		remote: Remote
 	) {
 		const channel = remote.getChannel(channelName);
 
 		if (isRemoteServiceWithChannelClientOptions(options)) {
-			return instantiationService.createInstance(new SyncDescriptor(options.channelClientCtor, [channel]));
+			return new options.channelClientCtor(channel);
 		}
 
 		return ProxyChannel.toService(channel, options?.proxyOptions);
 	}
 }
 
-export interface IRemoteServiceWithChannelClientOptions<T> {
+export interface IBaseRemoteServiceOptions {
+	readonly supportsDelayedInstantiation?: boolean;
+}
+
+export interface IRemoteServiceWithChannelClientOptions<T> extends IBaseRemoteServiceOptions {
 	readonly channelClientCtor: ChannelClientCtor<T>;
 }
 
-export interface IRemoteServiceWithProxyOptions {
+export interface IRemoteServiceWithProxyOptions extends IBaseRemoteServiceOptions {
 	readonly proxyOptions?: ProxyChannel.ICreateProxyServiceOptions;
 }
 
@@ -53,13 +56,13 @@ export interface IMainProcessService {
 }
 
 class MainProcessRemoteServiceStub<T extends object> extends RemoteServiceStub<T> {
-	constructor(channelName: string, options: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions | undefined, @IMainProcessService ipcService: IMainProcessService, @IInstantiationService instantiationService: IInstantiationService) {
-		super(channelName, options, ipcService, instantiationService);
+	constructor(channelName: string, options: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions | undefined, @IMainProcessService ipcService: IMainProcessService) {
+		super(channelName, options, ipcService);
 	}
 }
 
 export function registerMainProcessRemoteService<T>(id: ServiceIdentifier<T>, channelName: string, options?: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions): void {
-	registerSingleton(id, new SyncDescriptor(MainProcessRemoteServiceStub, [channelName, options], true));
+	registerSingleton(id, new SyncDescriptor(MainProcessRemoteServiceStub, [channelName, options], options?.supportsDelayedInstantiation));
 }
 
 //#endregion
@@ -79,13 +82,13 @@ export interface ISharedProcessService {
 }
 
 class SharedProcessRemoteServiceStub<T extends object> extends RemoteServiceStub<T> {
-	constructor(channelName: string, options: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions | undefined, @ISharedProcessService ipcService: ISharedProcessService, @IInstantiationService instantiationService: IInstantiationService) {
-		super(channelName, options, ipcService, instantiationService);
+	constructor(channelName: string, options: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions | undefined, @ISharedProcessService ipcService: ISharedProcessService) {
+		super(channelName, options, ipcService);
 	}
 }
 
 export function registerSharedProcessRemoteService<T>(id: ServiceIdentifier<T>, channelName: string, options?: IRemoteServiceWithChannelClientOptions<T> | IRemoteServiceWithProxyOptions): void {
-	registerSingleton(id, new SyncDescriptor(SharedProcessRemoteServiceStub, [channelName, options], true));
+	registerSingleton(id, new SyncDescriptor(SharedProcessRemoteServiceStub, [channelName, options], options?.supportsDelayedInstantiation));
 }
 
 //#endregion

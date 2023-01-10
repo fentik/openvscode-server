@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import 'vs/css!./media/anythingQuickAccess';
-import { IQuickInputButton, IKeyMods, quickPickItemScorerAccessor, QuickPickItemScorerAccessor, IQuickPick, IQuickPickItemWithResource, QuickInputHideReason, IQuickInputService, IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
+import { IQuickInputButton, IKeyMods, quickPickItemScorerAccessor, QuickPickItemScorerAccessor, IQuickPick, IQuickPickItemWithResource, QuickInputHideReason } from 'vs/platform/quickinput/common/quickInput';
 import { IPickerQuickAccessItem, PickerQuickAccessProvider, TriggerAction, FastAndSlowPicks, Picks, PicksWithActive } from 'vs/platform/quickinput/browser/pickerQuickAccess';
 import { prepareQuery, IPreparedQuery, compareItemsByFuzzyScore, scoreItemFuzzy, FuzzyScorerCache } from 'vs/base/common/fuzzyScorer';
 import { IFileQueryBuilderOptions, QueryBuilder } from 'vs/workbench/services/search/common/queryBuilder';
@@ -40,7 +40,7 @@ import { Schemas } from 'vs/base/common/network';
 import { IFilesConfigurationService, AutoSaveMode } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
 import { ResourceMap } from 'vs/base/common/map';
 import { SymbolsQuickAccessProvider } from 'vs/workbench/contrib/search/browser/symbolsQuickAccess';
-import { AnythingQuickAccessProviderRunOptions, DefaultQuickAccessFilterValue } from 'vs/platform/quickinput/common/quickAccess';
+import { DefaultQuickAccessFilterValue } from 'vs/platform/quickinput/common/quickAccess';
 import { IWorkbenchQuickAccessConfiguration } from 'vs/workbench/browser/quickaccess';
 import { GotoSymbolQuickAccessProvider } from 'vs/workbench/contrib/codeEditor/browser/quickaccess/gotoSymbolQuickAccess';
 import { ITextModelService } from 'vs/editor/common/services/resolverService';
@@ -52,11 +52,6 @@ import { withNullAsUndefined } from 'vs/base/common/types';
 import { Codicon } from 'vs/base/common/codicons';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { stripIcons } from 'vs/base/common/iconLabels';
-import { HelpQuickAccessProvider } from 'vs/platform/quickinput/browser/helpQuickAccess';
-import { CommandsQuickAccessProvider } from 'vs/workbench/contrib/quickaccess/browser/commandsQuickAccess';
-import { DEBUG_QUICK_ACCESS_PREFIX } from 'vs/workbench/contrib/debug/browser/debugCommands';
-import { TasksQuickAccessProvider } from 'vs/workbench/contrib/tasks/browser/tasksQuickAccess';
-import { Lazy } from 'vs/base/common/lazy';
 
 interface IAnythingQuickPickItem extends IPickerQuickAccessItem, IQuickPickItemWithResource { }
 
@@ -183,8 +178,7 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		@IHistoryService private readonly historyService: IHistoryService,
 		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService,
 		@ITextModelService private readonly textModelService: ITextModelService,
-		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-		@IQuickInputService private readonly quickInputService: IQuickInputService,
+		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService
 	) {
 		super(AnythingQuickAccessProvider.PREFIX, {
 			canAcceptInBackground: true,
@@ -208,7 +202,7 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		};
 	}
 
-	override provide(picker: IQuickPick<IAnythingQuickPickItem>, token: CancellationToken, runOptions?: AnythingQuickAccessProviderRunOptions): IDisposable {
+	override provide(picker: IQuickPick<IAnythingQuickPickItem>, token: CancellationToken): IDisposable {
 		const disposables = new DisposableStore();
 
 		// Update the pick state for this run
@@ -239,7 +233,7 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		}));
 
 		// Start picker
-		disposables.add(super.provide(picker, token, runOptions));
+		disposables.add(super.provide(picker, token));
 
 		return disposables;
 	}
@@ -267,7 +261,7 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		return toDisposable(() => this.clearDecorations(activeEditorControl));
 	}
 
-	protected _getPicks(originalFilter: string, disposables: DisposableStore, token: CancellationToken, runOptions?: AnythingQuickAccessProviderRunOptions): Picks<IAnythingQuickPickItem> | Promise<Picks<IAnythingQuickPickItem>> | FastAndSlowPicks<IAnythingQuickPickItem> | null {
+	protected _getPicks(originalFilter: string, disposables: DisposableStore, token: CancellationToken): Picks<IAnythingQuickPickItem> | Promise<Picks<IAnythingQuickPickItem>> | FastAndSlowPicks<IAnythingQuickPickItem> | null {
 
 		// Find a suitable range from the pattern looking for ":", "#" or ","
 		// unless we have the `@` editor symbol character inside the filter
@@ -322,15 +316,10 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		// search without prior filtering, you could not paste a file name
 		// including the `@` character to open it (e.g. /some/file@path)
 		// refs: https://github.com/microsoft/vscode/issues/93845
-		return this.doGetPicks(filter, { enableEditorSymbolSearch: lastWasFiltering, includeHelp: runOptions?.includeHelp }, disposables, token);
+		return this.doGetPicks(filter, { enableEditorSymbolSearch: lastWasFiltering }, disposables, token);
 	}
 
-	private doGetPicks(
-		filter: string,
-		options: AnythingQuickAccessProviderRunOptions & { enableEditorSymbolSearch: boolean },
-		disposables: DisposableStore,
-		token: CancellationToken
-	): Picks<IAnythingQuickPickItem> | Promise<Picks<IAnythingQuickPickItem>> | FastAndSlowPicks<IAnythingQuickPickItem> {
+	private doGetPicks(filter: string, options: { enableEditorSymbolSearch: boolean }, disposables: DisposableStore, token: CancellationToken): Picks<IAnythingQuickPickItem> | Promise<Picks<IAnythingQuickPickItem>> | FastAndSlowPicks<IAnythingQuickPickItem> {
 		const query = prepareQuery(filter);
 
 		// Return early if we have editor symbol picks. We support this by:
@@ -354,24 +343,16 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		// Otherwise return normally with history and file/symbol results
 		const historyEditorPicks = this.getEditorHistoryPicks(query);
 
-		let picks: Array<IAnythingQuickPickItem | IQuickPickSeparator>;
-		if (this.pickState.isQuickNavigating) {
-			picks = historyEditorPicks;
-		} else {
-			picks = [];
-			if (options.includeHelp) {
-				picks.push(...this.getHelpPicks(query, token));
-			}
-			if (historyEditorPicks.length !== 0) {
-				picks.push({ type: 'separator', label: localize('recentlyOpenedSeparator', "recently opened") } as IQuickPickSeparator);
-				picks.push(...historyEditorPicks);
-			}
-		}
-
 		return {
 
-			// Fast picks: help (if included) & editor history
-			picks,
+			// Fast picks: editor history
+			picks:
+				(this.pickState.isQuickNavigating || historyEditorPicks.length === 0) ?
+					historyEditorPicks :
+					[
+						{ type: 'separator', label: localize('recentlyOpenedSeparator', "recently opened") },
+						...historyEditorPicks
+					],
 
 			// Slow picks: files and symbols
 			additionalPicks: (async (): Promise<Picks<IAnythingQuickPickItem>> => {
@@ -751,70 +732,6 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 
 	//#endregion
 
-	//#region Help (if enabled)
-
-	private helpQuickAccess = this.instantiationService.createInstance(HelpQuickAccessProvider);
-
-	private getHelpPicks(query: IPreparedQuery, token: CancellationToken): IAnythingQuickPickItem[] {
-		if (query.normalized) {
-			return []; // If there's a filter, we don't show the help
-		}
-
-		type IHelpAnythingQuickPickItem = IAnythingQuickPickItem & { prefix: string };
-		const providers: Array<IHelpAnythingQuickPickItem> = this.helpQuickAccess.getQuickAccessProviders();
-		const mapOfProviders = new Map<string, IHelpAnythingQuickPickItem>();
-		for (const provider of providers) {
-			mapOfProviders.set(provider.prefix, provider);
-		}
-
-		const importantProviders: Array<IHelpAnythingQuickPickItem> = [];
-		const AddProvider = (prefix: string, modifications: Partial<IAnythingQuickPickItem> = {}) => {
-			if (mapOfProviders.has(prefix)) {
-				const provider = mapOfProviders.get(prefix)!;
-
-				// We swap the label and description in this to emphasize the ability
-				// not the prefix.
-				provider.label = provider.description!;
-				provider.description = provider.prefix;
-
-				// If the user chooses 'Go to File' the help should go away as if they were
-				// entering a new mode
-				const providerSpecificOptions: AnythingQuickAccessProviderRunOptions | undefined = provider.prefix === AnythingQuickAccessProvider.PREFIX
-					? undefined
-					: { includeHelp: true };
-
-				importantProviders.push({
-					...mapOfProviders.get(prefix)!,
-					...modifications,
-					accept: () => {
-						this.quickInputService.quickAccess.show(provider.prefix, {
-							preserveValue: true,
-							providerOptions: providerSpecificOptions
-						});
-					}
-				});
-			}
-		};
-
-		// TODO@TylerLeonhardt ideally this hardcoded list and hardcoded dependency moves
-		// into a provider model where when I register a quick access provider I can enlist
-		// for showing up in command center
-
-		// Acts as the ordering too
-		AddProvider(AnythingQuickAccessProvider.PREFIX);
-		AddProvider(CommandsQuickAccessProvider.PREFIX);
-		AddProvider(GotoSymbolQuickAccessProvider.PREFIX);
-		AddProvider(DEBUG_QUICK_ACCESS_PREFIX);
-		AddProvider(TasksQuickAccessProvider.PREFIX);
-		AddProvider(HelpQuickAccessProvider.PREFIX, {
-			// More concise
-			label: localize('more', 'More')
-		});
-
-		return importantProviders;
-	}
-
-	//#endregion
 
 	//#region Workspace Symbols (if enabled)
 
@@ -973,40 +890,35 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 		}
 
 		const labelAndDescription = description ? `${label} ${description}` : label;
-
-		const iconClassesValue = new Lazy(() => getIconClasses(this.modelService, this.languageService, resource).concat(extraClasses));
-
-		const buttonsValue = new Lazy(() => {
-			const openSideBySideDirection = configuration.openSideBySideDirection;
-			const buttons: IQuickInputButton[] = [];
-
-			// Open to side / below
-			buttons.push({
-				iconClass: openSideBySideDirection === 'right' ? Codicon.splitHorizontal.classNames : Codicon.splitVertical.classNames,
-				tooltip: openSideBySideDirection === 'right' ?
-					localize({ key: 'openToSide', comment: ['Open this file in a split editor on the left/right side'] }, "Open to the Side") :
-					localize({ key: 'openToBottom', comment: ['Open this file in a split editor on the bottom'] }, "Open to the Bottom")
-			});
-
-			// Remove from History
-			if (isEditorHistoryEntry) {
-				buttons.push({
-					iconClass: isDirty ? ('dirty-anything ' + Codicon.circleFilled.classNames) : Codicon.close.classNames,
-					tooltip: localize('closeEditor', "Remove from Recently Opened"),
-					alwaysVisible: isDirty
-				});
-			}
-
-			return buttons;
-		});
-
 		return {
 			resource,
 			label,
 			ariaLabel: isDirty ? localize('filePickAriaLabelDirty', "{0} unsaved changes", labelAndDescription) : labelAndDescription,
 			description,
-			get iconClasses() { return iconClassesValue.getValue(); },
-			get buttons() { return buttonsValue.getValue(); },
+			iconClasses: getIconClasses(this.modelService, this.languageService, resource).concat(extraClasses),
+			buttons: (() => {
+				const openSideBySideDirection = configuration.openSideBySideDirection;
+				const buttons: IQuickInputButton[] = [];
+
+				// Open to side / below
+				buttons.push({
+					iconClass: openSideBySideDirection === 'right' ? Codicon.splitHorizontal.classNames : Codicon.splitVertical.classNames,
+					tooltip: openSideBySideDirection === 'right' ?
+						localize({ key: 'openToSide', comment: ['Open this file in a split editor on the left/right side'] }, "Open to the Side") :
+						localize({ key: 'openToBottom', comment: ['Open this file in a split editor on the bottom'] }, "Open to the Bottom")
+				});
+
+				// Remove from History
+				if (isEditorHistoryEntry) {
+					buttons.push({
+						iconClass: isDirty ? ('dirty-anything ' + Codicon.circleFilled.classNames) : Codicon.close.classNames,
+						tooltip: localize('closeEditor', "Remove from Recently Opened"),
+						alwaysVisible: isDirty
+					});
+				}
+
+				return buttons;
+			})(),
 			trigger: (buttonIndex, keyMods) => {
 				switch (buttonIndex) {
 

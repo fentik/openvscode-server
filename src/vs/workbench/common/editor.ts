@@ -9,7 +9,7 @@ import { assertIsDefined } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { ICodeEditorViewState, IDiffEditor, IDiffEditorViewState, IEditor, IEditorViewState } from 'vs/editor/common/editorCommon';
-import { IEditorOptions, IResourceEditorInput, ITextResourceEditorInput, IBaseTextResourceEditorInput, IBaseUntypedEditorInput, ITextEditorOptions } from 'vs/platform/editor/common/editor';
+import { IEditorOptions, IResourceEditorInput, ITextResourceEditorInput, IBaseTextResourceEditorInput, IBaseUntypedEditorInput } from 'vs/platform/editor/common/editor';
 import type { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { IInstantiationService, IConstructorSignature, ServicesAccessor, BrandedService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -17,16 +17,12 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { IEncodingSupport, ILanguageSupport } from 'vs/workbench/services/textfile/common/textfiles';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { ICompositeControl, IComposite } from 'vs/workbench/common/composite';
-import { FileType, IFileReadLimits, IFileService } from 'vs/platform/files/common/files';
+import { FileType, IFileService } from 'vs/platform/files/common/files';
 import { IPathData } from 'vs/platform/window/common/window';
+import { coalesce } from 'vs/base/common/arrays';
 import { IExtUri } from 'vs/base/common/resources';
 import { Schemas } from 'vs/base/common/network';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { ILogService } from 'vs/platform/log/common/log';
-import { IErrorWithActions, createErrorWithActions, isErrorWithActions } from 'vs/base/common/errorMessage';
-import { IAction, toAction } from 'vs/base/common/actions';
-import Severity from 'vs/base/common/severity';
-import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 
 // Static values for editor contributions
 export const EditorExtensions = {
@@ -488,8 +484,6 @@ export interface IResourceDiffEditorInput extends IBaseUntypedEditorInput {
 	readonly modified: IResourceEditorInput | ITextResourceEditorInput | IUntitledTextResourceEditorInput;
 }
 
-export type IResourceMergeEditorInputSide = (IResourceEditorInput | ITextResourceEditorInput) & { detail?: string };
-
 /**
  * A resource merge editor input compares multiple editors
  * highlighting the differences for merging.
@@ -502,12 +496,12 @@ export interface IResourceMergeEditorInput extends IBaseUntypedEditorInput {
 	/**
 	 * The one changed version of the file.
 	 */
-	readonly input1: IResourceMergeEditorInputSide;
+	readonly input1: IResourceEditorInput | ITextResourceEditorInput;
 
 	/**
 	 * The second changed version of the file.
 	 */
-	readonly input2: IResourceMergeEditorInputSide;
+	readonly input2: IResourceEditorInput | ITextResourceEditorInput;
 
 	/**
 	 * The base common ancestor of the file to merge.
@@ -565,12 +559,6 @@ export function isUntitledResourceEditorInput(editor: unknown): editor is IUntit
 	}
 
 	return candidate.resource === undefined || candidate.resource.scheme === Schemas.untitled || candidate.forceUntitled === true;
-}
-
-const UNTITLED_WITHOUT_ASSOCIATED_RESOURCE_REGEX = /Untitled-\d+/;
-
-export function isUntitledWithAssociatedResource(resource: URI): boolean {
-	return resource.scheme === Schemas.untitled && resource.path.length > 1 && !UNTITLED_WITHOUT_ASSOCIATED_RESOURCE_REGEX.test(resource.path);
 }
 
 export function isResourceMergeEditorInput(editor: unknown): editor is IResourceMergeEditorInput {
@@ -898,40 +886,6 @@ export interface IFileEditorInput extends EditorInput, IEncodingSupport, ILangua
 	 * Figure out if the file input has been resolved or not.
 	 */
 	isResolved(): boolean;
-}
-
-export interface IFileEditorInputOptions extends ITextEditorOptions {
-
-	/**
-	 * If provided, the size of the file will be checked against the limits
-	 * and an error will be thrown if any limit is exceeded.
-	 */
-	readonly limits?: IFileReadLimits;
-}
-
-export function createTooLargeFileError(group: IEditorGroup, input: EditorInput, options: IEditorOptions | undefined, message: string, preferencesService: IPreferencesService): Error {
-	return createEditorOpenError(message, [
-		toAction({
-			id: 'workbench.action.openLargeFile', label: localize('openLargeFile', "Open Anyway"), run: () => {
-				const fileEditorOptions: IFileEditorInputOptions = {
-					...options,
-					limits: {
-						size: Number.MAX_VALUE
-					}
-				};
-
-				group.openEditor(input, fileEditorOptions);
-			}
-		}),
-		toAction({
-			id: 'workbench.action.configureEditorLargeFileConfirmation', label: localize('configureEditorLargeFileConfirmation', "Configure Limit"), run: () => {
-				return preferencesService.openUserSettings({ query: 'workbench.editorLargeFileConfirmation' });
-			}
-		}),
-	], {
-		forceMessage: true,
-		forceSeverity: Severity.Warning
-	});
 }
 
 export interface EditorInputWithOptions {
@@ -1420,22 +1374,20 @@ class EditorFactoryRegistry implements IEditorFactoryRegistry {
 
 Registry.add(EditorExtensions.EditorFactory, new EditorFactoryRegistry());
 
-export async function pathsToEditors(paths: IPathData[] | undefined, fileService: IFileService, logService: ILogService): Promise<ReadonlyArray<IResourceEditorInput | IUntitledTextResourceEditorInput | undefined>> {
+export async function pathsToEditors(paths: IPathData[] | undefined, fileService: IFileService): Promise<(IResourceEditorInput | IUntitledTextResourceEditorInput)[]> {
 	if (!paths || !paths.length) {
 		return [];
 	}
 
-	return await Promise.all(paths.map(async path => {
+	const editors = await Promise.all(paths.map(async path => {
 		const resource = URI.revive(path.fileUri);
 		if (!resource) {
-			logService.info('Cannot resolve the path because it is not valid.', path);
-			return undefined;
+			return;
 		}
 
 		const canHandleResource = await fileService.canHandleResource(resource);
 		if (!canHandleResource) {
-			logService.info('Cannot resolve the path because it cannot be handled', path);
-			return undefined;
+			return;
 		}
 
 		let exists = path.exists;
@@ -1444,20 +1396,17 @@ export async function pathsToEditors(paths: IPathData[] | undefined, fileService
 			try {
 				type = (await fileService.stat(resource)).isDirectory ? FileType.Directory : FileType.Unknown;
 				exists = true;
-			} catch (error) {
-				logService.error(error);
+			} catch {
 				exists = false;
 			}
 		}
 
 		if (!exists && path.openOnlyIfExists) {
-			logService.info('Cannot resolve the path because it does not exist', path);
-			return undefined;
+			return;
 		}
 
 		if (type === FileType.Directory) {
-			logService.info('Cannot resolve the path because it is a directory', path);
-			return undefined;
+			return;
 		}
 
 		const options: IEditorOptions = {
@@ -1465,12 +1414,17 @@ export async function pathsToEditors(paths: IPathData[] | undefined, fileService
 			pinned: true
 		};
 
+		let input: IResourceEditorInput | IUntitledTextResourceEditorInput;
 		if (!exists) {
-			return { resource, options, forceUntitled: true };
+			input = { resource, options, forceUntitled: true };
+		} else {
+			input = { resource, options };
 		}
 
-		return { resource, options };
+		return input;
 	}));
+
+	return coalesce(editors);
 }
 
 export const enum EditorsOrder {
@@ -1500,43 +1454,4 @@ export function isTextEditorViewState(candidate: unknown): candidate is IEditorV
 	const codeEditorViewState = viewState as ICodeEditorViewState;
 
 	return !!(codeEditorViewState.contributionsState && codeEditorViewState.viewState && Array.isArray(codeEditorViewState.cursorState));
-}
-
-export interface IEditorOpenErrorOptions {
-
-	/**
-	 * If set to true, the message will be taken
-	 * from the error message entirely and not be
-	 * composed with more text.
-	 */
-	forceMessage?: boolean;
-
-	/**
-	 * If set, will override the severity of the error.
-	 */
-	forceSeverity?: Severity;
-
-	/**
-	 * If set to true, the error may be shown in a dialog
-	 * to the user if the editor opening was triggered by
-	 * user action. Otherwise and by default, the error will
-	 * be shown as place holder in the editor area.
-	 */
-	allowDialog?: boolean;
-}
-
-export interface IEditorOpenError extends IErrorWithActions, IEditorOpenErrorOptions { }
-
-export function isEditorOpenError(obj: unknown): obj is IEditorOpenError {
-	return isErrorWithActions(obj);
-}
-
-export function createEditorOpenError(messageOrError: string | Error, actions: IAction[], options?: IEditorOpenErrorOptions): IEditorOpenError {
-	const error: IEditorOpenError = createErrorWithActions(messageOrError, actions);
-
-	error.forceMessage = options?.forceMessage;
-	error.forceSeverity = options?.forceSeverity;
-	error.allowDialog = options?.allowDialog;
-
-	return error;
 }

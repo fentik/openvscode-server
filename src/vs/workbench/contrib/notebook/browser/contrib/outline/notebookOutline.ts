@@ -8,10 +8,10 @@ import { Codicon } from 'vs/base/common/codicons';
 import { Emitter, Event } from 'vs/base/common/event';
 import { combinedDisposable, IDisposable, Disposable, DisposableStore, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
-import { CellRevealType, IActiveNotebookEditor, ICellViewModel, INotebookEditorOptions, INotebookEditorPane, INotebookViewCellsUpdateEvent } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { CellRevealType, IActiveNotebookEditor, ICellViewModel, INotebookEditorOptions } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { NotebookEditor } from 'vs/workbench/contrib/notebook/browser/notebookEditor';
 import { CellKind } from 'vs/workbench/contrib/notebook/common/notebookCommon';
-import { IOutline, IOutlineComparator, IOutlineCreator, IOutlineListConfig, IOutlineService, IQuickPickDataSource, IQuickPickOutlineElement, OutlineChangeEvent, OutlineConfigCollapseItemsValues, OutlineConfigKeys, OutlineTarget } from 'vs/workbench/services/outline/browser/outline';
+import { IOutline, IOutlineComparator, IOutlineCreator, IOutlineListConfig, IOutlineService, IQuickPickDataSource, IQuickPickOutlineElement, OutlineChangeEvent, OutlineConfigKeys, OutlineTarget } from 'vs/workbench/services/outline/browser/outline';
 import { IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from 'vs/workbench/common/contributions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
@@ -33,11 +33,11 @@ import { isEqual } from 'vs/base/common/resources';
 import { IdleValue } from 'vs/base/common/async';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'vs/platform/configuration/common/configurationRegistry';
+import { marked } from 'vs/base/common/marked/marked';
 import { renderMarkdownAsPlaintext } from 'vs/base/browser/markdownRenderer';
 import { INotebookExecutionStateService } from 'vs/workbench/contrib/notebook/common/notebookExecutionStateService';
 import { executingStateIcon } from 'vs/workbench/contrib/notebook/browser/notebookIcons';
 import { URI } from 'vs/base/common/uri';
-import { getMarkdownHeadersInCell } from 'vs/workbench/contrib/notebook/browser/viewModel/foldingModel';
 
 export interface IOutlineMarkerInfo {
 	readonly count: number;
@@ -168,16 +168,15 @@ class NotebookOutlineRenderer implements ITreeRenderer<OutlineEntry, FuzzyScore,
 	}
 
 	renderElement(node: ITreeNode<OutlineEntry, FuzzyScore>, _index: number, template: NotebookOutlineTemplate, _height: number | undefined): void {
-		const extraClasses: string[] = [];
 		const options: IIconLabelValueOptions = {
 			matches: createMatches(node.filterData),
 			labelEscapeNewLines: true,
-			extraClasses,
+			extraClasses: []
 		};
 
 		if (node.element.cell.cellKind === CellKind.Code && this._themeService.getFileIconTheme().hasFileIcons && !node.element.isExecuting) {
 			template.iconClass.className = '';
-			extraClasses.push(...getIconClassesForLanguageId(node.element.cell.language ?? ''));
+			options.extraClasses?.push(...getIconClassesForLanguageId(node.element.cell.language ?? ''));
 		} else {
 			template.iconClass.className = 'element-icon ' + ThemeIcon.asClassNameArray(node.element.icon).join(' ');
 		}
@@ -285,18 +284,16 @@ class NotebookComparator implements IOutlineComparator<OutlineEntry> {
 	}
 }
 
-export class NotebookCellOutline implements IOutline<OutlineEntry> {
+export class NotebookCellOutline extends Disposable implements IOutline<OutlineEntry> {
 
-	private readonly _dispoables = new DisposableStore();
-
-	private readonly _onDidChange = new Emitter<OutlineChangeEvent>();
+	private readonly _onDidChange = this._register(new Emitter<OutlineChangeEvent>());
 
 	readonly onDidChange: Event<OutlineChangeEvent> = this._onDidChange.event;
 
 	private _uri: URI | undefined;
 	private _entries: OutlineEntry[] = [];
 	private _activeEntry?: OutlineEntry;
-	private readonly _entriesDisposables = new DisposableStore();
+	private readonly _entriesDisposables = this._register(new DisposableStore());
 
 	readonly config: IOutlineListConfig<OutlineEntry>;
 	readonly outlineKind = 'notebookCells';
@@ -306,7 +303,7 @@ export class NotebookCellOutline implements IOutline<OutlineEntry> {
 	}
 
 	constructor(
-		private readonly _editor: INotebookEditorPane,
+		private readonly _editor: NotebookEditor,
 		private readonly _target: OutlineTarget,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,
@@ -315,44 +312,36 @@ export class NotebookCellOutline implements IOutline<OutlineEntry> {
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@INotebookExecutionStateService private readonly _notebookExecutionStateService: INotebookExecutionStateService,
 	) {
-		const selectionListener = new MutableDisposable();
-		this._dispoables.add(selectionListener);
+		super();
+		const selectionListener = this._register(new MutableDisposable());
 		const installSelectionListener = () => {
 			const notebookEditor = _editor.getControl();
 			if (!notebookEditor?.hasModel()) {
 				selectionListener.clear();
 			} else {
 				selectionListener.value = combinedDisposable(
-					Event.debounce<void, void>(
-						notebookEditor.onDidChangeSelection,
-						(last, _current) => last,
-						200
-					)(this._recomputeActive, this),
-					Event.debounce<INotebookViewCellsUpdateEvent, INotebookViewCellsUpdateEvent>(
-						notebookEditor.onDidChangeViewCells,
-						(last, _current) => last ?? _current,
-						200
-					)(this._recomputeState, this)
+					notebookEditor.onDidChangeSelection(() => this._recomputeActive()),
+					notebookEditor.onDidChangeViewCells(() => this._recomputeState())
 				);
 			}
 		};
 
-		this._dispoables.add(_editor.onDidChangeModel(() => {
+		this._register(_editor.onDidChangeModel(() => {
 			this._recomputeState();
 			installSelectionListener();
 		}));
 
-		this._dispoables.add(_configurationService.onDidChangeConfiguration(e => {
+		this._register(_configurationService.onDidChangeConfiguration(e => {
 			if (e.affectsConfiguration('notebook.outline.showCodeCells')) {
 				this._recomputeState();
 			}
 		}));
 
-		this._dispoables.add(themeService.onDidFileIconThemeChange(() => {
+		this._register(themeService.onDidFileIconThemeChange(() => {
 			this._onDidChange.fire({});
 		}));
 
-		this._dispoables.add(_notebookExecutionStateService.onDidChangeCellExecution(e => {
+		this._register(_notebookExecutionStateService.onDidChangeCellExecution(e => {
 			if (!!this._editor.textModel && e.affectsNotebook(this._editor.textModel?.uri)) {
 				this._recomputeState();
 			}
@@ -362,11 +351,11 @@ export class NotebookCellOutline implements IOutline<OutlineEntry> {
 		installSelectionListener();
 
 		const options: IWorkbenchDataTreeOptions<OutlineEntry, FuzzyScore> = {
-			collapseByDefault: _target === OutlineTarget.Breadcrumbs || (_target === OutlineTarget.OutlinePane && _configurationService.getValue(OutlineConfigKeys.collapseItems) === OutlineConfigCollapseItemsValues.Collapsed),
+			collapseByDefault: _target === OutlineTarget.Breadcrumbs,
 			expandOnlyOnTwistieClick: true,
 			multipleSelectionSupport: false,
 			accessibilityProvider: new NotebookOutlineAccessibility(),
-			identityProvider: { getId: element => element.cell.uri.toString() },
+			identityProvider: { getId: element => element.cell.id },
 			keyboardNavigationLabelProvider: new NotebookNavigationLabelProvider()
 		};
 
@@ -394,12 +383,6 @@ export class NotebookCellOutline implements IOutline<OutlineEntry> {
 			comparator,
 			options
 		};
-	}
-
-	dispose(): void {
-		this._onDidChange.dispose();
-		this._dispoables.dispose();
-		this._entriesDisposables.dispose();
 	}
 
 	private _recomputeState(): void {
@@ -452,22 +435,12 @@ export class NotebookCellOutline implements IOutline<OutlineEntry> {
 
 			if (isMarkdown) {
 				const fullContent = cell.getText().substring(0, 10_000);
-				for (const { depth, text } of getMarkdownHeadersInCell(fullContent)) {
-					hasHeader = true;
-					entries.push(new OutlineEntry(entries.length, depth, cell, text, false, false));
-				}
-
-				if (!hasHeader) {
-					// no markdown syntax headers, try to find html tags
-					const match = fullContent.match(/<h([1-6]).*>(.*)<\/h\1>/i);
-					if (match) {
+				for (const token of marked.lexer(fullContent, { gfm: true })) {
+					if (token.type === 'heading') {
 						hasHeader = true;
-						const level = parseInt(match[1]);
-						const text = match[2].trim();
-						entries.push(new OutlineEntry(entries.length, level, cell, text, false, false));
+						entries.push(new OutlineEntry(entries.length, token.depth, cell, renderMarkdownAsPlaintext({ value: token.text }).trim(), false, false));
 					}
 				}
-
 				if (!hasHeader) {
 					content = renderMarkdownAsPlaintext({ value: content });
 				}

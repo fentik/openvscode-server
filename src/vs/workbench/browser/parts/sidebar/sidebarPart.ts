@@ -162,7 +162,7 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 		this._register(focusTracker.onDidBlur(() => this.sideBarFocusContextKey.set(false)));
 	}
 
-	protected override createTitleArea(parent: HTMLElement): HTMLElement {
+	override createTitleArea(parent: HTMLElement): HTMLElement {
 		const titleArea = super.createTitleArea(parent);
 
 		this._register(addDisposableListener(titleArea, EventType.CONTEXT_MENU, e => {

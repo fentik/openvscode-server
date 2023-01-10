@@ -4,14 +4,13 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as assert from 'assert';
-import { decodeKeybinding, createSimpleKeybinding, KeyCodeChord } from 'vs/base/common/keybindings';
+import { createKeybinding, createSimpleKeybinding, SimpleKeybinding } from 'vs/base/common/keybindings';
 import { KeyChord, KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { OS } from 'vs/base/common/platform';
 import { ContextKeyExpr, ContextKeyExpression, IContext } from 'vs/platform/contextkey/common/contextkey';
 import { KeybindingResolver } from 'vs/platform/keybinding/common/keybindingResolver';
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayoutResolvedKeybinding';
-import { createUSLayoutResolvedKeybinding } from 'vs/platform/keybinding/test/common/keybindingsTestUtils';
 
 function createContext(ctx: any) {
 	return {
@@ -24,7 +23,7 @@ function createContext(ctx: any) {
 suite('KeybindingResolver', () => {
 
 	function kbItem(keybinding: number, command: string, commandArgs: any, when: ContextKeyExpression | undefined, isDefault: boolean): ResolvedKeybindingItem {
-		const resolvedKeybinding = createUSLayoutResolvedKeybinding(keybinding, OS);
+		const resolvedKeybinding = (keybinding !== 0 ? new USLayoutResolvedKeybinding(createKeybinding(keybinding, OS)!, OS) : undefined);
 		return new ResolvedKeybindingItem(
 			resolvedKeybinding,
 			command,
@@ -36,8 +35,8 @@ suite('KeybindingResolver', () => {
 		);
 	}
 
-	function getDispatchStr(chord: KeyCodeChord): string {
-		return USLayoutResolvedKeybinding.getDispatchStr(chord)!;
+	function getDispatchStr(runtimeKb: SimpleKeybinding): string {
+		return USLayoutResolvedKeybinding.getDispatchStr(runtimeKb)!;
 	}
 
 	test('resolve key', () => {
@@ -236,28 +235,6 @@ suite('KeybindingResolver', () => {
 		]);
 	});
 
-	test('issue #157751: Auto-quoting of context keys prevents removal of keybindings via UI', () => {
-		const defaults = [
-			kbItem(KeyCode.KeyA, 'command1', null, ContextKeyExpr.deserialize(`editorTextFocus && activeEditor != workbench.editor.notebook && editorLangId in julia.supportedLanguageIds`), true),
-		];
-		const overrides = [
-			kbItem(KeyCode.KeyA, '-command1', null, ContextKeyExpr.deserialize(`editorTextFocus && activeEditor != 'workbench.editor.notebook' && editorLangId in 'julia.supportedLanguageIds'`), false),
-		];
-		const actual = KeybindingResolver.handleRemovals([...defaults, ...overrides]);
-		assert.deepStrictEqual(actual, []);
-	});
-
-	test('issue #160604: Remove keybindings with when clause does not work', () => {
-		const defaults = [
-			kbItem(KeyCode.KeyA, 'command1', null, undefined, true),
-		];
-		const overrides = [
-			kbItem(KeyCode.KeyA, '-command1', null, ContextKeyExpr.true(), false),
-		];
-		const actual = KeybindingResolver.handleRemovals([...defaults, ...overrides]);
-		assert.deepStrictEqual(actual, []);
-	});
-
 	test('contextIsEntirelyIncluded', () => {
 		const toContextKeyExpression = (expr: ContextKeyExpression | string | null) => {
 			if (typeof expr === 'string' || !expr) {
@@ -393,33 +370,33 @@ suite('KeybindingResolver', () => {
 			const lookupResult = resolver.lookupKeybindings(commandId);
 			assert.strictEqual(lookupResult.length, expectedKeys.length, 'Length mismatch @ commandId ' + commandId);
 			for (let i = 0, len = lookupResult.length; i < len; i++) {
-				const expected = createUSLayoutResolvedKeybinding(expectedKeys[i], OS)!;
+				const expected = new USLayoutResolvedKeybinding(createKeybinding(expectedKeys[i], OS)!, OS);
 
 				assert.strictEqual(lookupResult[i].resolvedKeybinding!.getUserSettingsLabel(), expected.getUserSettingsLabel(), 'value mismatch @ commandId ' + commandId);
 			}
 		};
 
 		const testResolve = (ctx: IContext, _expectedKey: number, commandId: string) => {
-			const expectedKeybinding = decodeKeybinding(_expectedKey, OS)!;
+			const expectedKey = createKeybinding(_expectedKey, OS)!;
 
-			let previousChord: (string | null) = null;
-			for (let i = 0, len = expectedKeybinding.chords.length; i < len; i++) {
-				const chord = getDispatchStr(<KeyCodeChord>expectedKeybinding.chords[i]);
-				const result = resolver.resolve(ctx, previousChord, chord);
+			let previousPart: (string | null) = null;
+			for (let i = 0, len = expectedKey.parts.length; i < len; i++) {
+				const part = getDispatchStr(expectedKey.parts[i]);
+				const result = resolver.resolve(ctx, previousPart, part);
 				if (i === len - 1) {
-					// if it's the final chord, then we should find a valid command,
+					// if it's the final part, then we should find a valid command,
 					// and there should not be a chord.
-					assert.ok(result !== null, `Enters multi chord for ${commandId} at chord ${i}`);
-					assert.strictEqual(result!.commandId, commandId, `Enters multi chord for ${commandId} at chord ${i}`);
-					assert.strictEqual(result!.enterMultiChord, false, `Enters multi chord for ${commandId} at chord ${i}`);
+					assert.ok(result !== null, `Enters chord for ${commandId} at part ${i}`);
+					assert.strictEqual(result!.commandId, commandId, `Enters chord for ${commandId} at part ${i}`);
+					assert.strictEqual(result!.enterChord, false, `Enters chord for ${commandId} at part ${i}`);
 				} else {
-					// if it's not the final chord, then we should not find a valid command,
+					// if it's not the final part, then we should not find a valid command,
 					// and there should be a chord.
-					assert.ok(result !== null, `Enters multi chord for ${commandId} at chord ${i}`);
-					assert.strictEqual(result!.commandId, null, `Enters multi chord for ${commandId} at chord ${i}`);
-					assert.strictEqual(result!.enterMultiChord, true, `Enters multi chord for ${commandId} at chord ${i}`);
+					assert.ok(result !== null, `Enters chord for ${commandId} at part ${i}`);
+					assert.strictEqual(result!.commandId, null, `Enters chord for ${commandId} at part ${i}`);
+					assert.strictEqual(result!.enterChord, true, `Enters chord for ${commandId} at part ${i}`);
 				}
-				previousChord = chord;
+				previousPart = part;
 			}
 		};
 

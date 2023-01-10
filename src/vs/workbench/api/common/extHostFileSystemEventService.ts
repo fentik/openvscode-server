@@ -16,6 +16,7 @@ import { FileOperation } from 'vs/platform/files/common/files';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IExtHostWorkspace } from 'vs/workbench/api/common/extHostWorkspace';
+import { isProposedApiEnabled } from 'vs/workbench/services/extensions/common/extensions';
 
 class FileSystemWatcher implements vscode.FileSystemWatcher {
 
@@ -249,11 +250,11 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
 
 		// concat all WorkspaceEdits collected via waitUntil-call and send them over to the renderer
 		const dto: IWorkspaceEditDto = { edits: [] };
-		for (const [, edit] of edits) {
+		for (const [extension, edit] of edits) {
 			const { edits } = typeConverter.WorkspaceEdit.from(edit, {
 				getTextDocumentVersion: uri => this._extHostDocumentsAndEditors.getDocument(uri)?.version,
 				getNotebookDocumentVersion: () => undefined,
-			});
+			}, isProposedApiEnabled(extension, 'snippetWorkspaceEdit'));
 			dto.edits = dto.edits.concat(edits);
 		}
 		return { edit: dto, extensionNames: Array.from(extensionNames) };

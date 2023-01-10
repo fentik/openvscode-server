@@ -17,7 +17,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IStateMainService } from 'vs/platform/state/electron-main/state';
 import { ICodeWindow, LoadReason, UnloadReason } from 'vs/platform/window/electron-main/window';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
-import { IEnvironmentMainService } from 'vs/platform/environment/electron-main/environmentMainService';
 
 export const ILifecycleMainService = createDecorator<ILifecycleMainService>('lifecycleMainService');
 
@@ -26,17 +25,17 @@ interface WindowLoadEvent {
 	/**
 	 * The window that is loaded to a new workspace.
 	 */
-	readonly window: ICodeWindow;
+	window: ICodeWindow;
 
 	/**
 	 * The workspace the window is loaded into.
 	 */
-	readonly workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | undefined;
+	workspace: IWorkspaceIdentifier | ISingleFolderWorkspaceIdentifier | undefined;
 
 	/**
 	 * More details why the window loads to a new workspace.
 	 */
-	readonly reason: LoadReason;
+	reason: LoadReason;
 }
 
 export const enum ShutdownReason {
@@ -175,13 +174,7 @@ export const enum LifecycleMainPhase {
 	 * and is typically the best place to do work that is not required
 	 * for the window to open.
 	 */
-	AfterWindowOpen = 3,
-
-	/**
-	 * The last phase after a window has opened and some time has passed
-	 * (2-5 seconds).
-	 */
-	Eventually = 4
+	AfterWindowOpen = 3
 }
 
 export class LifecycleMainService extends Disposable implements ILifecycleMainService {
@@ -226,8 +219,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 
 	constructor(
 		@ILogService private readonly logService: ILogService,
-		@IStateMainService private readonly stateMainService: IStateMainService,
-		@IEnvironmentMainService private readonly environmentMainService: IEnvironmentMainService
+		@IStateMainService private readonly stateMainService: IStateMainService
 	) {
 		super();
 
@@ -253,11 +245,11 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 				return;
 			}
 
-			this.trace('Lifecycle#app.on(before-quit)');
+			this.logService.trace('Lifecycle#app.on(before-quit)');
 			this._quitRequested = true;
 
 			// Emit event to indicate that we are about to shutdown
-			this.trace('Lifecycle#onBeforeShutdown.fire()');
+			this.logService.trace('Lifecycle#onBeforeShutdown.fire()');
 			this._onBeforeShutdown.fire();
 
 			// macOS: can run without any window open. in that case we fire
@@ -273,7 +265,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 		// was closed. We override this event to be in charge if app.quit()
 		// should be called or not.
 		const windowAllClosedListener = () => {
-			this.trace('Lifecycle#app.on(window-all-closed)');
+			this.logService.trace('Lifecycle#app.on(window-all-closed)');
 
 			// Windows/Linux: we quit when all windows have closed
 			// Mac: we only quit when quit was requested
@@ -286,7 +278,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 		// will-quit: an event that is fired after all windows have been
 		// closed, but before actually quitting.
 		app.once('will-quit', e => {
-			this.trace('Lifecycle#app.on(will-quit)');
+			this.logService.trace('Lifecycle#app.on(will-quit)');
 
 			// Prevent the quit until the shutdown promise was resolved
 			e.preventDefault();
@@ -315,7 +307,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 			return this.pendingWillShutdownPromise; // shutdown is already running
 		}
 
-		this.trace('Lifecycle#onWillShutdown.fire()');
+		this.logService.trace('Lifecycle#onWillShutdown.fire()');
 
 		const joiners: Promise<void>[] = [];
 
@@ -356,7 +348,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 			return;
 		}
 
-		this.trace(`lifecycle (main): phase changed (value: ${value})`);
+		this.logService.trace(`lifecycle (main): phase changed (value: ${value})`);
 
 		this._phase = value;
 
@@ -402,7 +394,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 				return;
 			}
 
-			this.trace(`Lifecycle#window.on('close') - window ID ${window.id}`);
+			this.logService.trace(`Lifecycle#window.on('close') - window ID ${window.id}`);
 
 			// Otherwise prevent unload and handle it from window
 			e.preventDefault();
@@ -415,7 +407,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 				this.windowToCloseRequest.add(windowId);
 
 				// Fire onBeforeCloseWindow before actually closing
-				this.trace(`Lifecycle#onBeforeCloseWindow.fire() - window ID ${windowId}`);
+				this.logService.trace(`Lifecycle#onBeforeCloseWindow.fire() - window ID ${windowId}`);
 				this._onBeforeCloseWindow.fire(window);
 
 				// No veto, close window now
@@ -425,7 +417,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 
 		// Window After Closing
 		win.on('closed', () => {
-			this.trace(`Lifecycle#window.on('closed') - window ID ${window.id}`);
+			this.logService.trace(`Lifecycle#window.on('closed') - window ID ${window.id}`);
 
 			// update window count
 			this.windowCounter--;
@@ -475,13 +467,13 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 			return false;
 		}
 
-		this.trace(`Lifecycle#unload() - window ID ${window.id}`);
+		this.logService.trace(`Lifecycle#unload() - window ID ${window.id}`);
 
 		// first ask the window itself if it vetos the unload
 		const windowUnloadReason = this._quitRequested ? UnloadReason.QUIT : reason;
 		const veto = await this.onBeforeUnloadWindowInRenderer(window, windowUnloadReason);
 		if (veto) {
-			this.trace(`Lifecycle#unload() - veto in renderer (window ID ${window.id})`);
+			this.logService.trace(`Lifecycle#unload() - veto in renderer (window ID ${window.id})`);
 
 			return this.handleWindowUnloadVeto(veto);
 		}
@@ -544,13 +536,11 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 	}
 
 	quit(willRestart?: boolean): Promise<boolean /* veto */> {
-		this.trace(`Lifecycle#quit() - begin (willRestart: ${willRestart})`);
-
 		if (this.pendingQuitPromise) {
-			this.trace('Lifecycle#quit() - returning pending quit promise');
-
 			return this.pendingQuitPromise;
 		}
+
+		this.logService.trace(`Lifecycle#quit() - will restart: ${willRestart}`);
 
 		// Remember if we are about to restart
 		if (willRestart) {
@@ -564,23 +554,15 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 
 			// Calling app.quit() will trigger the close handlers of each opened window
 			// and only if no window vetoed the shutdown, we will get the will-quit event
-			this.trace('Lifecycle#quit() - calling app.quit()');
+			this.logService.trace('Lifecycle#quit() - calling app.quit()');
 			app.quit();
 		});
 
 		return this.pendingQuitPromise;
 	}
 
-	private trace(msg: string): void {
-		if (this.environmentMainService.args['enable-smoke-test-driver']) {
-			this.logService.info(msg); // helps diagnose issues with exiting from smoke tests
-		} else {
-			this.logService.trace(msg);
-		}
-	}
-
 	async relaunch(options?: { addArgs?: string[]; removeArgs?: string[] }): Promise<void> {
-		this.trace('Lifecycle#relaunch()');
+		this.logService.trace('Lifecycle#relaunch()');
 
 		const args = process.argv.slice(1);
 		if (options?.addArgs) {
@@ -613,7 +595,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 			}
 
 			// relaunch after we are sure there is no veto
-			this.trace('Lifecycle#relaunch() - calling app.relaunch()');
+			this.logService.trace('Lifecycle#relaunch() - calling app.relaunch()');
 			app.relaunch({ args });
 		};
 		app.once('quit', quitListener);
@@ -627,7 +609,7 @@ export class LifecycleMainService extends Disposable implements ILifecycleMainSe
 	}
 
 	async kill(code?: number): Promise<void> {
-		this.trace('Lifecycle#kill()');
+		this.logService.trace('Lifecycle#kill()');
 
 		// Give main process participants a chance to orderly shutdown
 		await this.fireOnWillShutdown(ShutdownReason.KILL);

@@ -154,18 +154,10 @@ suite('Files - TextFileEditorTracker', () => {
 		}
 	}
 
-	test('dirty untitled text file model opens as editor', function () {
-		return testUntitledEditor(false);
-	});
+	test('dirty untitled text file model opens as editor', async function () {
+		const accessor = await createTracker();
 
-	test('dirty untitled text file model opens as editor - autosave ON', function () {
-		return testUntitledEditor(true);
-	});
-
-	async function testUntitledEditor(autoSaveEnabled: boolean): Promise<void> {
-		const accessor = await createTracker(autoSaveEnabled);
-
-		const untitledTextEditor = await accessor.textEditorService.resolveTextEditor({ resource: undefined, forceUntitled: true }) as UntitledTextEditorInput;
+		const untitledTextEditor = accessor.textEditorService.createTextEditor({ resource: undefined, forceUntitled: true }) as UntitledTextEditorInput;
 		const model = disposables.add(await untitledTextEditor.resolve());
 
 		assert.ok(!accessor.editorService.isOpened(untitledTextEditor));
@@ -174,7 +166,7 @@ suite('Files - TextFileEditorTracker', () => {
 
 		await awaitEditorOpening(accessor.editorService);
 		assert.ok(accessor.editorService.isOpened(untitledTextEditor));
-	}
+	});
 
 	function awaitEditorOpening(editorService: IEditorService): Promise<void> {
 		return Event.toPromise(Event.once(editorService.onDidActiveEditorChange));
@@ -185,7 +177,7 @@ suite('Files - TextFileEditorTracker', () => {
 
 		const resource = toResource.call(this, '/path/index.txt');
 
-		await accessor.editorService.openEditor(await accessor.textEditorService.resolveTextEditor({ resource, options: { override: DEFAULT_EDITOR_ASSOCIATION.id } }));
+		await accessor.editorService.openEditor(accessor.textEditorService.createTextEditor({ resource, options: { override: DEFAULT_EDITOR_ASSOCIATION.id } }));
 
 		accessor.hostService.setFocus(false);
 		accessor.hostService.setFocus(true);

@@ -7,6 +7,7 @@ import { Event } from 'vs/base/common/event';
 import { ScanCode, ScanCodeUtils } from 'vs/base/common/keyCodes';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
+import { DispatchConfig } from 'vs/platform/keyboardLayout/common/dispatchConfig';
 import { IKeyboardMapper } from 'vs/platform/keyboardLayout/common/keyboardMapper';
 
 export const IKeyboardLayoutService = createDecorator<IKeyboardLayoutService>('keyboardLayoutService');
@@ -79,7 +80,7 @@ export interface IKeyboardLayoutService {
 	getRawKeyboardMapping(): IKeyboardMapping | null;
 	getCurrentKeyboardLayout(): IKeyboardLayoutInfo | null;
 	getAllKeyboardLayouts(): IKeyboardLayoutInfo[];
-	getKeyboardMapper(): IKeyboardMapper;
+	getKeyboardMapper(dispatchConfig: DispatchConfig): IKeyboardMapper;
 	validateCurrentKeyboardMapping(keyboardEvent: IKeyboardEvent): void;
 }
 

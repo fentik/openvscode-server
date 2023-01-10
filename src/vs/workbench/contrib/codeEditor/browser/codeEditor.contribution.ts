@@ -19,5 +19,5 @@ import './toggleMultiCursorModifier';
 import './toggleRenderControlCharacter';
 import './toggleRenderWhitespace';
 import './toggleWordWrap';
-import './untitledTextEditorHint/untitledTextEditorHint';
+import './untitledTextEditorHint';
 import './workbenchReferenceSearch';

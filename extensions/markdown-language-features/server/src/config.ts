@@ -3,25 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { LsConfiguration } from 'vscode-markdown-languageservice';
-
-export { LsConfiguration };
+export interface LsConfiguration {
+	/**
+	 * List of file extensions should be considered as markdown.
+	 *
+	 * These should not include the leading `.`.
+	 */
+	readonly markdownFileExtensions: readonly string[];
+}
 
 const defaultConfig: LsConfiguration = {
 	markdownFileExtensions: ['md'],
-	knownLinkedToFileExtensions: [
-		'jpg',
-		'jpeg',
-		'png',
-		'gif',
-		'webp',
-		'bmp',
-		'tiff',
-	],
-	excludePaths: [
-		'**/.*',
-		'**/node_modules/**',
-	]
 };
 
 export function getLsConfiguration(overrides: Partial<LsConfiguration>): LsConfiguration {

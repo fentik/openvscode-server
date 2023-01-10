@@ -19,16 +19,8 @@ export class LineDataEventAddon extends Disposable implements ITerminalAddon {
 	private readonly _onLineData = this._register(new Emitter<string>());
 	readonly onLineData = this._onLineData.event;
 
-	constructor(private readonly _initializationPromise?: Promise<void>) {
-		super();
-	}
-
-	async activate(xterm: XTermTerminal) {
+	activate(xterm: XTermTerminal) {
 		this._xterm = xterm;
-
-		// If there is an initialization promise, wait for it before registering the event
-		await this._initializationPromise;
-
 		// Fire onLineData when a line feed occurs, taking into account wrapped lines
 		this._register(xterm.onLineFeed(() => {
 			const buffer = xterm.buffer;

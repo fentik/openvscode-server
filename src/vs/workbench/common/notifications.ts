@@ -195,7 +195,9 @@ export class NotificationsModel extends Disposable implements INotificationsMode
 
 		// Deduplicate
 		const duplicate = this.findNotification(item);
-		duplicate?.close();
+		if (duplicate) {
+			duplicate.close();
+		}
 
 		// Add to list as first entry
 		this._notifications.splice(0, 0, item);

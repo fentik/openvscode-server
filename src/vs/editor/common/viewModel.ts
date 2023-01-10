@@ -40,7 +40,7 @@ export interface IViewModel extends ICursorSimpleModel {
 	onCompositionStart(): void;
 	onCompositionEnd(): void;
 
-	getDecorationsInViewport(visibleRange: Range, onlyMinimapDecorations?: boolean): ViewModelDecoration[];
+	getDecorationsInViewport(visibleRange: Range): ViewModelDecoration[];
 	getViewportViewLineRenderingData(visibleRange: Range, lineNumber: number): ViewLineRenderingData;
 	getViewLineRenderingData(lineNumber: number): ViewLineRenderingData;
 	getViewLineData(lineNumber: number): ViewLineData;
@@ -62,8 +62,6 @@ export interface IViewModel extends ICursorSimpleModel {
 	getLineLastNonWhitespaceColumn(lineNumber: number): number;
 	getAllOverviewRulerDecorations(theme: EditorTheme): OverviewRulerDecorationsGroup[];
 	getValueInRange(range: Range, eol: EndOfLinePreference): string;
-	getValueLengthInRange(range: Range, eol: EndOfLinePreference): number;
-	modifyPosition(position: Position, offset: number): Position;
 
 	getInjectedTextAt(viewPosition: Position): InjectedText | null;
 
@@ -122,8 +120,7 @@ export interface IViewLayout {
 	isInTopPadding(verticalOffset: number): boolean;
 	isInBottomPadding(verticalOffset: number): boolean;
 	getLineNumberAtVerticalOffset(verticalOffset: number): number;
-	getVerticalOffsetForLineNumber(lineNumber: number, includeViewZones?: boolean): number;
-	getVerticalOffsetAfterLineNumber(lineNumber: number, includeViewZones?: boolean): number;
+	getVerticalOffsetForLineNumber(lineNumber: number): number;
 	getWhitespaceAtVerticalOffset(verticalOffset: number): IViewWhitespaceViewportData | null;
 
 	/**

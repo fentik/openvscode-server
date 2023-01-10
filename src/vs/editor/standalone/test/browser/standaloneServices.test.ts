@@ -46,7 +46,6 @@ suite('StandaloneKeybindingService', () => {
 			shiftKey: false,
 			altKey: false,
 			metaKey: false,
-			altGraphKey: false,
 			keyCode: KeyCode.F9,
 			code: null!
 		});

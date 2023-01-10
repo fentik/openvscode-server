@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IIntegrityService, IntegrityTestResult } from 'vs/workbench/services/integrity/common/integrity';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 
 export class IntegrityService implements IIntegrityService {
 
@@ -15,4 +15,4 @@ export class IntegrityService implements IIntegrityService {
 	}
 }
 
-registerSingleton(IIntegrityService, IntegrityService, InstantiationType.Delayed);
+registerSingleton(IIntegrityService, IntegrityService, true);

@@ -5,7 +5,7 @@
 
 import { Emitter } from 'vs/base/common/event';
 import { URI } from 'vs/base/common/uri';
-import { IEditorModel, IEditorOptions } from 'vs/platform/editor/common/editor';
+import { IEditorModel } from 'vs/platform/editor/common/editor';
 import { firstOrDefault } from 'vs/base/common/arrays';
 import { EditorInputCapabilities, Verbosity, GroupIdentifier, ISaveOptions, IRevertOptions, IMoveResult, IEditorDescriptor, IEditorPane, IUntypedEditorInput, EditorResourceAccessor, AbstractEditorInput, isEditorInput, IEditorIdentifier } from 'vs/workbench/common/editor';
 import { isEqual } from 'vs/base/common/resources';
@@ -194,11 +194,8 @@ export abstract class EditorInput extends AbstractEditorInput {
 	 * Returns a type of `IEditorModel` that represents the resolved input.
 	 * Subclasses should override to provide a meaningful model or return
 	 * `null` if the editor does not require a model.
-	 *
-	 * The `options` parameter are passed down from the editor when the
-	 * input is resolved as part of it.
 	 */
-	async resolve(options?: IEditorOptions): Promise<IEditorModel | null> {
+	async resolve(): Promise<IEditorModel | null> {
 		return null;
 	}
 
@@ -265,9 +262,12 @@ export abstract class EditorInput extends AbstractEditorInput {
 		// Untyped inputs: go into properties
 		const otherInputEditorId = otherInput.options?.override;
 
-		// If the overrides are both defined and don't match that means they're separate inputs
-		if (this.editorId !== otherInputEditorId && otherInputEditorId !== undefined && this.editorId !== undefined) {
-			return false;
+		if (this.editorId === undefined) {
+			return false; // untyped inputs can only match for editors that have adopted `editorId`
+		}
+
+		if (this.editorId !== otherInputEditorId) {
+			return false; // untyped input uses another `editorId`
 		}
 
 		return isEqual(this.resource, EditorResourceAccessor.getCanonicalUri(otherInput));

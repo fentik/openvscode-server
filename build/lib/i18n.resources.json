@@ -91,10 +91,6 @@
 			"project": "vscode-workbench"
 		},
 		{
-			"name": "vs/workbench/contrib/folding",
-			"project": "vscode-workbench"
-		},
-		{
 			"name": "vs/workbench/contrib/html",
 			"project": "vscode-workbench"
 		},
@@ -308,10 +304,6 @@
 		},
 		{
 			"name": "vs/workbench/contrib/offline",
-			"project": "vscode-workbench"
-		},
-		{
-			"name": "vs/workbench/contrib/remoteTunnel",
 			"project": "vscode-workbench"
 		},
 		{

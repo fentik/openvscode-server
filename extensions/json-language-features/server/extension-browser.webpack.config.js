@@ -13,7 +13,7 @@ const path = require('path');
 module.exports = withBrowserDefaults({
 	context: __dirname,
 	entry: {
-		extension: './src/browser/jsonServerWorkerMain.ts',
+		extension: './src/browser/jsonServerMain.ts',
 	},
 	output: {
 		filename: 'jsonServerMain.js',

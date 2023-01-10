@@ -6,4 +6,4 @@
 import { IChecksumService } from 'vs/platform/checksum/common/checksumService';
 import { registerSharedProcessRemoteService } from 'vs/platform/ipc/electron-sandbox/services';
 
-registerSharedProcessRemoteService(IChecksumService, 'checksum');
+registerSharedProcessRemoteService(IChecksumService, 'checksum', { supportsDelayedInstantiation: true });

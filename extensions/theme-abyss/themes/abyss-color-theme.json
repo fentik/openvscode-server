@@ -7,11 +7,7 @@
 			}
 		},
 		{
-			"scope": [
-				"meta.embedded",
-				"source.groovy.embedded",
-				"string meta.image.inline.markdown"
-			],
+			"scope": ["meta.embedded", "source.groovy.embedded"],
 			"settings": {
 				"foreground": "#6688cc"
 			}
@@ -409,7 +405,6 @@
 		// "activityBar.foreground": "",
 		// "activityBarBadge.background": "",
 		// "activityBarBadge.foreground": "",
-		"activityBarItem.profilesBackground": "#082877",
 
 		// Workbench: Panel
 		// "panel.background": "",

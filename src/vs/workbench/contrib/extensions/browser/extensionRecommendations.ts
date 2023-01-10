@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IExtensionRecommendationReason } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
+import { IExtensionRecommendationReson } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 
 export type ExtensionRecommendation = {
 	readonly extensionId: string;
-	readonly reason: IExtensionRecommendationReason;
+	readonly reason: IExtensionRecommendationReson;
 };
 
 export abstract class ExtensionRecommendations extends Disposable {

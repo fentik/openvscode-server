@@ -6,18 +6,9 @@
 	"overrideCommand": false,
 	"runArgs": [ "--init", "--security-opt", "seccomp=unconfined", "--shm-size=1g"],
 
-	// VS Code extensions and settings
-	"customizations": {
-		"vscode": {
-			"settings": {
-				"resmon.show.battery": false,
-				"resmon.show.cpufreq": false
-			},
-			"extensions": [
-				"dbaeumer.vscode-eslint",
-				"mutantdino.resourcemonitor"
-			]
-		}
+	"settings": {
+		"resmon.show.battery": false,
+		"resmon.show.cpufreq": false
 	},
 
 	// noVNC, VNC
@@ -33,12 +24,17 @@
 		}
 	},
 
+	"extensions": [
+		"dbaeumer.vscode-eslint",
+		"mutantdino.resourcemonitor"
+	],
+
 	// Optionally loads a cached yarn install for the repo
 	"postCreateCommand": ".devcontainer/cache/restore-diff.sh",
 
 	"remoteUser": "node",
 
 	"hostRequirements": {
-		"memory": "9gb"
+		"memory": "8gb"
 	}
 }

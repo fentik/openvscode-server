@@ -6,8 +6,7 @@
   "license": "MIT",
   "enableProposedApi": true,
   "enabledApiProposals": [
-    "resolvers",
-	"tunnels"
+    "resolvers"
   ],
   "private": true,
   "engines": {

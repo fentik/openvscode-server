@@ -5,7 +5,7 @@
 
 import { IPickAndOpenOptions, ISaveDialogOptions, IOpenDialogOptions, IFileDialogService, FileFilter } from 'vs/platform/dialogs/common/dialogs';
 import { URI } from 'vs/base/common/uri';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { AbstractFileDialogService } from 'vs/workbench/services/dialogs/browser/abstractFileDialogService';
 import { Schemas } from 'vs/base/common/network';
 import { memoize } from 'vs/base/common/decorators';
@@ -270,4 +270,4 @@ export class FileDialogService extends AbstractFileDialogService implements IFil
 	}
 }
 
-registerSingleton(IFileDialogService, FileDialogService, InstantiationType.Delayed);
+registerSingleton(IFileDialogService, FileDialogService, true);

@@ -19,7 +19,7 @@ import { Action2 } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES } from 'vs/workbench/common/actions';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { IDebugService, REPL_VIEW_ID } from 'vs/workbench/contrib/debug/common/debug';
 
@@ -203,8 +203,9 @@ export class ViewQuickAccessProvider extends PickerQuickAccessProvider<IViewQuic
 		// Output Channels
 		const channels = this.outputService.getChannelDescriptors();
 		for (const channel of channels) {
+			const label = channel.log ? localize('logChannel', "Log ({0})", channel.label) : channel.label;
 			viewEntries.push({
-				label: channel.label,
+				label,
 				containerLabel: localize('channels', "Output"),
 				accept: () => this.outputService.showChannel(channel.id)
 			});
@@ -234,7 +235,7 @@ export class OpenViewPickerAction extends Action2 {
 		super({
 			id: OpenViewPickerAction.ID,
 			title: { value: localize('openView', "Open View"), original: 'Open View' },
-			category: Categories.View,
+			category: CATEGORIES.View,
 			f1: true
 		});
 	}
@@ -257,7 +258,7 @@ export class QuickAccessViewPickerAction extends Action2 {
 		super({
 			id: QuickAccessViewPickerAction.ID,
 			title: { value: localize('quickOpenView', "Quick Open View"), original: 'Quick Open View' },
-			category: Categories.View,
+			category: CATEGORIES.View,
 			f1: false, // hide quick pickers from command palette to not confuse with the other entry that shows a input field
 			keybinding: {
 				weight: KeybindingWeight.WorkbenchContrib,

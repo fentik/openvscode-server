@@ -17,8 +17,7 @@
 					// see https://github.com/w3c/webappsec-trusted-types/wiki/Trusted-Types-for-function-constructor
 					const fnArgs = args.slice(0, -1).join(',');
 					const fnBody = args.pop()!.toString();
-					// Do not add a new line to fnBody, as this will confuse source maps.
-					const body = `(function anonymous(${fnArgs}) { ${fnBody}\n})`;
+					const body = `(function anonymous(${fnArgs}) {\n${fnBody}\n})`;
 					return body;
 				}
 			})

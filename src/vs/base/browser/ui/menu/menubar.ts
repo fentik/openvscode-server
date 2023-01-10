@@ -109,7 +109,7 @@ export class MenuBar extends Disposable {
 		this.menuUpdater = this._register(new RunOnceScheduler(() => this.update(), 200));
 
 		this.actionRunner = this.options.actionRunner ?? this._register(new ActionRunner());
-		this._register(this.actionRunner.onWillRun(() => {
+		this._register(this.actionRunner.onBeforeRun(() => {
 			this.setUnfocusedState();
 		}));
 
@@ -985,7 +985,9 @@ export class MenuBar extends Disposable {
 				this.focusedMenu.holder.remove();
 			}
 
-			this.focusedMenu.widget?.dispose();
+			if (this.focusedMenu.widget) {
+				this.focusedMenu.widget.dispose();
+			}
 
 			this.focusedMenu = { index: this.focusedMenu.index };
 		}

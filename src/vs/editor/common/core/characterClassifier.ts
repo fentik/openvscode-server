@@ -12,14 +12,14 @@ export class CharacterClassifier<T extends number> {
 	/**
 	 * Maintain a compact (fully initialized ASCII map for quickly classifying ASCII characters - used more often in code).
 	 */
-	protected readonly _asciiMap: Uint8Array;
+	protected _asciiMap: Uint8Array;
 
 	/**
 	 * The entire map (sparse array).
 	 */
-	protected readonly _map: Map<number, number>;
+	protected _map: Map<number, number>;
 
-	protected readonly _defaultValue: number;
+	protected _defaultValue: number;
 
 	constructor(_defaultValue: T) {
 		const defaultValue = toUint8(_defaultValue);
@@ -30,8 +30,10 @@ export class CharacterClassifier<T extends number> {
 	}
 
 	private static _createAsciiMap(defaultValue: number): Uint8Array {
-		const asciiMap = new Uint8Array(256);
-		asciiMap.fill(defaultValue);
+		const asciiMap: Uint8Array = new Uint8Array(256);
+		for (let i = 0; i < 256; i++) {
+			asciiMap[i] = defaultValue;
+		}
 		return asciiMap;
 	}
 
@@ -51,11 +53,6 @@ export class CharacterClassifier<T extends number> {
 		} else {
 			return <T>(this._map.get(charCode) || this._defaultValue);
 		}
-	}
-
-	public clear() {
-		this._asciiMap.fill(this._defaultValue);
-		this._map.clear();
 	}
 }
 
@@ -78,9 +75,5 @@ export class CharacterSet {
 
 	public has(charCode: number): boolean {
 		return (this._actual.get(charCode) === Boolean.True);
-	}
-
-	public clear(): void {
-		return this._actual.clear();
 	}
 }

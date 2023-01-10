@@ -64,17 +64,7 @@ export class GlobalPointerMoveMonitor implements IDisposable {
 		try {
 			initialElement.setPointerCapture(pointerId);
 			this._hooks.add(toDisposable(() => {
-				try {
-					initialElement.releasePointerCapture(pointerId);
-				} catch (err) {
-					// See https://github.com/microsoft/vscode/issues/161731
-					//
-					// `releasePointerCapture` sometimes fails when being invoked with the exception:
-					//     DOMException: Failed to execute 'releasePointerCapture' on 'Element':
-					//     No active pointer with the given id is found.
-					//
-					// There's no need to do anything in case of failure
-				}
+				initialElement.releasePointerCapture(pointerId);
 			}));
 		} catch (err) {
 			// See https://github.com/microsoft/vscode/issues/144584

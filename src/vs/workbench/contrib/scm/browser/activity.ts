@@ -16,6 +16,7 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { EditorResourceAccessor } from 'vs/workbench/common/editor';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
+import { stripIcons } from 'vs/base/common/iconLabels';
 import { Schemas } from 'vs/base/common/network';
 import { Iterable } from 'vs/base/common/iterator';
 
@@ -40,6 +41,7 @@ export class SCMStatusController implements IWorkbenchContribution {
 		@ISCMService private readonly scmService: ISCMService,
 		@ISCMViewService private readonly scmViewService: ISCMViewService,
 		@IStatusbarService private readonly statusbarService: IStatusbarService,
+		@IContextKeyService readonly contextKeyService: IContextKeyService,
 		@IActivityService private readonly activityService: IActivityService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
@@ -153,24 +155,13 @@ export class SCMStatusController implements IWorkbenchContribution {
 			const command = commands[index];
 			const tooltip = `${label}${command.tooltip ? ` - ${command.tooltip}` : ''}`;
 
-			// Get a repository agnostic name for the status bar action, derive this from the
-			// first command argument which is in the form "git.<command>/<number>"
-			let repoAgnosticActionName = command.arguments?.[0];
-			if (repoAgnosticActionName && typeof repoAgnosticActionName === 'string') {
-				repoAgnosticActionName = repoAgnosticActionName
-					.substring(0, repoAgnosticActionName.lastIndexOf('/'))
-					.replace(/^git\./, '');
-				if (repoAgnosticActionName.length > 1) {
-					repoAgnosticActionName = repoAgnosticActionName[0].toLocaleUpperCase() + repoAgnosticActionName.slice(1);
-				}
-			} else {
-				repoAgnosticActionName = '';
-			}
+			let ariaLabel = stripIcons(command.title).trim();
+			ariaLabel = ariaLabel ? `${ariaLabel}, ${label}` : label;
 
 			disposables.add(this.statusbarService.addEntry({
-				name: localize('status.scm', "Source Control") + (repoAgnosticActionName ? ` ${repoAgnosticActionName}` : ''),
+				name: localize('status.scm', "Source Control"),
 				text: command.title,
-				ariaLabel: tooltip,
+				ariaLabel: `${ariaLabel}${command.tooltip ? ` - ${command.tooltip}` : ''}`,
 				tooltip,
 				command: command.id ? command : undefined
 			}, `status.scm.${index}`, MainThreadStatusBarAlignment.LEFT, 10000 - index));
@@ -216,7 +207,7 @@ export class SCMActiveResourceContextKeyController implements IWorkbenchContribu
 	private repositoryDisposables = new Set<IDisposable>();
 
 	constructor(
-		@IContextKeyService contextKeyService: IContextKeyService,
+		@IContextKeyService readonly contextKeyService: IContextKeyService,
 		@IEditorService private readonly editorService: IEditorService,
 		@ISCMService private readonly scmService: ISCMService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService

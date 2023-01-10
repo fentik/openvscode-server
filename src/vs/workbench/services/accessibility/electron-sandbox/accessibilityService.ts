@@ -10,7 +10,7 @@ import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { AccessibilityService } from 'vs/platform/accessibility/browser/accessibilityService';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IJSONEditingService } from 'vs/workbench/services/configuration/common/jsonEditing';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from 'vs/workbench/common/contributions';
@@ -23,8 +23,7 @@ interface AccessibilityMetrics {
 }
 type AccessibilityMetricsClassification = {
 	owner: 'isidorn';
-	comment: 'Helps gain an understanding of when accessibility features are being used';
-	enabled: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether or not accessibility features are enabled' };
+	enabled: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
 };
 
 export class NativeAccessibilityService extends AccessibilityService implements IAccessibilityService {
@@ -67,7 +66,7 @@ export class NativeAccessibilityService extends AccessibilityService implements 
 	}
 }
 
-registerSingleton(IAccessibilityService, NativeAccessibilityService, InstantiationType.Delayed);
+registerSingleton(IAccessibilityService, NativeAccessibilityService, true);
 
 // On linux we do not automatically detect that a screen reader is detected, thus we have to implicitly notify the renderer to enable accessibility when user configures it in settings
 class LinuxAccessibilityContribution implements IWorkbenchContribution {

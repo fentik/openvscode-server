@@ -18,9 +18,8 @@ import { LogLevelChannelClient } from 'vs/platform/log/common/logIpc';
 import { RequestStore } from 'vs/platform/terminal/common/requestStore';
 import { HeartbeatConstants, IHeartbeatService, IProcessDataEvent, IPtyService, IReconnectConstants, IRequestResolveVariablesEvent, IShellLaunchConfig, ITerminalLaunchError, ITerminalProfile, ITerminalsLayoutInfo, TerminalIcon, TerminalIpcChannels, IProcessProperty, TitleEventSource, ProcessPropertyType, IProcessPropertyMap, TerminalSettingId, ISerializedTerminalState, ITerminalProcessOptions } from 'vs/platform/terminal/common/terminal';
 import { registerTerminalPlatformConfiguration } from 'vs/platform/terminal/common/terminalPlatformConfiguration';
-import { IGetTerminalLayoutInfoArgs, IProcessDetails, ISetTerminalLayoutInfoArgs } from 'vs/platform/terminal/common/terminalProcess';
+import { IGetTerminalLayoutInfoArgs, IProcessDetails, IPtyHostProcessReplayEvent, ISetTerminalLayoutInfoArgs } from 'vs/platform/terminal/common/terminalProcess';
 import { detectAvailableProfiles } from 'vs/platform/terminal/node/terminalProfiles';
-import { IPtyHostProcessReplayEvent } from 'vs/platform/terminal/common/capabilities/capabilities';
 
 enum Constants {
 	MaxRestarts = 5
@@ -123,7 +122,7 @@ export class PtyHostService extends Disposable implements IPtyService {
 		}
 
 		try {
-			return await getResolvedShellEnv(this._configurationService, this._logService, { _: [] }, process.env);
+			return await getResolvedShellEnv(this._logService, { _: [] }, process.env);
 		} catch (error) {
 			this._logService.error('ptyHost was unable to resolve shell environment', error);
 
@@ -155,7 +154,7 @@ export class PtyHostService extends Disposable implements IPtyService {
 			}
 		}
 
-		const client = new Client(FileAccess.asFileUri('bootstrap-fork').fsPath, opts);
+		const client = new Client(FileAccess.asFileUri('bootstrap-fork', require).fsPath, opts);
 		this._onPtyHostStart.fire();
 
 		// Setup heartbeat service and trigger a heartbeat immediately to reset the timeouts
@@ -224,14 +223,14 @@ export class PtyHostService extends Disposable implements IPtyService {
 	updateTitle(id: number, title: string, titleSource: TitleEventSource): Promise<void> {
 		return this._proxy.updateTitle(id, title, titleSource);
 	}
-	updateIcon(id: number, userInitiated: boolean, icon: TerminalIcon, color?: string): Promise<void> {
-		return this._proxy.updateIcon(id, userInitiated, icon, color);
+	updateIcon(id: number, icon: TerminalIcon, color?: string): Promise<void> {
+		return this._proxy.updateIcon(id, icon, color);
 	}
 	attachToProcess(id: number): Promise<void> {
 		return this._proxy.attachToProcess(id);
 	}
-	detachFromProcess(id: number, forcePersist?: boolean): Promise<void> {
-		return this._proxy.detachFromProcess(id, forcePersist);
+	detachFromProcess(id: number): Promise<void> {
+		return this._proxy.detachFromProcess(id);
 	}
 	listProcesses(): Promise<IProcessDetails[]> {
 		return this._proxy.listProcesses();
@@ -293,8 +292,8 @@ export class PtyHostService extends Disposable implements IPtyService {
 	getEnvironment(): Promise<IProcessEnvironment> {
 		return this._proxy.getEnvironment();
 	}
-	getWslPath(original: string, direction: 'unix-to-win' | 'win-to-unix'): Promise<string> {
-		return this._proxy.getWslPath(original, direction);
+	getWslPath(original: string): Promise<string> {
+		return this._proxy.getWslPath(original);
 	}
 
 	getRevivedPtyNewId(id: number): Promise<number | undefined> {
@@ -314,13 +313,6 @@ export class PtyHostService extends Disposable implements IPtyService {
 
 	async acceptDetachInstanceReply(requestId: number, persistentProcessId: number): Promise<void> {
 		return this._proxy.acceptDetachInstanceReply(requestId, persistentProcessId);
-	}
-
-	async freePortKillProcess(port: string): Promise<{ port: string; processId: string }> {
-		if (!this._proxy.freePortKillProcess) {
-			throw new Error('freePortKillProcess does not exist on the pty proxy');
-		}
-		return this._proxy.freePortKillProcess(port);
 	}
 
 	async serializeTerminalState(ids: number[]): Promise<string> {

@@ -3,12 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { assertNever } from 'vs/base/common/assert';
 import { CancelablePromise, createCancelablePromise, RunOnceScheduler } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { onUnexpectedError, onUnexpectedExternalError } from 'vs/base/common/errors';
 import { Emitter } from 'vs/base/common/event';
-import { matchesSubString } from 'vs/base/common/filters';
 import { Disposable, IDisposable, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { CoreEditingCommands } from 'vs/editor/browser/coreCommands';
 import { IActiveCodeEditor } from 'vs/editor/browser/editorBrowser';
@@ -16,23 +14,25 @@ import { EditorOption } from 'vs/editor/common/config/editorOptions';
 import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { Position } from 'vs/editor/common/core/position';
 import { Range } from 'vs/editor/common/core/range';
-import { CursorChangeReason } from 'vs/editor/common/cursorEvents';
-import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
-import { Command, InlineCompletion, InlineCompletionContext, InlineCompletions, InlineCompletionsProvider, InlineCompletionTriggerKind } from 'vs/editor/common/languages';
-import { ILanguageConfigurationService } from 'vs/editor/common/languages/languageConfigurationRegistry';
 import { ITextModel } from 'vs/editor/common/model';
-import { fixBracketsInLine } from 'vs/editor/common/model/bracketPairsTextModelPart/fixBrackets';
-import { IFeatureDebounceInformation, ILanguageFeatureDebounceService } from 'vs/editor/common/services/languageFeatureDebounce';
-import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
-import { inlineSuggestCommitId } from 'vs/editor/contrib/inlineCompletions/browser/consts';
+import { Command, InlineCompletion, InlineCompletionContext, InlineCompletions, InlineCompletionsProvider, InlineCompletionTriggerKind } from 'vs/editor/common/languages';
 import { BaseGhostTextWidgetModel, GhostText, GhostTextReplacement, GhostTextWidgetModel } from 'vs/editor/contrib/inlineCompletions/browser/ghostText';
+import { ICommandService } from 'vs/platform/commands/common/commands';
+import { inlineSuggestCommitId } from 'vs/editor/contrib/inlineCompletions/browser/consts';
 import { SharedInlineCompletionCache } from 'vs/editor/contrib/inlineCompletions/browser/ghostTextModel';
 import { inlineCompletionToGhostText, NormalizedInlineCompletion } from 'vs/editor/contrib/inlineCompletions/browser/inlineCompletionToGhostText';
-import { getReadonlyEmptyArray } from 'vs/editor/contrib/inlineCompletions/browser/utils';
+import { ILanguageConfigurationService } from 'vs/editor/common/languages/languageConfigurationRegistry';
+import { fixBracketsInLine } from 'vs/editor/common/model/bracketPairsTextModelPart/fixBrackets';
+import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
+import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
+import { IFeatureDebounceInformation, ILanguageFeatureDebounceService } from 'vs/editor/common/services/languageFeatureDebounce';
+import { SnippetParser } from 'vs/editor/contrib/snippet/browser/snippetParser';
 import { SnippetController2 } from 'vs/editor/contrib/snippet/browser/snippetController2';
-import { SnippetParser, Text } from 'vs/editor/contrib/snippet/browser/snippetParser';
-import { ICommandService } from 'vs/platform/commands/common/commands';
+import { assertNever } from 'vs/base/common/types';
+import { matchesSubString } from 'vs/base/common/filters';
+import { getReadonlyEmptyArray } from 'vs/editor/contrib/inlineCompletions/browser/utils';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { CursorChangeReason } from 'vs/editor/common/cursorEvents';
 
 export class InlineCompletionsModel extends Disposable implements GhostTextWidgetModel {
 	protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -195,10 +195,6 @@ export class InlineCompletionsModel extends Disposable implements GhostTextWidge
 	public commitCurrentSuggestion(): void {
 		// Don't dispose the session, so that after committing, more suggestions are shown.
 		this.session?.commitCurrentCompletion();
-	}
-
-	public commitCurrentSuggestionPartially(): void {
-		this.session?.commitCurrentCompletionNextWord();
 	}
 
 	public showNext(): void {
@@ -498,56 +494,6 @@ export class InlineCompletionsSession extends BaseGhostTextWidgetModel {
 		this._register(disposable);
 	}
 
-	public commitCurrentCompletionNextWord(): void {
-		const ghostText = this.ghostText;
-		if (!ghostText) {
-			return;
-		}
-		const completion = this.currentCompletion;
-		if (!completion) {
-			return;
-		}
-
-		if (completion.snippetInfo || completion.filterText !== completion.insertText) {
-			// not in WYSIWYG mode, partial commit might change completion, thus it is not supported
-			this.commit(completion);
-			return;
-		}
-
-		if (ghostText.parts.length === 0) {
-			return;
-		}
-		const firstPart = ghostText.parts[0];
-		const position = new Position(ghostText.lineNumber, firstPart.column);
-
-		const line = firstPart.lines[0];
-		const langId = this.editor.getModel()!.getLanguageIdAtPosition(ghostText.lineNumber, 1);
-		const config = this.languageConfigurationService.getLanguageConfiguration(langId);
-		const r = new RegExp(config.wordDefinition, config.wordDefinition.flags.replace('g', ''));
-		const m = line.match(r);
-		let acceptUntilIndexExclusive = 0;
-		if (m && m.index !== undefined) {
-			if (m.index === 0) {
-				acceptUntilIndexExclusive = m[0].length;
-			} else {
-				acceptUntilIndexExclusive = m.index;
-			}
-		} else {
-			acceptUntilIndexExclusive = line.length;
-		}
-
-		const partialText = line.substring(0, acceptUntilIndexExclusive);
-
-		this.editor.pushUndoStop();
-		this.editor.executeEdits(
-			'inlineSuggestion.accept',
-			[
-				EditOperation.replace(Range.fromPositions(position), partialText),
-			]
-		);
-		this.editor.setPosition(position.delta(0, partialText.length));
-	}
-
 	public commitCurrentCompletion(): void {
 		const ghostText = this.ghostText;
 		if (!ghostText) {
@@ -566,7 +512,6 @@ export class InlineCompletionsSession extends BaseGhostTextWidgetModel {
 		// otherwise command args might get disposed.
 		const cache = this.cache.clearAndLeak();
 
-		this.editor.pushUndoStop();
 		if (completion.snippetInfo) {
 			this.editor.executeEdits(
 				'inlineSuggestion.accept',
@@ -576,7 +521,7 @@ export class InlineCompletionsSession extends BaseGhostTextWidgetModel {
 				]
 			);
 			this.editor.setPosition(completion.snippetInfo.range.getStartPosition());
-			SnippetController2.get(this.editor)?.insert(completion.snippetInfo.snippet, { undoStopBefore: false });
+			SnippetController2.get(this.editor)?.insert(completion.snippetInfo.snippet);
 		} else {
 			this.editor.executeEdits(
 				'inlineSuggestion.accept',
@@ -789,35 +734,12 @@ export async function provideInlineCompletions(
 
 				snippetInfo = undefined;
 			} else if ('snippet' in item.insertText) {
-				const preBracketCompletionLength = item.insertText.snippet.length;
-
-				if (languageConfigurationService && item.completeBracketPairs) {
-					item.insertText.snippet = closeBrackets(
-						item.insertText.snippet,
-						range.getStartPosition(),
-						model,
-						languageConfigurationService
-					);
-
-					// Modify range depending on if brackets are added or removed
-					const diff = item.insertText.snippet.length - preBracketCompletionLength;
-					if (diff !== 0) {
-						range = new Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn + diff);
-					}
-				}
-
 				const snippet = new SnippetParser().parse(item.insertText.snippet);
-
-				if (snippet.children.length === 1 && snippet.children[0] instanceof Text) {
-					insertText = snippet.children[0].value;
-					snippetInfo = undefined;
-				} else {
-					insertText = snippet.toString();
-					snippetInfo = {
-						snippet: item.insertText.snippet,
-						range: range
-					};
-				}
+				insertText = snippet.toString();
+				snippetInfo = {
+					snippet: item.insertText.snippet,
+					range: range
+				};
 			} else {
 				assertNever(item.insertText);
 			}

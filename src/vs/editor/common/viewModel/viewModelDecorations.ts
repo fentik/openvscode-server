@@ -36,7 +36,6 @@ export class ViewModelDecorations implements IDisposable {
 
 	private _cachedModelDecorationsResolver: IDecorationsViewportData | null;
 	private _cachedModelDecorationsResolverViewRange: Range | null;
-	private _cachedOnlyMinimapDecorations: boolean | null = null;
 
 	constructor(editorId: number, model: ITextModel, configuration: IEditorConfiguration, linesCollection: IViewModelLines, coordinatesConverter: ICoordinatesConverter) {
 		this.editorId = editorId;
@@ -97,25 +96,23 @@ export class ViewModelDecorations implements IDisposable {
 		return r;
 	}
 
-	public getDecorationsViewportData(viewRange: Range, onlyMinimapDecorations: boolean = false): IDecorationsViewportData {
+	public getDecorationsViewportData(viewRange: Range): IDecorationsViewportData {
 		let cacheIsValid = (this._cachedModelDecorationsResolver !== null);
 		cacheIsValid = cacheIsValid && (viewRange.equalsRange(this._cachedModelDecorationsResolverViewRange));
-		cacheIsValid = cacheIsValid && (this._cachedOnlyMinimapDecorations === onlyMinimapDecorations);
 		if (!cacheIsValid) {
-			this._cachedModelDecorationsResolver = this._getDecorationsInRange(viewRange, onlyMinimapDecorations);
+			this._cachedModelDecorationsResolver = this._getDecorationsInRange(viewRange);
 			this._cachedModelDecorationsResolverViewRange = viewRange;
-			this._cachedOnlyMinimapDecorations = onlyMinimapDecorations;
 		}
 		return this._cachedModelDecorationsResolver!;
 	}
 
-	public getInlineDecorationsOnLine(lineNumber: number, onlyMinimapDecorations: boolean = false): InlineDecoration[] {
+	public getInlineDecorationsOnLine(lineNumber: number): InlineDecoration[] {
 		const range = new Range(lineNumber, this._linesCollection.getViewLineMinColumn(lineNumber), lineNumber, this._linesCollection.getViewLineMaxColumn(lineNumber));
-		return this._getDecorationsInRange(range, onlyMinimapDecorations).inlineDecorations[0];
+		return this._getDecorationsInRange(range).inlineDecorations[0];
 	}
 
-	private _getDecorationsInRange(viewRange: Range, onlyMinimapDecorations: boolean): IDecorationsViewportData {
-		const modelDecorations = this._linesCollection.getDecorationsInRange(viewRange, this.editorId, filterValidationDecorations(this.configuration.options), onlyMinimapDecorations);
+	private _getDecorationsInRange(viewRange: Range): IDecorationsViewportData {
+		const modelDecorations = this._linesCollection.getDecorationsInRange(viewRange, this.editorId, filterValidationDecorations(this.configuration.options));
 		const startLineNumber = viewRange.startLineNumber;
 		const endLineNumber = viewRange.endLineNumber;
 

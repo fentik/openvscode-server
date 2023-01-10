@@ -10,10 +10,12 @@ import { printKeyboardEvent, printStandardKeyboardEvent, StandardKeyboardEvent }
 import { Emitter, Event } from 'vs/base/common/event';
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { KeyCode, KeyMod, ScanCode, ScanCodeUtils, IMMUTABLE_CODE_TO_KEY_CODE, KeyCodeUtils } from 'vs/base/common/keyCodes';
-import { ResolvedKeybinding, KeyCodeChord, ScanCodeChord, Keybinding } from 'vs/base/common/keybindings';
+import { Keybinding, ResolvedKeybinding, SimpleKeybinding, ScanCodeBinding } from 'vs/base/common/keybindings';
 import { KeybindingParser } from 'vs/base/common/keybindingParser';
 import { OS, OperatingSystem, isMacintosh } from 'vs/base/common/platform';
 import { ICommandService, CommandsRegistry } from 'vs/platform/commands/common/commands';
+import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { ConfigurationScope, Extensions as ConfigExtensions, IConfigurationNode, IConfigurationRegistry } from 'vs/platform/configuration/common/configurationRegistry';
 import { ContextKeyExpr, IContextKeyService, ContextKeyExpression, IContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { Extensions, IJSONContributionRegistry } from 'vs/platform/jsonschemas/common/jsonContributionRegistry';
 import { AbstractKeybindingService } from 'vs/platform/keybinding/common/abstractKeybindingService';
@@ -30,7 +32,7 @@ import { IKeyboardMapper } from 'vs/platform/keyboardLayout/common/keyboardMappe
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { MenuRegistry } from 'vs/platform/actions/common/actions';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { commandsExtensionPoint } from 'vs/workbench/services/actions/common/menusExtensionPoint';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { RunOnceScheduler } from 'vs/base/common/async';
@@ -38,6 +40,8 @@ import { FileOperation, IFileService } from 'vs/platform/files/common/files';
 import { parse } from 'vs/base/common/json';
 import * as objects from 'vs/base/common/objects';
 import { IKeyboardLayoutService } from 'vs/platform/keyboardLayout/common/keyboardLayout';
+import { getDispatchConfig } from 'vs/platform/keyboardLayout/common/dispatchConfig';
+import { isArray } from 'vs/base/common/types';
 import { INavigatorWithKeyboard, IKeyboard } from 'vs/workbench/services/keybinding/browser/navigatorKeyboard';
 import { flatten } from 'vs/base/common/arrays';
 import { BrowserFeatures, KeyboardSupport } from 'vs/base/browser/canIUse';
@@ -187,6 +191,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@IUserDataProfileService userDataProfileService: IUserDataProfileService,
+		@IConfigurationService configurationService: IConfigurationService,
 		@IHostService private readonly hostService: IHostService,
 		@IExtensionService extensionService: IExtensionService,
 		@IFileService fileService: IFileService,
@@ -198,9 +203,21 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		this.isComposingGlobalContextKey = contextKeyService.createKey('isComposing', false);
 		this.updateSchema();
 
-		this._keyboardMapper = this.keyboardLayoutService.getKeyboardMapper();
+		let dispatchConfig = getDispatchConfig(configurationService);
+		configurationService.onDidChangeConfiguration((e) => {
+			const newDispatchConfig = getDispatchConfig(configurationService);
+			if (dispatchConfig === newDispatchConfig) {
+				return;
+			}
+
+			dispatchConfig = newDispatchConfig;
+			this._keyboardMapper = this.keyboardLayoutService.getKeyboardMapper(dispatchConfig);
+			this.updateResolver();
+		});
+
+		this._keyboardMapper = this.keyboardLayoutService.getKeyboardMapper(dispatchConfig);
 		this.keyboardLayoutService.onDidChangeKeyboardLayout(() => {
-			this._keyboardMapper = this.keyboardLayoutService.getKeyboardMapper();
+			this._keyboardMapper = this.keyboardLayoutService.getKeyboardMapper(dispatchConfig);
 			this.updateResolver();
 		});
 
@@ -286,17 +303,17 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		updateSchema(flatten(this._contributions.map(x => x.getSchemaAdditions())));
 	}
 
-	private _printKeybinding(keybinding: Keybinding): string {
-		return UserSettingsLabelProvider.toLabel(OS, keybinding.chords, (chord) => {
-			if (chord instanceof KeyCodeChord) {
-				return KeyCodeUtils.toString(chord.keyCode);
+	private _printUserBinding(parts: (SimpleKeybinding | ScanCodeBinding)[]): string {
+		return UserSettingsLabelProvider.toLabel(OS, parts, (part) => {
+			if (part instanceof SimpleKeybinding) {
+				return KeyCodeUtils.toString(part.keyCode);
 			}
-			return ScanCodeUtils.toString(chord.scanCode);
+			return ScanCodeUtils.toString(part.scanCode);
 		}) || '[null]';
 	}
 
 	private _printResolvedKeybinding(resolvedKeybinding: ResolvedKeybinding): string {
-		return resolvedKeybinding.getDispatchChords().map(x => x || '[null]').join(' ');
+		return resolvedKeybinding.getDispatchParts().map(x => x || '[null]').join(' ');
 	}
 
 	private _printResolvedKeybindings(output: string[], input: string, resolvedKeybindings: ResolvedKeybinding[]): void {
@@ -326,29 +343,30 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 
 		result.push(`Default Resolved Keybindings (unique only):`);
 		for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
-			if (!item.keybinding) {
+			if (!item.keybinding || item.keybinding.length === 0) {
 				continue;
 			}
-			const input = this._printKeybinding(item.keybinding);
+			const input = this._printUserBinding(item.keybinding);
 			if (seenBindings.has(input)) {
 				continue;
 			}
 			seenBindings.add(input);
-			const resolvedKeybindings = this._keyboardMapper.resolveKeybinding(item.keybinding);
+			const resolvedKeybindings = this._keyboardMapper.resolveUserBinding(item.keybinding);
 			this._printResolvedKeybindings(result, input, resolvedKeybindings);
 		}
 
 		result.push(`User Resolved Keybindings (unique only):`);
-		for (const item of this.userKeybindings.keybindings) {
-			if (!item.keybinding) {
+		for (const _item of this.userKeybindings.keybindings) {
+			const item = KeybindingIO.readUserKeybindingItem(_item);
+			if (!item.parts || item.parts.length === 0) {
 				continue;
 			}
-			const input = item._source.key;
+			const input = _item.key;
 			if (seenBindings.has(input)) {
 				continue;
 			}
 			seenBindings.add(input);
-			const resolvedKeybindings = this._keyboardMapper.resolveKeybinding(item.keybinding);
+			const resolvedKeybindings = this._keyboardMapper.resolveUserBinding(item.parts);
 			this._printResolvedKeybindings(result, input, resolvedKeybindings);
 		}
 
@@ -383,7 +401,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 	protected _getResolver(): KeybindingResolver {
 		if (!this._cachedResolver) {
 			const defaults = this._resolveKeybindingItems(KeybindingsRegistry.getDefaultKeybindings(), true);
-			const overrides = this._resolveUserKeybindingItems(this.userKeybindings.keybindings, false);
+			const overrides = this._resolveUserKeybindingItems(this.userKeybindings.keybindings.map((k) => KeybindingIO.readUserKeybindingItem(k)), false);
 			this._cachedResolver = new KeybindingResolver(defaults, overrides, (str) => this._log(str));
 		}
 		return this._cachedResolver;
@@ -410,7 +428,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 					continue;
 				}
 
-				const resolvedKeybindings = this._keyboardMapper.resolveKeybinding(keybinding);
+				const resolvedKeybindings = this._keyboardMapper.resolveUserBinding(keybinding);
 				for (let i = resolvedKeybindings.length - 1; i >= 0; i--) {
 					const resolvedKeybinding = resolvedKeybindings[i];
 					result[resultLen++] = new ResolvedKeybindingItem(resolvedKeybinding, item.command, item.commandArgs, when, isDefault, item.extensionId, item.isBuiltinExtension);
@@ -426,11 +444,12 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		let resultLen = 0;
 		for (const item of items) {
 			const when = item.when || undefined;
-			if (!item.keybinding) {
+			const parts = item.parts;
+			if (parts.length === 0) {
 				// This might be a removal keybinding item in user settings => accept it
 				result[resultLen++] = new ResolvedKeybindingItem(undefined, item.command, item.commandArgs, when, isDefault, null, false);
 			} else {
-				const resolvedKeybindings = this._keyboardMapper.resolveKeybinding(item.keybinding);
+				const resolvedKeybindings = this._keyboardMapper.resolveUserBinding(parts);
 				for (const resolvedKeybinding of resolvedKeybindings) {
 					result[resultLen++] = new ResolvedKeybindingItem(resolvedKeybinding, item.command, item.commandArgs, when, isDefault, null, false);
 				}
@@ -440,7 +459,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		return result;
 	}
 
-	private _assertBrowserConflicts(keybinding: Keybinding, commandId: string | null): boolean {
+	private _assertBrowserConflicts(kb: (SimpleKeybinding | ScanCodeBinding)[], commandId: string): boolean {
 		if (BrowserFeatures.keyboard === KeyboardSupport.Always) {
 			return false;
 		}
@@ -449,47 +468,47 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 			return false;
 		}
 
-		for (const chord of keybinding.chords) {
-			if (!chord.metaKey && !chord.altKey && !chord.ctrlKey && !chord.shiftKey) {
+		for (const part of kb) {
+			if (!part.metaKey && !part.altKey && !part.ctrlKey && !part.shiftKey) {
 				continue;
 			}
 
 			const modifiersMask = KeyMod.CtrlCmd | KeyMod.Alt | KeyMod.Shift;
 
 			let partModifiersMask = 0;
-			if (chord.metaKey) {
+			if (part.metaKey) {
 				partModifiersMask |= KeyMod.CtrlCmd;
 			}
 
-			if (chord.shiftKey) {
+			if (part.shiftKey) {
 				partModifiersMask |= KeyMod.Shift;
 			}
 
-			if (chord.altKey) {
+			if (part.altKey) {
 				partModifiersMask |= KeyMod.Alt;
 			}
 
-			if (chord.ctrlKey && OS === OperatingSystem.Macintosh) {
+			if (part.ctrlKey && OS === OperatingSystem.Macintosh) {
 				partModifiersMask |= KeyMod.WinCtrl;
 			}
 
 			if ((partModifiersMask & modifiersMask) === (KeyMod.CtrlCmd | KeyMod.Alt)) {
-				if (chord instanceof ScanCodeChord && (chord.scanCode === ScanCode.ArrowLeft || chord.scanCode === ScanCode.ArrowRight)) {
+				if (part instanceof ScanCodeBinding && (part.scanCode === ScanCode.ArrowLeft || part.scanCode === ScanCode.ArrowRight)) {
 					// console.warn('Ctrl/Cmd+Arrow keybindings should not be used by default in web. Offender: ', kb.getHashCode(), ' for ', commandId);
 					return true;
 				}
-				if (chord instanceof KeyCodeChord && (chord.keyCode === KeyCode.LeftArrow || chord.keyCode === KeyCode.RightArrow)) {
+				if (part instanceof SimpleKeybinding && (part.keyCode === KeyCode.LeftArrow || part.keyCode === KeyCode.RightArrow)) {
 					// console.warn('Ctrl/Cmd+Arrow keybindings should not be used by default in web. Offender: ', kb.getHashCode(), ' for ', commandId);
 					return true;
 				}
 			}
 
 			if ((partModifiersMask & modifiersMask) === KeyMod.CtrlCmd) {
-				if (chord instanceof ScanCodeChord && (chord.scanCode >= ScanCode.Digit1 && chord.scanCode <= ScanCode.Digit0)) {
+				if (part instanceof ScanCodeBinding && (part.scanCode >= ScanCode.Digit1 && part.scanCode <= ScanCode.Digit0)) {
 					// console.warn('Ctrl/Cmd+Num keybindings should not be used by default in web. Offender: ', kb.getHashCode(), ' for ', commandId);
 					return true;
 				}
-				if (chord instanceof KeyCodeChord && (chord.keyCode >= KeyCode.Digit0 && chord.keyCode <= KeyCode.Digit9)) {
+				if (part instanceof SimpleKeybinding && (part.keyCode >= KeyCode.Digit0 && part.keyCode <= KeyCode.Digit9)) {
 					// console.warn('Ctrl/Cmd+Num keybindings should not be used by default in web. Offender: ', kb.getHashCode(), ' for ', commandId);
 					return true;
 				}
@@ -509,8 +528,8 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 	}
 
 	public resolveUserBinding(userBinding: string): ResolvedKeybinding[] {
-		const keybinding = KeybindingParser.parseKeybinding(userBinding);
-		return (keybinding ? this._keyboardMapper.resolveKeybinding(keybinding) : []);
+		const parts = KeybindingParser.parseUserBinding(userBinding);
+		return this._keyboardMapper.resolveUserBinding(parts);
 	}
 
 	private _handleKeybindingsExtensionPointUser(extensionId: ExtensionIdentifier, isBuiltin: boolean, keybindings: ContributedKeyBinding | ContributedKeyBinding[], collector: ExtensionMessageCollector, result: IExtensionKeybindingRule[]): void {
@@ -592,7 +611,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 			args,
 			when: fullWhen,
 			weight: weight,
-			keybinding: KeybindingParser.parseKeybinding(keybinding),
+			keybinding: KeybindingParser.parseUserBinding(keybinding),
 			extensionId: extensionId.value,
 			isBuiltinExtension: isBuiltin
 		};
@@ -682,9 +701,8 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 
 class UserKeybindings extends Disposable {
 
-	private _rawKeybindings: IUserFriendlyKeybinding[] = [];
-	private _keybindings: IUserKeybindingItem[] = [];
-	get keybindings(): IUserKeybindingItem[] { return this._keybindings; }
+	private _keybindings: IUserFriendlyKeybinding[] = [];
+	get keybindings(): IUserFriendlyKeybinding[] { return this._keybindings; }
 
 	private readonly reloadConfigurationScheduler: RunOnceScheduler;
 
@@ -745,25 +763,15 @@ class UserKeybindings extends Disposable {
 	}
 
 	private async reload(): Promise<boolean> {
-		const newKeybindings = await this.readUserKeybindings();
-		if (objects.equals(this._rawKeybindings, newKeybindings)) {
-			// no change
-			return false;
-		}
-
-		this._rawKeybindings = newKeybindings;
-		this._keybindings = this._rawKeybindings.map((k) => KeybindingIO.readUserKeybindingItem(k));
-		return true;
-	}
-
-	private async readUserKeybindings(): Promise<IUserFriendlyKeybinding[]> {
+		const existing = this._keybindings;
 		try {
 			const content = await this.fileService.readFile(this.userDataProfileService.currentProfile.keybindingsResource);
 			const value = parse(content.value.toString());
-			return Array.isArray(value) ? value : [];
+			this._keybindings = isArray(value) ? value : [];
 		} catch (e) {
-			return [];
+			this._keybindings = [];
 		}
+		return existing ? !objects.equals(existing, this._keybindings) : true;
 	}
 }
 
@@ -895,4 +903,24 @@ function updateSchema(additionalContributions: readonly IJSONSchema[]) {
 	schemaRegistry.notifySchemaChanged(schemaId);
 }
 
-registerSingleton(IKeybindingService, WorkbenchKeybindingService, InstantiationType.Eager);
+const configurationRegistry = Registry.as<IConfigurationRegistry>(ConfigExtensions.Configuration);
+const keyboardConfiguration: IConfigurationNode = {
+	'id': 'keyboard',
+	'order': 15,
+	'type': 'object',
+	'title': nls.localize('keyboardConfigurationTitle', "Keyboard"),
+	'properties': {
+		'keyboard.dispatch': {
+			scope: ConfigurationScope.APPLICATION,
+			type: 'string',
+			enum: ['code', 'keyCode'],
+			default: 'code',
+			markdownDescription: nls.localize('dispatch', "Controls the dispatching logic for key presses to use either `code` (recommended) or `keyCode`."),
+			included: OS === OperatingSystem.Macintosh || OS === OperatingSystem.Linux
+		}
+	}
+};
+
+configurationRegistry.registerConfiguration(keyboardConfiguration);
+
+registerSingleton(IKeybindingService, WorkbenchKeybindingService);

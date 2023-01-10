@@ -15,7 +15,6 @@ import { ITerminalStatus } from 'vs/workbench/contrib/terminal/browser/terminalS
 import { MarkerSeverity } from 'vs/platform/markers/common/markers';
 import { spinningLoading } from 'vs/platform/theme/common/iconRegistry';
 import { IMarker } from 'vs/platform/terminal/common/capabilities/capabilities';
-import { AudioCue, IAudioCueService } from 'vs/platform/audioCues/browser/audioCueService';
 
 interface ITerminalData {
 	terminal: ITerminalInstance;
@@ -38,9 +37,9 @@ const INFO_TASK_STATUS: ITerminalStatus = { id: TASK_TERMINAL_STATUS_ID, icon: C
 const INFO_INACTIVE_TASK_STATUS: ITerminalStatus = { id: TASK_TERMINAL_STATUS_ID, icon: Codicon.info, severity: Severity.Info, tooltip: nls.localize('taskTerminalStatus.infosInactive', "Task has infos and is waiting...") };
 
 export class TaskTerminalStatus extends Disposable {
-	private terminalMap: Map<number, ITerminalData> = new Map();
+	private terminalMap: Map<string, ITerminalData> = new Map();
 	private _marker: IMarker | undefined;
-	constructor(@ITaskService taskService: ITaskService, @IAudioCueService private readonly _audioCueService: IAudioCueService) {
+	constructor(taskService: ITaskService) {
 		super();
 		this._register(taskService.onDidStateChange((event) => {
 			switch (event.kind) {
@@ -60,22 +59,22 @@ export class TaskTerminalStatus extends Disposable {
 		});
 		problemMatcher.onDidFindErrors(() => {
 			if (this._marker) {
-				terminal.addBufferMarker({ marker: this._marker, hoverMessage: nls.localize('task.watchFirstError', "Beginning of detected errors for this run"), disableCommandStorage: true });
+				terminal.addGenericMark(this._marker, { hoverMessage: nls.localize('task.watchFirstError', "Beginning of detected errors for this run"), disableCommandStorage: true });
 			}
 		});
 		problemMatcher.onDidRequestInvalidateLastMarker(() => {
 			this._marker?.dispose();
 			this._marker = undefined;
 		});
-
-		this.terminalMap.set(terminal.instanceId, { terminal, task, status, problemMatcher, taskRunEnded: false });
+		this.terminalMap.set(task._id, { terminal, task, status, problemMatcher, taskRunEnded: false });
 	}
 
 	private terminalFromEvent(event: ITaskEvent): ITerminalData | undefined {
-		if (!event.terminalId) {
+		if (!event.__task) {
 			return undefined;
 		}
-		return this.terminalMap.get(event.terminalId);
+
+		return this.terminalMap.get(event.__task._id);
 	}
 
 	private eventEnd(event: ITaskEvent) {
@@ -86,7 +85,6 @@ export class TaskTerminalStatus extends Disposable {
 		terminalData.taskRunEnded = true;
 		terminalData.terminal.statusList.remove(terminalData.status);
 		if ((event.exitCode === 0) && (terminalData.problemMatcher.numberOfMatches === 0)) {
-			this._audioCueService.playAudioCue(AudioCue.taskCompleted);
 			if (terminalData.task.configurationProperties.isBackground) {
 				for (const status of terminalData.terminal.statusList.statuses) {
 					terminalData.terminal.statusList.remove(status);
@@ -95,7 +93,6 @@ export class TaskTerminalStatus extends Disposable {
 				terminalData.terminal.statusList.add(SUCCEEDED_TASK_STATUS);
 			}
 		} else if (event.exitCode || terminalData.problemMatcher.maxMarkerSeverity === MarkerSeverity.Error) {
-			this._audioCueService.playAudioCue(AudioCue.taskFailed);
 			terminalData.terminal.statusList.add(FAILED_TASK_STATUS);
 		} else if (terminalData.problemMatcher.maxMarkerSeverity === MarkerSeverity.Warning) {
 			terminalData.terminal.statusList.add(WARNING_TASK_STATUS);
@@ -111,10 +108,8 @@ export class TaskTerminalStatus extends Disposable {
 		}
 		terminalData.terminal.statusList.remove(terminalData.status);
 		if (terminalData.problemMatcher.numberOfMatches === 0) {
-			this._audioCueService.playAudioCue(AudioCue.taskCompleted);
 			terminalData.terminal.statusList.add(SUCCEEDED_INACTIVE_TASK_STATUS);
 		} else if (terminalData.problemMatcher.maxMarkerSeverity === MarkerSeverity.Error) {
-			this._audioCueService.playAudioCue(AudioCue.taskFailed);
 			terminalData.terminal.statusList.add(FAILED_INACTIVE_TASK_STATUS);
 		} else if (terminalData.problemMatcher.maxMarkerSeverity === MarkerSeverity.Warning) {
 			terminalData.terminal.statusList.add(WARNING_INACTIVE_TASK_STATUS);
@@ -130,10 +125,7 @@ export class TaskTerminalStatus extends Disposable {
 		}
 		if (!terminalData.disposeListener) {
 			terminalData.disposeListener = terminalData.terminal.onDisposed(() => {
-				if (!event.terminalId) {
-					return;
-				}
-				this.terminalMap.delete(event.terminalId);
+				this.terminalMap.delete(event.__task?._id!);
 				terminalData.disposeListener?.dispose();
 			});
 		}

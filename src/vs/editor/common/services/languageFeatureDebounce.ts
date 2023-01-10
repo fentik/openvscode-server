@@ -8,7 +8,7 @@ import { LRUCache } from 'vs/base/common/map';
 import { clamp, MovingAverage, SlidingWindowAverage } from 'vs/base/common/numbers';
 import { LanguageFeatureRegistry } from 'vs/editor/common/languageFeatureRegistry';
 import { ITextModel } from 'vs/editor/common/model';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { matchesScheme } from 'vs/platform/opener/common/opener';
@@ -136,4 +136,4 @@ export class LanguageFeatureDebounceService implements ILanguageFeatureDebounceS
 	}
 }
 
-registerSingleton(ILanguageFeatureDebounceService, LanguageFeatureDebounceService, InstantiationType.Delayed);
+registerSingleton(ILanguageFeatureDebounceService, LanguageFeatureDebounceService, true);

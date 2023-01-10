@@ -30,43 +30,9 @@ export type ServicesAccessor = InstantiationServicesAccessor;
 export type IEditorContributionCtor = IConstructorSignature<IEditorContribution, [ICodeEditor]>;
 export type IDiffEditorContributionCtor = IConstructorSignature<IDiffEditorContribution, [IDiffEditor]>;
 
-export const enum EditorContributionInstantiation {
-	/**
-	 * The contribution is created eagerly when the {@linkcode ICodeEditor} is instantiated.
-	 * Only Eager contributions can participate in saving or restoring of view state.
-	 */
-	Eager,
-
-	/**
-	 * The contribution is created at the latest 50ms after the first render after attaching a text model.
-	 * If the contribution is explicitly requested via `getContribution`, it will be instantiated sooner.
-	 * If there is idle time available, it will be instantiated sooner.
-	 */
-	AfterFirstRender,
-
-	/**
-	 * The contribution is created before the editor emits events produced by user interaction (mouse events, keyboard events).
-	 * If the contribution is explicitly requested via `getContribution`, it will be instantiated sooner.
-	 * If there is idle time available, it will be instantiated sooner.
-	 */
-	BeforeFirstInteraction,
-
-	/**
-	 * The contribution is created when there is idle time available, at the latest 5000ms after the editor creation.
-	 * If the contribution is explicitly requested via `getContribution`, it will be instantiated sooner.
-	 */
-	Eventually,
-
-	/**
-	 * The contribution is created only when explicitly requested via `getContribution`.
-	 */
-	Lazy,
-}
-
 export interface IEditorContributionDescription {
-	readonly id: string;
-	readonly ctor: IEditorContributionCtor;
-	readonly instantiation: EditorContributionInstantiation;
+	id: string;
+	ctor: IEditorContributionCtor;
 }
 
 export interface IDiffEditorContributionDescription {
@@ -282,12 +248,7 @@ export abstract class EditorCommand extends Command {
 		};
 	}
 
-	public static runEditorCommand(
-		accessor: ServicesAccessor,
-		args: any,
-		precondition: ContextKeyExpression | undefined,
-		runner: (accessor: ServicesAccessor | null, editor: ICodeEditor, args: any) => void | Promise<void>
-	): void | Promise<void> {
+	public runCommand(accessor: ServicesAccessor, args: any): void | Promise<void> {
 		const codeEditorService = accessor.get(ICodeEditorService);
 
 		// Find the editor with text focus or active
@@ -299,17 +260,13 @@ export abstract class EditorCommand extends Command {
 
 		return editor.invokeWithinContext((editorAccessor) => {
 			const kbService = editorAccessor.get(IContextKeyService);
-			if (!kbService.contextMatchesRules(withNullAsUndefined(precondition))) {
+			if (!kbService.contextMatchesRules(withNullAsUndefined(this.precondition))) {
 				// precondition does not hold
 				return;
 			}
 
-			return runner(editorAccessor, editor, args);
+			return this.runEditorCommand(editorAccessor, editor!, args);
 		});
-	}
-
-	public runCommand(accessor: ServicesAccessor, args: any): void | Promise<void> {
-		return EditorCommand.runEditorCommand(accessor, args, this.precondition, (accessor, editor, args) => this.runEditorCommand(accessor, editor, args));
 	}
 
 	public abstract runEditorCommand(accessor: ServicesAccessor | null, editor: ICodeEditor, args: any): void | Promise<void>;
@@ -452,7 +409,7 @@ export abstract class EditorAction2 extends Action2 {
 		return editor.invokeWithinContext((editorAccessor) => {
 			const kbService = editorAccessor.get(IContextKeyService);
 			if (kbService.contextMatchesRules(withNullAsUndefined(this.desc.precondition))) {
-				return this.runEditorCommand(editorAccessor, editor!, ...args);
+				return this.runEditorCommand(editorAccessor, editor!, args);
 			}
 		});
 	}
@@ -515,8 +472,8 @@ export function registerInstantiatedEditorAction(editorAction: EditorAction): vo
 	EditorContributionRegistry.INSTANCE.registerEditorAction(editorAction);
 }
 
-export function registerEditorContribution<Services extends BrandedService[]>(id: string, ctor: { new(editor: ICodeEditor, ...services: Services): IEditorContribution }, instantiation: EditorContributionInstantiation): void {
-	EditorContributionRegistry.INSTANCE.registerEditorContribution(id, ctor, instantiation);
+export function registerEditorContribution<Services extends BrandedService[]>(id: string, ctor: { new(editor: ICodeEditor, ...services: Services): IEditorContribution }): void {
+	EditorContributionRegistry.INSTANCE.registerEditorContribution(id, ctor);
 }
 
 export function registerDiffEditorContribution<Services extends BrandedService[]>(id: string, ctor: { new(editor: IDiffEditor, ...services: Services): IEditorContribution }): void {
@@ -529,7 +486,7 @@ export namespace EditorExtensionsRegistry {
 		return EditorContributionRegistry.INSTANCE.getEditorCommand(commandId);
 	}
 
-	export function getEditorActions(): Iterable<EditorAction> {
+	export function getEditorActions(): EditorAction[] {
 		return EditorContributionRegistry.INSTANCE.getEditorActions();
 	}
 
@@ -567,8 +524,8 @@ class EditorContributionRegistry {
 		this.editorCommands = Object.create(null);
 	}
 
-	public registerEditorContribution<Services extends BrandedService[]>(id: string, ctor: { new(editor: ICodeEditor, ...services: Services): IEditorContribution }, instantiation: EditorContributionInstantiation): void {
-		this.editorContributions.push({ id, ctor: ctor as IEditorContributionCtor, instantiation });
+	public registerEditorContribution<Services extends BrandedService[]>(id: string, ctor: { new(editor: ICodeEditor, ...services: Services): IEditorContribution }): void {
+		this.editorContributions.push({ id, ctor: ctor as IEditorContributionCtor });
 	}
 
 	public getEditorContributions(): IEditorContributionDescription[] {
@@ -588,8 +545,8 @@ class EditorContributionRegistry {
 		this.editorActions.push(action);
 	}
 
-	public getEditorActions(): Iterable<EditorAction> {
-		return this.editorActions;
+	public getEditorActions(): EditorAction[] {
+		return this.editorActions.slice(0);
 	}
 
 	public registerEditorCommand(editorCommand: EditorCommand) {

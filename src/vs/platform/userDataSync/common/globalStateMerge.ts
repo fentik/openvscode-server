@@ -10,18 +10,18 @@ import { IStorageValue, SYNC_SERVICE_URL_TYPE } from 'vs/platform/userDataSync/c
 
 export interface IMergeResult {
 	local: { added: IStringDictionary<IStorageValue>; removed: string[]; updated: IStringDictionary<IStorageValue> };
-	remote: { added: string[]; removed: string[]; updated: string[]; all: IStringDictionary<IStorageValue> | null };
+	remote: IStringDictionary<IStorageValue> | null;
 }
 
 export function merge(localStorage: IStringDictionary<IStorageValue>, remoteStorage: IStringDictionary<IStorageValue> | null, baseStorage: IStringDictionary<IStorageValue> | null, storageKeys: { machine: ReadonlyArray<string>; unregistered: ReadonlyArray<string> }, logService: ILogService): IMergeResult {
 	if (!remoteStorage) {
-		return { remote: { added: Object.keys(localStorage), removed: [], updated: [], all: Object.keys(localStorage).length > 0 ? localStorage : null }, local: { added: {}, removed: [], updated: {} } };
+		return { remote: Object.keys(localStorage).length > 0 ? localStorage : null, local: { added: {}, removed: [], updated: {} } };
 	}
 
 	const localToRemote = compare(localStorage, remoteStorage);
 	if (localToRemote.added.size === 0 && localToRemote.removed.size === 0 && localToRemote.updated.size === 0) {
 		// No changes found between local and remote.
-		return { remote: { added: [], removed: [], updated: [], all: null }, local: { added: {}, removed: [], updated: {} } };
+		return { remote: null, local: { added: {}, removed: [], updated: {} } };
 	}
 
 	const baseToRemote = baseStorage ? compare(baseStorage, remoteStorage) : { added: Object.keys(remoteStorage).reduce((r, k) => { r.add(k); return r; }, new Set<string>()), removed: new Set<string>(), updated: new Set<string>() };
@@ -116,8 +116,7 @@ export function merge(localStorage: IStringDictionary<IStorageValue>, remoteStor
 		local.removed.push(key);
 	}
 
-	const result = compare(remoteStorage, remote);
-	return { local, remote: { added: [...result.added], updated: [...result.updated], removed: [...result.removed], all: result.added.size === 0 && result.removed.size === 0 && result.updated.size === 0 ? null : remote } };
+	return { local, remote: areSame(remote, remoteStorage) ? null : remote };
 }
 
 function compare(from: IStringDictionary<any>, to: IStringDictionary<any>): { added: Set<string>; removed: Set<string>; updated: Set<string> } {
@@ -139,5 +138,10 @@ function compare(from: IStringDictionary<any>, to: IStringDictionary<any>): { ad
 	}
 
 	return { added, removed, updated };
+}
+
+function areSame(a: IStringDictionary<IStorageValue>, b: IStringDictionary<IStorageValue>): boolean {
+	const { added, removed, updated } = compare(a, b);
+	return added.size === 0 && removed.size === 0 && updated.size === 0;
 }
 

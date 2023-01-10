@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { onUnexpectedError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import { compareIgnoreCase, regExpLeadsToEndlessLoop } from 'vs/base/common/strings';
@@ -18,7 +19,7 @@ import { Registry } from 'vs/platform/registry/common/platform';
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 const NULL_LANGUAGE_ID = 'vs.editor.nullLanguage';
 
-interface IResolvedLanguage {
+export interface IResolvedLanguage {
 	identifier: string;
 	name: string | null;
 	mimetypes: string[];
@@ -227,7 +228,7 @@ export class LanguagesRegistry extends Disposable {
 				}
 			} catch (err) {
 				// Most likely, the regex was bad
-				console.warn(`[${lang.id}]: Invalid regular expression \`${firstLineRegexStr}\`: `, err);
+				onUnexpectedError(err);
 			}
 		}
 

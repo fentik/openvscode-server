@@ -19,11 +19,6 @@ export interface IModelLanguageChangedEvent {
 	 * New language
 	 */
 	readonly newLanguage: string;
-
-	/**
-	 * Source of the call that caused the event.
-	 */
-	readonly source: string;
 }
 
 /**

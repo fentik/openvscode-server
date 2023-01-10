@@ -32,7 +32,6 @@
 		"ports.iconRunningProcessForeground": "#369432",
 		"activityBar.background": "#221a0f",
 		"activityBar.foreground": "#d3af86",
-		"activityBarItem.profilesBackground": "#47351d",
 		"sideBar.background": "#362712",
 		"menu.background": "#362712",
 		"menu.foreground": "#CCCCCC",
@@ -61,11 +60,7 @@
 			}
 		},
 		{
-			"scope": [
-				"meta.embedded",
-				"source.groovy.embedded",
-				"string meta.image.inline.markdown"
-			],
+			"scope": ["meta.embedded", "source.groovy.embedded"],
 			"settings": {
 				"foreground": "#d3af86"
 			}

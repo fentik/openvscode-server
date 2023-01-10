@@ -19,7 +19,8 @@ import { localize } from 'vs/nls';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { ILabelService } from 'vs/platform/label/common/label';
-import { defaultCountBadgeStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { attachBadgeStyler } from 'vs/platform/theme/common/styler';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { FileReferences, OneReference, ReferencesModel } from '../referencesModel';
 
 //#region data source
@@ -111,14 +112,16 @@ class FileReferencesTemplate extends Disposable {
 
 	constructor(
 		container: HTMLElement,
-		@ILabelService private readonly _labelService: ILabelService
+		@ILabelService private readonly _labelService: ILabelService,
+		@IThemeService themeService: IThemeService,
 	) {
 		super();
 		const parent = document.createElement('div');
 		parent.classList.add('reference-file');
 		this.file = this._register(new IconLabel(parent, { supportHighlights: true }));
 
-		this.badge = new CountBadge(dom.append(parent, dom.$('.count')), {}, defaultCountBadgeStyles);
+		this.badge = new CountBadge(dom.append(parent, dom.$('.count')));
+		this._register(attachBadgeStyler(this.badge, themeService));
 
 		container.appendChild(parent);
 	}

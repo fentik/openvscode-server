@@ -31,6 +31,7 @@ import { isWindows } from 'vs/base/common/platform';
 import { Schemas } from 'vs/base/common/network';
 import { IWorkspaceTrustRequestService } from 'vs/platform/workspace/common/workspaceTrust';
 import { TestWorkspaceTrustRequestService } from 'vs/workbench/services/workspaces/test/common/testWorkspaceTrustService';
+import { EditorResolution } from 'vs/platform/editor/common/editor';
 
 suite('WorkingCopyBackupTracker (browser)', function () {
 	let accessor: TestServiceAccessor;
@@ -69,7 +70,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 			return this.unrestoredBackups;
 		}
 
-		async testRestoreBackups(handler: IWorkingCopyEditorHandler): Promise<void> {
+		override async restoreBackups(handler: IWorkingCopyEditorHandler): Promise<void> {
 			return super.restoreBackups(handler);
 		}
 	}
@@ -242,7 +243,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		let isOpenCounter = 0;
 		let createEditorCounter = 0;
 
-		await tracker.testRestoreBackups({
+		await tracker.restoreBackups({
 			handles: workingCopy => {
 				handlesCounter++;
 
@@ -279,7 +280,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 	test('Restore backups (basics, none handled)', async function () {
 		const [tracker, accessor, disposables] = await restoreBackupsInit();
 
-		await tracker.testRestoreBackups({
+		await tracker.restoreBackups({
 			handles: workingCopy => false,
 			isOpen: (workingCopy, editor) => { throw new Error('unexpected'); },
 			createEditor: workingCopy => { throw new Error('unexpected'); }
@@ -295,7 +296,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		const [tracker, , disposables] = await restoreBackupsInit();
 
 		try {
-			await tracker.testRestoreBackups({
+			await tracker.restoreBackups({
 				handles: workingCopy => true,
 				isOpen: (workingCopy, editor) => { throw new Error('unexpected'); },
 				createEditor: workingCopy => { throw new Error('unexpected'); }
@@ -312,7 +313,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 	test('Restore backups (multiple handlers)', async function () {
 		const [tracker, accessor, disposables] = await restoreBackupsInit();
 
-		const firstHandler = tracker.testRestoreBackups({
+		const firstHandler = tracker.restoreBackups({
 			handles: workingCopy => {
 				return workingCopy.typeId === 'testBackupTypeId';
 			},
@@ -324,7 +325,7 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 			}
 		});
 
-		const secondHandler = tracker.testRestoreBackups({
+		const secondHandler = tracker.restoreBackups({
 			handles: workingCopy => {
 				return workingCopy.typeId.length === 0;
 			},
@@ -361,12 +362,12 @@ suite('WorkingCopyBackupTracker (browser)', function () {
 		const editor1 = accessor.instantiationService.createInstance(TestUntitledTextEditorInput, accessor.untitledTextEditorService.create({ initialValue: 'foo' }));
 		const editor2 = accessor.instantiationService.createInstance(TestUntitledTextEditorInput, accessor.untitledTextEditorService.create({ initialValue: 'foo' }));
 
-		await accessor.editorService.openEditors([{ editor: editor1 }, { editor: editor2 }]);
+		await accessor.editorService.openEditors([{ editor: editor1, options: { override: EditorResolution.DISABLED } }, { editor: editor2, options: { override: EditorResolution.DISABLED } }]);
 
 		editor1.resolved = false;
 		editor2.resolved = false;
 
-		await tracker.testRestoreBackups({
+		await tracker.restoreBackups({
 			handles: workingCopy => {
 				handlesCounter++;
 

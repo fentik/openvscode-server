@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as assert from 'assert';
 import { KeyChord, KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { createSimpleKeybinding, ResolvedKeybinding, KeyCodeChord, Keybinding } from 'vs/base/common/keybindings';
+import { createKeybinding, createSimpleKeybinding, Keybinding, ResolvedKeybinding, SimpleKeybinding } from 'vs/base/common/keybindings';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { OS } from 'vs/base/common/platform';
 import Severity from 'vs/base/common/severity';
@@ -15,7 +15,6 @@ import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
 import { KeybindingResolver } from 'vs/platform/keybinding/common/keybindingResolver';
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayoutResolvedKeybinding';
-import { createUSLayoutResolvedKeybinding } from 'vs/platform/keybinding/test/common/keybindingsTestUtils';
 import { NullLogService } from 'vs/platform/log/common/log';
 import { INotification, INotificationService, IPromptChoice, IPromptOptions, IStatusMessageOptions, NoOpNotification } from 'vs/platform/notification/common/notification';
 import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
@@ -52,18 +51,18 @@ suite('AbstractKeybindingService', () => {
 		}
 
 		public resolveKeybinding(kb: Keybinding): ResolvedKeybinding[] {
-			return USLayoutResolvedKeybinding.resolveKeybinding(kb, OS);
+			return [new USLayoutResolvedKeybinding(kb, OS)];
 		}
 
 		public resolveKeyboardEvent(keyboardEvent: IKeyboardEvent): ResolvedKeybinding {
-			const chord = new KeyCodeChord(
+			const keybinding = new SimpleKeybinding(
 				keyboardEvent.ctrlKey,
 				keyboardEvent.shiftKey,
 				keyboardEvent.altKey,
 				keyboardEvent.metaKey,
 				keyboardEvent.keyCode
-			).toKeybinding();
-			return this.resolveKeybinding(chord)[0];
+			).toChord();
+			return this.resolveKeybinding(keybinding)[0];
 		}
 
 		public resolveUserBinding(userBinding: string): ResolvedKeybinding[] {
@@ -78,7 +77,6 @@ suite('AbstractKeybindingService', () => {
 				shiftKey: keybinding.shiftKey,
 				altKey: keybinding.altKey,
 				metaKey: keybinding.metaKey,
-				altGraphKey: false,
 				keyCode: keybinding.keyCode,
 				code: null!
 			}, null!);
@@ -192,8 +190,9 @@ suite('AbstractKeybindingService', () => {
 	});
 
 	function kbItem(keybinding: number, command: string, when?: ContextKeyExpression): ResolvedKeybindingItem {
+		const resolvedKeybinding = (keybinding !== 0 ? new USLayoutResolvedKeybinding(createKeybinding(keybinding, OS)!, OS) : undefined);
 		return new ResolvedKeybindingItem(
-			createUSLayoutResolvedKeybinding(keybinding, OS),
+			resolvedKeybinding,
 			command,
 			null,
 			when,
@@ -204,7 +203,8 @@ suite('AbstractKeybindingService', () => {
 	}
 
 	function toUsLabel(keybinding: number): string {
-		return createUSLayoutResolvedKeybinding(keybinding, OS)!.getLabel()!;
+		const usResolvedKeybinding = new USLayoutResolvedKeybinding(createKeybinding(keybinding, OS)!, OS);
+		return usResolvedKeybinding.getLabel()!;
 	}
 
 	test('issue #16498: chord mode is quit for invalid chords', () => {

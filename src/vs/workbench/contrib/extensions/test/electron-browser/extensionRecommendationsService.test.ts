@@ -85,7 +85,6 @@ const mockExtensionGallery: IGalleryExtension[] = [
 		icon: { uri: 'uri:icon', fallbackUri: 'fallback:icon' },
 		license: { uri: 'uri:license', fallbackUri: 'fallback:license' },
 		repository: { uri: 'uri:repository', fallbackUri: 'fallback:repository' },
-		signature: { uri: 'uri:signature', fallbackUri: 'fallback:signature' },
 		coreTranslations: []
 	}),
 	aGalleryExtension('MockExtension2', {
@@ -108,7 +107,6 @@ const mockExtensionGallery: IGalleryExtension[] = [
 		icon: { uri: 'uri:icon', fallbackUri: 'fallback:icon' },
 		license: { uri: 'uri:license', fallbackUri: 'fallback:license' },
 		repository: { uri: 'uri:repository', fallbackUri: 'fallback:repository' },
-		signature: { uri: 'uri:signature', fallbackUri: 'fallback:signature' },
 		coreTranslations: []
 	})
 ];
@@ -168,7 +166,6 @@ const noAssets: IGalleryExtensionAssets = {
 	manifest: null,
 	readme: null,
 	repository: null,
-	signature: null,
 	coreTranslations: []
 };
 
@@ -219,15 +216,13 @@ suite('ExtensionRecommendationsService Test', () => {
 			onDidInstallExtensions: didInstallEvent.event,
 			onUninstallExtension: uninstallEvent.event,
 			onDidUninstallExtension: didUninstallEvent.event,
-			onDidChangeProfile: Event.None,
+			onDidChangeProfileExtensions: Event.None,
 			async getInstalled() { return []; },
 			async canInstall() { return true; },
 			async getExtensionsControlManifest() { return { malicious: [], deprecated: {} }; },
 			async getTargetPlatform() { return getTargetPlatform(platform, arch); }
 		});
 		instantiationService.stub(IExtensionService, <Partial<IExtensionService>>{
-			onDidChangeExtensions: Event.None,
-			extensions: [],
 			async whenInstalledExtensionsRegistered() { return true; }
 		});
 		instantiationService.stub(IWorkbenchExtensionEnablementService, new TestExtensionEnablementService(instantiationService));
@@ -263,7 +258,9 @@ suite('ExtensionRecommendationsService Test', () => {
 	});
 
 	suiteTeardown(() => {
-		experimentService?.dispose();
+		if (experimentService) {
+			experimentService.dispose();
+		}
 	});
 
 	setup(() => {

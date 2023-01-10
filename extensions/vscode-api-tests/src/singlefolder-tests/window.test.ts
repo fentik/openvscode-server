@@ -5,7 +5,7 @@
 
 import * as assert from 'assert';
 import { join } from 'path';
-import { CancellationTokenSource, commands, MarkdownString, TabInputNotebook, Position, QuickPickItem, Selection, StatusBarAlignment, TextEditor, TextEditorSelectionChangeKind, TextEditorViewColumnChangeEvent, TabInputText, Uri, ViewColumn, window, workspace, TabInputTextDiff, UIKind, env } from 'vscode';
+import { CancellationTokenSource, commands, MarkdownString, TabInputNotebook, Position, QuickPickItem, Selection, StatusBarAlignment, TextEditor, TextEditorSelectionChangeKind, TextEditorViewColumnChangeEvent, TabInputText, Uri, ViewColumn, window, workspace, TabInputTextDiff } from 'vscode';
 import { assertNoRpc, closeAllEditors, createRandomFile, pathEquals } from '../utils';
 
 
@@ -71,7 +71,9 @@ suite('vscode API - window', () => {
 		reg.dispose();
 	});
 
-	test('editor, onDidChangeTextEditorViewColumn (close editor)', async () => {
+	test('editor, onDidChangeTextEditorViewColumn (close editor)', () => {
+
+		let actualEvent: TextEditorViewColumnChangeEvent;
 
 		const registration1 = workspace.registerTextDocumentContentProvider('bikes', {
 			provideTextDocumentContent() {
@@ -79,30 +81,33 @@ suite('vscode API - window', () => {
 			}
 		});
 
-		const doc1 = await workspace.openTextDocument(Uri.parse('bikes://testing/one'));
-		await window.showTextDocument(doc1, ViewColumn.One);
+		return Promise.all([
+			workspace.openTextDocument(Uri.parse('bikes://testing/one')).then(doc => window.showTextDocument(doc, ViewColumn.One)),
+			workspace.openTextDocument(Uri.parse('bikes://testing/two')).then(doc => window.showTextDocument(doc, ViewColumn.Two))
+		]).then(async editors => {
 
-		const doc2 = await workspace.openTextDocument(Uri.parse('bikes://testing/two'));
-		const two = await window.showTextDocument(doc2, ViewColumn.Two);
+			const [one, two] = editors;
 
-		assert.strictEqual(window.activeTextEditor?.viewColumn, ViewColumn.Two);
-
-		const actualEvent = await new Promise<TextEditorViewColumnChangeEvent>(resolve => {
-			const registration2 = window.onDidChangeTextEditorViewColumn(event => {
-				registration2.dispose();
-				resolve(event);
+			await new Promise<void>(resolve => {
+				const registration2 = window.onDidChangeTextEditorViewColumn(event => {
+					actualEvent = event;
+					registration2.dispose();
+					resolve();
+				});
+				// close editor 1, wait a little for the event to bubble
+				one.hide();
 			});
-			// close editor 1, wait a little for the event to bubble
-			commands.executeCommand('workbench.action.closeEditorsInOtherGroups');
-		});
-		assert.ok(actualEvent);
-		assert.ok(actualEvent.textEditor === two);
-		assert.ok(actualEvent.viewColumn === two.viewColumn);
+			assert.ok(actualEvent);
+			assert.ok(actualEvent.textEditor === two);
+			assert.ok(actualEvent.viewColumn === two.viewColumn);
 
-		registration1.dispose();
+			registration1.dispose();
+		});
 	});
 
-	test('editor, onDidChangeTextEditorViewColumn (move editor group)', async () => {
+	test('editor, onDidChangeTextEditorViewColumn (move editor group)', () => {
+
+		const actualEvents: TextEditorViewColumnChangeEvent[] = [];
 
 		const registration1 = workspace.registerTextDocumentContentProvider('bikes', {
 			provideTextDocumentContent() {
@@ -110,38 +115,38 @@ suite('vscode API - window', () => {
 			}
 		});
 
-		const doc1 = await workspace.openTextDocument(Uri.parse('bikes://testing/one'));
-		await window.showTextDocument(doc1, ViewColumn.One);
+		return Promise.all([
+			workspace.openTextDocument(Uri.parse('bikes://testing/one')).then(doc => window.showTextDocument(doc, ViewColumn.One)),
+			workspace.openTextDocument(Uri.parse('bikes://testing/two')).then(doc => window.showTextDocument(doc, ViewColumn.Two))
+		]).then(editors => {
 
-		const doc2 = await workspace.openTextDocument(Uri.parse('bikes://testing/two'));
-		await window.showTextDocument(doc2, ViewColumn.Two);
+			const [, two] = editors;
+			two.show();
 
-		assert.strictEqual(window.activeTextEditor?.viewColumn, ViewColumn.Two);
+			return new Promise<void>(resolve => {
 
-		const actualEvents = await new Promise<TextEditorViewColumnChangeEvent[]>(resolve => {
+				const registration2 = window.onDidChangeTextEditorViewColumn(event => {
+					actualEvents.push(event);
 
-			const actualEvents: TextEditorViewColumnChangeEvent[] = [];
+					if (actualEvents.length === 2) {
+						registration2.dispose();
+						resolve();
+					}
+				});
 
-			const registration2 = window.onDidChangeTextEditorViewColumn(event => {
-				actualEvents.push(event);
+				// move active editor group left
+				return commands.executeCommand('workbench.action.moveActiveEditorGroupLeft');
 
-				if (actualEvents.length === 2) {
-					registration2.dispose();
-					resolve(actualEvents);
+			}).then(() => {
+				assert.strictEqual(actualEvents.length, 2);
+
+				for (const event of actualEvents) {
+					assert.strictEqual(event.viewColumn, event.textEditor.viewColumn);
 				}
+
+				registration1.dispose();
 			});
-
-			// move active editor group left
-			return commands.executeCommand('workbench.action.moveActiveEditorGroupLeft');
-
 		});
-		assert.strictEqual(actualEvents.length, 2);
-
-		for (const event of actualEvents) {
-			assert.strictEqual(event.viewColumn, event.textEditor.viewColumn);
-		}
-
-		registration1.dispose();
 	});
 
 	test('active editor not always correct... #49125', async function () {
@@ -444,7 +449,7 @@ suite('vscode API - window', () => {
 		assert.strictEqual(tabs[3].input.uri.toString(), commandFile.toString());
 	});
 
-	(env.uiKind === UIKind.Web ? test.skip : test)('Tabs - Ensure tabs getter is correct', async function () {
+	test('Tabs - Ensure tabs getter is correct', async function () {
 		// Reduce test timeout as this test should be quick, so even with 3 retries it will be under 60s.
 		this.timeout(10000);
 		// This test can be flaky because of opening a notebook

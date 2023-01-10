@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as platform from 'vs/base/common/platform';
-import { EditorFontVariations, EditorOptions, EditorOption, FindComputedEditorOptionValueById, EDITOR_FONT_DEFAULTS } from 'vs/editor/common/config/editorOptions';
+import { EditorOptions, EditorOption, FindComputedEditorOptionValueById, EDITOR_FONT_DEFAULTS } from 'vs/editor/common/config/editorOptions';
 import { EditorZoom } from 'vs/editor/common/config/editorZoom';
 
 /**
@@ -36,30 +36,28 @@ export class BareFontInfo {
 		const fontWeight = options.get(EditorOption.fontWeight);
 		const fontSize = options.get(EditorOption.fontSize);
 		const fontFeatureSettings = options.get(EditorOption.fontLigatures);
-		const fontVariationSettings = options.get(EditorOption.fontVariations);
 		const lineHeight = options.get(EditorOption.lineHeight);
 		const letterSpacing = options.get(EditorOption.letterSpacing);
-		return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, fontVariationSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
+		return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
 	}
 
 	/**
 	 * @internal
 	 */
-	public static createFromRawSettings(opts: { fontFamily?: string; fontWeight?: string; fontSize?: number; fontLigatures?: boolean | string; fontVariations?: boolean | string; lineHeight?: number; letterSpacing?: number }, pixelRatio: number, ignoreEditorZoom: boolean = false): BareFontInfo {
+	public static createFromRawSettings(opts: { fontFamily?: string; fontWeight?: string; fontSize?: number; fontLigatures?: boolean | string; lineHeight?: number; letterSpacing?: number }, pixelRatio: number, ignoreEditorZoom: boolean = false): BareFontInfo {
 		const fontFamily = EditorOptions.fontFamily.validate(opts.fontFamily);
 		const fontWeight = EditorOptions.fontWeight.validate(opts.fontWeight);
 		const fontSize = EditorOptions.fontSize.validate(opts.fontSize);
 		const fontFeatureSettings = EditorOptions.fontLigatures2.validate(opts.fontLigatures);
-		const fontVariationSettings = EditorOptions.fontVariations.validate(opts.fontVariations);
 		const lineHeight = EditorOptions.lineHeight.validate(opts.lineHeight);
 		const letterSpacing = EditorOptions.letterSpacing.validate(opts.letterSpacing);
-		return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, fontVariationSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
+		return BareFontInfo._create(fontFamily, fontWeight, fontSize, fontFeatureSettings, lineHeight, letterSpacing, pixelRatio, ignoreEditorZoom);
 	}
 
 	/**
 	 * @internal
 	 */
-	private static _create(fontFamily: string, fontWeight: string, fontSize: number, fontFeatureSettings: string, fontVariationSettings: string, lineHeight: number, letterSpacing: number, pixelRatio: number, ignoreEditorZoom: boolean): BareFontInfo {
+	private static _create(fontFamily: string, fontWeight: string, fontSize: number, fontFeatureSettings: string, lineHeight: number, letterSpacing: number, pixelRatio: number, ignoreEditorZoom: boolean): BareFontInfo {
 		if (lineHeight === 0) {
 			lineHeight = GOLDEN_LINE_HEIGHT_RATIO * fontSize;
 		} else if (lineHeight < MINIMUM_LINE_HEIGHT) {
@@ -77,23 +75,12 @@ export class BareFontInfo {
 		fontSize *= editorZoomLevelMultiplier;
 		lineHeight *= editorZoomLevelMultiplier;
 
-		if (fontVariationSettings === EditorFontVariations.TRANSLATE) {
-			if (fontWeight === 'normal' || fontWeight === 'bold') {
-				fontVariationSettings = EditorFontVariations.OFF;
-			} else {
-				const fontWeightAsNumber = parseInt(fontWeight, 10);
-				fontVariationSettings = `'wght' ${fontWeightAsNumber}`;
-				fontWeight = 'normal';
-			}
-		}
-
 		return new BareFontInfo({
 			pixelRatio: pixelRatio,
 			fontFamily: fontFamily,
 			fontWeight: fontWeight,
 			fontSize: fontSize,
 			fontFeatureSettings: fontFeatureSettings,
-			fontVariationSettings,
 			lineHeight: lineHeight,
 			letterSpacing: letterSpacing
 		});
@@ -104,7 +91,6 @@ export class BareFontInfo {
 	readonly fontWeight: string;
 	readonly fontSize: number;
 	readonly fontFeatureSettings: string;
-	readonly fontVariationSettings: string;
 	readonly lineHeight: number;
 	readonly letterSpacing: number;
 
@@ -117,7 +103,6 @@ export class BareFontInfo {
 		fontWeight: string;
 		fontSize: number;
 		fontFeatureSettings: string;
-		fontVariationSettings: string;
 		lineHeight: number;
 		letterSpacing: number;
 	}) {
@@ -126,7 +111,6 @@ export class BareFontInfo {
 		this.fontWeight = String(opts.fontWeight);
 		this.fontSize = opts.fontSize;
 		this.fontFeatureSettings = opts.fontFeatureSettings;
-		this.fontVariationSettings = opts.fontVariationSettings;
 		this.lineHeight = opts.lineHeight | 0;
 		this.letterSpacing = opts.letterSpacing;
 	}
@@ -135,7 +119,7 @@ export class BareFontInfo {
 	 * @internal
 	 */
 	public getId(): string {
-		return `${this.pixelRatio}-${this.fontFamily}-${this.fontWeight}-${this.fontSize}-${this.fontFeatureSettings}-${this.fontVariationSettings}-${this.lineHeight}-${this.letterSpacing}`;
+		return `${this.pixelRatio}-${this.fontFamily}-${this.fontWeight}-${this.fontSize}-${this.fontFeatureSettings}-${this.lineHeight}-${this.letterSpacing}`;
 	}
 
 	/**
@@ -164,7 +148,7 @@ export class BareFontInfo {
 }
 
 // change this whenever `FontInfo` members are changed
-export const SERIALIZED_FONT_INFO_VERSION = 2;
+export const SERIALIZED_FONT_INFO_VERSION = 1;
 
 export class FontInfo extends BareFontInfo {
 	readonly _editorStylingBrand: void = undefined;
@@ -189,7 +173,6 @@ export class FontInfo extends BareFontInfo {
 		fontWeight: string;
 		fontSize: number;
 		fontFeatureSettings: string;
-		fontVariationSettings: string;
 		lineHeight: number;
 		letterSpacing: number;
 		isMonospace: boolean;
@@ -222,7 +205,6 @@ export class FontInfo extends BareFontInfo {
 			&& this.fontWeight === other.fontWeight
 			&& this.fontSize === other.fontSize
 			&& this.fontFeatureSettings === other.fontFeatureSettings
-			&& this.fontVariationSettings === other.fontVariationSettings
 			&& this.lineHeight === other.lineHeight
 			&& this.letterSpacing === other.letterSpacing
 			&& this.typicalHalfwidthCharacterWidth === other.typicalHalfwidthCharacterWidth

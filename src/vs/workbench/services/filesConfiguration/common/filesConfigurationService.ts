@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { Event, Emitter } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { RawContextKey, IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -216,4 +216,4 @@ export class FilesConfigurationService extends Disposable implements IFilesConfi
 	}
 }
 
-registerSingleton(IFilesConfigurationService, FilesConfigurationService, InstantiationType.Eager);
+registerSingleton(IFilesConfigurationService, FilesConfigurationService);

@@ -8,7 +8,6 @@ import { EditOperation, ISingleEditOperation } from 'vs/editor/common/core/editO
 import { Range } from 'vs/editor/common/core/range';
 import { EndOfLineSequence } from 'vs/editor/common/model';
 import { TextEdit } from 'vs/editor/common/languages';
-import { StableEditorScrollState } from 'vs/editor/browser/stableEditorScroll';
 
 export class FormattingEdit {
 
@@ -48,7 +47,6 @@ export class FormattingEdit {
 		if (addUndoStops) {
 			editor.pushUndoStop();
 		}
-		const scrollState = StableEditorScrollState.capture(editor);
 		const edits = FormattingEdit._handleEolEdits(editor, _edits);
 		if (edits.length === 1 && FormattingEdit._isFullModelReplaceEdit(editor, edits[0])) {
 			// We use replace semantics and hope that markers stay put...
@@ -59,6 +57,5 @@ export class FormattingEdit {
 		if (addUndoStops) {
 			editor.pushUndoStop();
 		}
-		scrollState.restoreRelativeVerticalPositionOfCursor(editor);
 	}
 }

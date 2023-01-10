@@ -19,10 +19,13 @@ class Monkey:
 					}=42):
 		pass
 
-pass
+if 1900 < year < 2100 and 1 <= month <= 12 \
+   and 1 <= day <= 31 and 0 <= hour < 24 \
+   and 0 <= minute < 60 and 0 <= second < 60:   # Looks like a valid date
+        return 1
 
 def firstn(g, n):
-	for _ in range(n):
+	for i in range(n):
 		yield g.next()
 
 reduce(lambda x,y: x+y, [47,11,42,13])
@@ -34,14 +37,15 @@ mydictionary = {
 }
 
 def steuern(einkommen):
-	"""Berechnung der zu zahlenden Steuern fuer ein zu versteuerndes Einkommen von x"""
-	if einkommen <= 8004:
-		return 0
-	elif einkommen <= 13469:
-		y = (einkommen -8004.0)/10000.0
-		return (912.17 * y + 1400)*y
-	else:
-		return einkommen * 0.44 - 15694
+    """Berechnung der zu zahlenden Steuern fuer ein zu versteuerndes Einkommen von x"""
+    if einkommen <= 8004:
+        steuer = 0
+    elif einkommen <= 13469:
+        y = (einkommen -8004.0)/10000.0
+        steuer = (912.17 * y + 1400)*y
+    else:
+        steuer = einkommen * 0.44 - 15694
+    return steuer
 
 def beliebig(x, y, *mehr):
     print "x=", x, ", x=", y

@@ -15,55 +15,55 @@ suite('network', () => {
 
 		// asCodeUri() & asFileUri(): simple, without authority
 		let originalFileUri = URI.file('network.test.ts');
-		let browserUri = FileAccess.uriToBrowserUri(originalFileUri);
+		let browserUri = FileAccess.asBrowserUri(originalFileUri);
 		assert.ok(browserUri.authority.length > 0);
-		let fileUri = FileAccess.uriToFileUri(browserUri);
+		let fileUri = FileAccess.asFileUri(browserUri);
 		assert.strictEqual(fileUri.authority.length, 0);
 		assert(isEqual(originalFileUri, fileUri));
 
 		// asCodeUri() & asFileUri(): with authority
 		originalFileUri = URI.file('network.test.ts').with({ authority: 'test-authority' });
-		browserUri = FileAccess.uriToBrowserUri(originalFileUri);
+		browserUri = FileAccess.asBrowserUri(originalFileUri);
 		assert.strictEqual(browserUri.authority, originalFileUri.authority);
-		fileUri = FileAccess.uriToFileUri(browserUri);
+		fileUri = FileAccess.asFileUri(browserUri);
 		assert(isEqual(originalFileUri, fileUri));
 	});
 
 	(isWeb ? test.skip : test)('FileAccess: moduleId (native)', () => {
-		const browserUri = FileAccess.asBrowserUri('vs/base/test/node/network.test');
+		const browserUri = FileAccess.asBrowserUri('vs/base/test/node/network.test', require);
 		assert.strictEqual(browserUri.scheme, Schemas.vscodeFileResource);
 
-		const fileUri = FileAccess.asFileUri('vs/base/test/node/network.test');
+		const fileUri = FileAccess.asFileUri('vs/base/test/node/network.test', require);
 		assert.strictEqual(fileUri.scheme, Schemas.file);
 	});
 
 	(isWeb ? test.skip : test)('FileAccess: query and fragment is dropped (native)', () => {
 		const originalFileUri = URI.file('network.test.ts').with({ query: 'foo=bar', fragment: 'something' });
-		const browserUri = FileAccess.uriToBrowserUri(originalFileUri);
+		const browserUri = FileAccess.asBrowserUri(originalFileUri);
 		assert.strictEqual(browserUri.query, '');
 		assert.strictEqual(browserUri.fragment, '');
 	});
 
 	(isWeb ? test.skip : test)('FileAccess: query and fragment is kept if URI is already of same scheme (native)', () => {
 		const originalFileUri = URI.file('network.test.ts').with({ query: 'foo=bar', fragment: 'something' });
-		const browserUri = FileAccess.uriToBrowserUri(originalFileUri.with({ scheme: Schemas.vscodeFileResource }));
+		const browserUri = FileAccess.asBrowserUri(originalFileUri.with({ scheme: Schemas.vscodeFileResource }));
 		assert.strictEqual(browserUri.query, 'foo=bar');
 		assert.strictEqual(browserUri.fragment, 'something');
 
-		const fileUri = FileAccess.uriToFileUri(originalFileUri);
+		const fileUri = FileAccess.asFileUri(originalFileUri);
 		assert.strictEqual(fileUri.query, 'foo=bar');
 		assert.strictEqual(fileUri.fragment, 'something');
 	});
 
 	(isWeb ? test.skip : test)('FileAccess: web', () => {
 		const originalHttpsUri = URI.file('network.test.ts').with({ scheme: 'https' });
-		const browserUri = FileAccess.uriToBrowserUri(originalHttpsUri);
+		const browserUri = FileAccess.asBrowserUri(originalHttpsUri);
 		assert.strictEqual(originalHttpsUri.toString(), browserUri.toString());
 	});
 
 	test('FileAccess: remote URIs', () => {
 		const originalRemoteUri = URI.file('network.test.ts').with({ scheme: Schemas.vscodeRemote });
-		const browserUri = FileAccess.uriToBrowserUri(originalRemoteUri);
+		const browserUri = FileAccess.asBrowserUri(originalRemoteUri);
 		assert.notStrictEqual(originalRemoteUri.scheme, browserUri.scheme);
 	});
 });

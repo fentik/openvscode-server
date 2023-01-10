@@ -41,7 +41,7 @@
     "onCommand:editor.emmet.action.decrementNumberByTen",
     "onCommand:editor.emmet.action.reflectCSSValue",
     "onCommand:workbench.action.showEmmetCommands",
-    "onLanguage"
+    "onStartupFinished"
   ],
   "main": "./out/node/emmetNodeMain",
   "browser": "./dist/browser/emmetBrowserMain",
@@ -74,6 +74,7 @@
             "type": "string"
           },
           "default": {},
+          "scope": "resource",
           "markdownDescription": "%emmetIncludeLanguages%"
         },
         "emmet.variables": {
@@ -92,11 +93,13 @@
             "type": "string"
           },
           "default": {},
+          "scope": "resource",
           "markdownDescription": "%emmetVariables%"
         },
         "emmet.syntaxProfiles": {
           "type": "object",
           "default": {},
+          "scope": "resource",
           "markdownDescription": "%emmetSyntaxProfiles%"
         },
         "emmet.excludeLanguages": {
@@ -107,6 +110,7 @@
           "default": [
             "markdown"
           ],
+          "scope": "resource",
           "markdownDescription": "%emmetExclude%"
         },
         "emmet.extensionsPath": {
@@ -133,6 +137,7 @@
         "emmet.preferences": {
           "type": "object",
           "default": {},
+          "scope": "resource",
           "markdownDescription": "%emmetPreferences%",
           "properties": {
             "css.intUnit": {

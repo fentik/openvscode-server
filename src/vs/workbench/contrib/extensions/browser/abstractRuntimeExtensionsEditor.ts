@@ -35,7 +35,7 @@ import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { RuntimeExtensionsInput } from 'vs/workbench/contrib/extensions/common/runtimeExtensionsInput';
 import { Action2, MenuId } from 'vs/platform/actions/common/actions';
-import { Categories } from 'vs/platform/action/common/actionCommonCategories';
+import { CATEGORIES } from 'vs/workbench/common/actions';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 
 interface IExtensionProfileInformation {
@@ -100,8 +100,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 
 	private async _resolveExtensions(): Promise<IRuntimeExtension[]> {
 		// We only deal with extensions with source code!
-		await this._extensionService.whenInstalledExtensionsRegistered();
-		const extensionsDescriptions = this._extensionService.extensions.filter((extension) => {
+		const extensionsDescriptions = (await this._extensionService.getExtensions()).filter((extension) => {
 			return Boolean(extension.main) || Boolean(extension.browser);
 		});
 		const marketplaceMap: { [id: string]: IExtension } = Object.create(null);
@@ -371,7 +370,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 				}
 
 				let extraLabel: string | null = null;
-				if (element.status.runningLocation && element.status.runningLocation.equals(new LocalWebWorkerRunningLocation(0))) {
+				if (element.status.runningLocation && element.status.runningLocation.equals(new LocalWebWorkerRunningLocation())) {
 					extraLabel = `$(globe) web worker`;
 				} else if (element.description.extensionLocation.scheme === Schemas.vscodeRemote) {
 					const hostLabel = this._labelService.getHostLabel(Schemas.vscodeRemote, this._environmentService.remoteAuthority);
@@ -381,9 +380,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 						extraLabel = `$(remote) ${element.description.extensionLocation.authority}`;
 					}
 				} else if (element.status.runningLocation && element.status.runningLocation.affinity > 0) {
-					extraLabel = element.status.runningLocation instanceof LocalWebWorkerRunningLocation
-						? `$(globe) web worker ${element.status.runningLocation.affinity + 1}`
-						: `$(server-process) local process ${element.status.runningLocation.affinity + 1}`;
+					extraLabel = `$(server-process) local process ${element.status.runningLocation.affinity + 1}`;
 				}
 
 				if (extraLabel) {
@@ -493,7 +490,7 @@ export class ShowRuntimeExtensionsAction extends Action2 {
 		super({
 			id: 'workbench.action.showRuntimeExtensions',
 			title: { value: nls.localize('showRuntimeExtensions', "Show Running Extensions"), original: 'Show Running Extensions' },
-			category: Categories.Developer,
+			category: CATEGORIES.Developer,
 			f1: true,
 			menu: {
 				id: MenuId.ViewContainerTitle,

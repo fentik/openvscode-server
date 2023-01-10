@@ -156,10 +156,6 @@ export abstract class AbstractCodeEditorService extends Disposable implements IC
 		provider.refCount++;
 	}
 
-	public listDecorationTypes(): string[] {
-		return Array.from(this._decorationOptionProviders.keys());
-	}
-
 	public removeDecorationType(key: string): void {
 		const provider = this._decorationOptionProviders.get(key);
 		if (provider) {
@@ -293,7 +289,7 @@ export class ModelTransientSettingWatcher {
 	}
 }
 
-class RefCountedStyleSheet {
+export class RefCountedStyleSheet {
 
 	private readonly _parent: AbstractCodeEditorService;
 	private readonly _editorId: string;
@@ -366,7 +362,7 @@ interface IModelDecorationOptionsProvider extends IDisposable {
 	resolveDecorationCSSRules(): CSSRuleList;
 }
 
-class DecorationSubTypeOptionsProvider implements IModelDecorationOptionsProvider {
+export class DecorationSubTypeOptionsProvider implements IModelDecorationOptionsProvider {
 
 	private readonly _styleSheet: GlobalStyleSheet | RefCountedStyleSheet;
 	public refCount: number;
@@ -421,7 +417,7 @@ interface ProviderArguments {
 }
 
 
-class DecorationTypeOptionsProvider implements IModelDecorationOptionsProvider {
+export class DecorationTypeOptionsProvider implements IModelDecorationOptionsProvider {
 
 	private readonly _disposables = new DisposableStore();
 	private readonly _styleSheet: GlobalStyleSheet | RefCountedStyleSheet;

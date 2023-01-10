@@ -47,12 +47,12 @@ declare module 'vscode' {
 		/**
 		 * The text or snippet to insert at the pasted locations.
 		 */
-		insertText: string | SnippetString;
+		readonly insertText: string | SnippetString;
 
 		/**
 		 * An optional additional edit to apply on paste.
 		 */
-		additionalEdit?: WorkspaceEdit;
+		readonly additionalEdit?: WorkspaceEdit;
 
 		/**
 		 * @param insertText The text or snippet to insert at the pasted locations.

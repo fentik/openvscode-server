@@ -5,7 +5,7 @@
 
 import * as assert from 'assert';
 import 'mocha';
-import { SymbolDisplayPart } from '../../protocol';
+import { SymbolDisplayPart } from 'typescript/lib/protocol';
 import { Uri } from 'vscode';
 import { IFilePathToResourceConverter, markdownDocumentation, plainWithLinks, tagsMarkdownPreview } from '../../utils/previewer';
 

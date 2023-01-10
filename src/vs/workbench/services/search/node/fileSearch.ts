@@ -315,7 +315,9 @@ export class FileWalker {
 			if (err || last) {
 				onData = () => { };
 
-				this.cmdSW?.stop();
+				if (this.cmdSW) {
+					this.cmdSW.stop();
+				}
 			}
 			cb(err, stdout, last);
 		};
@@ -716,7 +718,7 @@ class AbsoluteAndRelativeParsedExpression {
 	}
 }
 
-function rgErrorMsgForDisplay(msg: string): string | undefined {
+export function rgErrorMsgForDisplay(msg: string): string | undefined {
 	const lines = msg.trim().split('\n');
 	const firstLine = lines[0].trim();
 

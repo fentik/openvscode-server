@@ -1,66 +1,86 @@
-NOTICES
+microsoft-vscode
 
-This repository incorporates material as listed below or described in the code.
+THIRD-PARTY SOFTWARE NOTICES AND INFORMATION
+Do Not Translate or Localize
+
+This project incorporates components from the projects listed below. The original copyright notices and the licenses under which Microsoft received such components are set forth below. Microsoft reserves all rights not expressly granted herein, whether by implication, estoppel or otherwise.
+
+1.	atom/language-clojure version 0.22.8 (https://github.com/atom/language-clojure)
+2.	atom/language-coffee-script version 0.49.3 (https://github.com/atom/language-coffee-script)
+3.	atom/language-css version 0.45.1 (https://github.com/atom/language-css)
+4.	atom/language-java version 0.32.1 (https://github.com/atom/language-java)
+5.	atom/language-sass version 0.62.1 (https://github.com/atom/language-sass)
+6.	atom/language-shellscript version 0.28.2 (https://github.com/atom/language-shellscript)
+7.	atom/language-xml version 0.35.2 (https://github.com/atom/language-xml)
+8.	better-go-syntax version 1.0.0 (https://github.com/jeff-hykin/better-go-syntax/ )
+9.	Colorsublime-Themes version 0.1.0 (https://github.com/Colorsublime/Colorsublime-Themes)
+10.	daaain/Handlebars version 1.8.0 (https://github.com/daaain/Handlebars)
+11.	dart-lang/dart-syntax-highlight (https://github.com/dart-lang/dart-syntax-highlight)
+12.	davidrios/pug-tmbundle (https://github.com/davidrios/pug-tmbundle)
+13.	definitelytyped (https://github.com/DefinitelyTyped/DefinitelyTyped)
+14.	demyte/language-cshtml version 0.3.0 (https://github.com/demyte/language-cshtml)
+15.	Document Object Model version 4.0.0 (https://www.w3.org/DOM/)
+16.	dompurify version 2.3.1 (https://github.com/cure53/DOMPurify)
+17.	dotnet/csharp-tmLanguage version 0.1.0 (https://github.com/dotnet/csharp-tmLanguage)
+18.	expand-abbreviation version 0.5.8 (https://github.com/emmetio/expand-abbreviation)
+19.	fadeevab/make.tmbundle (https://github.com/fadeevab/make.tmbundle)
+20.	freebroccolo/atom-language-swift (https://github.com/freebroccolo/atom-language-swift)
+21.	HTML 5.1 W3C Working Draft version 08 October 2015 (http://www.w3.org/TR/2015/WD-html51-20151008/)
+22.	Ikuyadeu/vscode-R version 2.3.8 (https://github.com/Ikuyadeu/vscode-R)
+23.	Ionic documentation version 1.2.4 (https://github.com/ionic-team/ionic-site)
+24.	ionide/ionide-fsgrammar (https://github.com/ionide/ionide-fsgrammar)
+25.	James-Yu/LaTeX-Workshop version 8.19.1 (https://github.com/James-Yu/LaTeX-Workshop)
+26.	jeff-hykin/better-c-syntax version 1.13.2 (https://github.com/jeff-hykin/better-c-syntax)
+27.	jeff-hykin/better-cpp-syntax version 1.15.18 (https://github.com/jeff-hykin/better-cpp-syntax)
+28.	jeff-hykin/better-objc-syntax version 0.2.0 (https://github.com/jeff-hykin/better-objc-syntax)
+29.	jeff-hykin/better-objcpp-syntax version 0.1.0 (https://github.com/jeff-hykin/better-objcpp-syntax)
+30.	jlelong/vscode-latex-basics version 1.3.0 (https://github.com/jlelong/vscode-latex-basics)
+31.	js-beautify version 1.6.8 (https://github.com/beautify-web/js-beautify)
+32.	JuliaEditorSupport/atom-language-julia version 0.22.1 (https://github.com/JuliaEditorSupport/atom-language-julia)
+33.	Jxck/assert version 1.0.0 (https://github.com/Jxck/assert)
+34.	language-docker (https://github.com/moby/moby)
+35.	language-less version 0.34.2 (https://github.com/atom/language-less)
+36.	language-php version 0.48.1 (https://github.com/atom/language-php)
+37.	MagicStack/MagicPython version 1.1.1 (https://github.com/MagicStack/MagicPython)
+38.	marked version 4.0.16 (https://github.com/markedjs/marked)
+39.	mdn-data version 1.1.12 (https://github.com/mdn/data)
+40.	microsoft/TypeScript-TmLanguage version 0.0.1 (https://github.com/microsoft/TypeScript-TmLanguage)
+41.	microsoft/vscode-JSON.tmLanguage (https://github.com/microsoft/vscode-JSON.tmLanguage)
+42.	microsoft/vscode-markdown-tm-grammar version 1.0.0 (https://github.com/microsoft/vscode-markdown-tm-grammar)
+43.	microsoft/vscode-mssql version 1.16.0 (https://github.com/microsoft/vscode-mssql)
+44.	mmims/language-batchfile version 0.7.6 (https://github.com/mmims/language-batchfile)
+45.	NVIDIA/cuda-cpp-grammar (https://github.com/NVIDIA/cuda-cpp-grammar)
+46.	PowerShell/EditorSyntax version 1.0.0 (https://github.com/PowerShell/EditorSyntax)
+47.	rust-syntax version 0.5.0 (https://github.com/dustypomerleau/rust-syntax)
+48.	semver version 5.5.0 (https://github.com/npm/node-semver)
+49.	seti-ui version 0.1.0 (https://github.com/jesseweed/seti-ui)
+50.	shaders-tmLanguage version 0.1.0 (https://github.com/tgjones/shaders-tmLanguage)
+51.	sumneko/lua.tmbundle version 1.0.0 (https://github.com/sumneko/lua.tmbundle)
+52.	textmate/asp.vb.net.tmbundle (https://github.com/textmate/asp.vb.net.tmbundle)
+53.	textmate/c.tmbundle (https://github.com/textmate/c.tmbundle)
+54.	textmate/diff.tmbundle (https://github.com/textmate/diff.tmbundle)
+55.	textmate/git.tmbundle (https://github.com/textmate/git.tmbundle)
+56.	textmate/groovy.tmbundle (https://github.com/textmate/groovy.tmbundle)
+57.	textmate/html.tmbundle (https://github.com/textmate/html.tmbundle)
+58.	textmate/ini.tmbundle (https://github.com/textmate/ini.tmbundle)
+59.	textmate/javascript.tmbundle (https://github.com/textmate/javascript.tmbundle)
+60.	textmate/markdown.tmbundle (https://github.com/textmate/markdown.tmbundle)
+61.	textmate/perl.tmbundle (https://github.com/textmate/perl.tmbundle)
+62.	textmate/ruby.tmbundle (https://github.com/textmate/ruby.tmbundle)
+63.	textmate/yaml.tmbundle (https://github.com/textmate/yaml.tmbundle)
+64.	trond-snekvik/vscode-rst version 1.5.1 (https://github.com/trond-snekvik/vscode-rst)
+65.	TypeScript-TmLanguage version 0.1.8 (https://github.com/microsoft/TypeScript-TmLanguage)
+66.	TypeScript-TmLanguage version 1.0.0 (https://github.com/microsoft/TypeScript-TmLanguage)
+67.	Unicode version 12.0.0 (https://home.unicode.org/)
+68.	vscode-codicons version 0.0.14 (https://github.com/microsoft/vscode-codicons)
+69.	vscode-logfile-highlighter version 2.15.0 (https://github.com/emilast/vscode-logfile-highlighter)
+70.	vscode-swift version 0.0.1 (https://github.com/owensd/vscode-swift)
+71.	vscode-win32-app-container-tokens (https://github.com/microsoft/vscode-win32-app-container-tokens)
+72.	Web Background Synchronization (https://github.com/WICG/background-sync)
 
 
-
----------------------------------------------------------
-
-@iktakahiro/markdown-it-katex 4.0.2 - MIT
-https://github.com/mjbvz/markdown-it-katex
-
-The MIT License (MIT)
-
-Copyright (c) 2016 Waylon Flinn
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
-
-The MIT License (MIT)
-
-Copyright (c) 2018 Takahiro Ethan Ikeuchi @iktakahiro
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
----------------------------------------------------------
-
----------------------------------------------------------
-
-atom/language-clojure 0.22.8 - MIT
-https://github.com/atom/language-clojure
-
+%% atom/language-clojure NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) 2014 GitHub Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -108,13 +128,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF atom/language-clojure NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-coffee-script 0.49.3 - MIT
-https://github.com/atom/language-coffee-script
-
+%% atom/language-coffee-script NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -165,13 +183,11 @@ HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF atom/language-coffee-script NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-css 0.45.1 - GitHub License
-https://github.com/atom/language-css
-
+%% atom/language-css NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) 2014 GitHub Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -203,13 +219,11 @@ Permission to copy, use, modify, sell and distribute this
 software is granted. This software is provided "as is" without
 express or implied warranty, and with no claim as to its
 suitability for any purpose.
----------------------------------------------------------
+=========================================
+END OF atom/language-css NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-java 0.32.1 - MIT
-https://github.com/atom/language-java
-
+%% atom/language-java NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -242,13 +256,11 @@ Permission to copy, use, modify, sell and distribute this
 software is granted. This software is provided "as is" without
 express or implied warranty, and with no claim as to its
 suitability for any purpose.
----------------------------------------------------------
+=========================================
+END OF atom/language-java NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-sass 0.62.1 - MIT
-https://github.com/atom/language-sass
-
+%% atom/language-sass NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -297,13 +309,11 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF atom/language-sass NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-shellscript 0.28.2 - MIT
-https://github.com/atom/language-shellscript
-
+%% atom/language-shellscript NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -336,13 +346,11 @@ Permission to copy, use, modify, sell and distribute this
 software is granted. This software is provided "as is" without
 express or implied warranty, and with no claim as to its
 suitability for any purpose.
----------------------------------------------------------
+=========================================
+END OF atom/language-shellscript NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-atom/language-xml 0.35.2 - MIT
-https://github.com/atom/language-xml
-
+%% atom/language-xml NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -375,13 +383,11 @@ Permission to copy, use, modify, sell and distribute this
 software is granted. This software is provided "as is" without
 express or implied warranty, and with no claim as to its
 suitability for any purpose.
----------------------------------------------------------
+=========================================
+END OF atom/language-xml NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-better-go-syntax 1.0.0 - MIT
-https://github.com/jeff-hykin/better-go-syntax/
-
+%% better-go-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2019 Jeff Hykin
@@ -403,13 +409,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF better-go-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Colorsublime-Themes 0.1.0
-https://github.com/Colorsublime/Colorsublime-Themes
-
+%% Colorsublime-Themes NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) 2015 Colorsublime.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -429,13 +433,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF Colorsublime-Themes NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-daaain/Handlebars 1.8.0 - MIT
-https://github.com/daaain/Handlebars
-
+%% daaain/Handlebars NOTICES AND INFORMATION BEGIN HERE
+=========================================
 -- Credits
 
 Adapted from the great sublime-text-handlebars package by Nicholas Westlake.
@@ -453,13 +455,11 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF daaain/Handlebars NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-dart-lang/dart-syntax-highlight 0.0.0 - BSD
-https://github.com/dart-lang/dart-syntax-highlight
-
+%% dart-lang/dart-syntax-highlight NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright 2020, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
@@ -487,13 +487,11 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
----------------------------------------------------------
+=========================================
+END OF dart-lang/dart-syntax-highlight NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-davidrios/pug-tmbundle 0.0.0 - MIT
-https://github.com/davidrios/pug-tmbundle
-
+%% davidrios/pug-tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2016 David Rios
@@ -514,13 +512,11 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF davidrios/pug-tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-definitelytyped  - MIT
-https://github.com/DefinitelyTyped/DefinitelyTyped
-
+%% definitelytyped NOTICES AND INFORMATION BEGIN HERE
+=========================================
 This project is licensed under the MIT license.
 Copyrights are respective of each contributor listed at the beginning of each definition file.
 
@@ -529,13 +525,38 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF definitelytyped NOTICES AND INFORMATION
 
----------------------------------------------------------
+%% demyte/language-cshtml NOTICES AND INFORMATION BEGIN HERE
+=========================================
+The MIT License (MIT)
 
-Document Object Model 4.0.0 - W3C License
-https://www.w3.org/DOM/
+Copyright (c) 2014 James Summerton
 
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+=========================================
+END OF demyte/language-cshtml NOTICES AND INFORMATION
+
+%% Document Object Model NOTICES AND INFORMATION BEGIN HERE
+=========================================
 W3C License
 This work is being provided by the copyright holders under the following license.
 By obtaining and/or copying this work, you (the licensee) agree that you have read, understood, and will comply with the following terms and conditions.
@@ -552,13 +573,11 @@ FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE OR DOCUMENT W
 COPYRIGHT HOLDERS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF ANY USE OF THE SOFTWARE OR DOCUMENT.
 The name and trademarks of copyright holders may NOT be used in advertising or publicity pertaining to the work without specific, written prior permission.
 Title to copyright in this work will at all times remain with copyright holders.
----------------------------------------------------------
+=========================================
+END OF Document Object Model NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-dompurify 2.3.1 - Apache 2.0
-https://github.com/cure53/DOMPurify
-
+%% dompurify NOTICES AND INFORMATION BEGIN HERE
+=========================================
 DOMPurify
 Copyright 2015 Mario Heiderich
 
@@ -936,13 +955,11 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
       This Source Code Form is "Incompatible
       With Secondary Licenses", as defined by
       the Mozilla Public License, v. 2.0.
----------------------------------------------------------
+=========================================
+END OF dompurify NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-dotnet/csharp-tmLanguage 0.1.0 - MIT
-https://github.com/dotnet/csharp-tmLanguage
-
+%% dotnet/csharp-tmLanguage NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2016 .NET Foundation
@@ -964,42 +981,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF dotnet/csharp-tmLanguage NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-dotnet/razor-tooling 1.0.0 - MIT
-https://github.com/dotnet/razor-tooling
-
-MIT License
-
-Copyright (c) .NET Foundation and Contributors
-All Rights Reserved
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
----------------------------------------------------------
-
----------------------------------------------------------
-
-expand-abbreviation 0.5.8 - MIT
-https://github.com/emmetio/expand-abbreviation
-
+%% expand-abbreviation NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2017 Emmet.io
@@ -1021,13 +1007,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF expand-abbreviation NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-fadeevab/make.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/fadeevab/make.tmbundle
-
+%% fadeevab/make.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-make.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -1041,13 +1025,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF fadeevab/make.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-freebroccolo/atom-language-swift 0.0.0 - MIT
-https://github.com/freebroccolo/atom-language-swift
-
+%% freebroccolo/atom-language-swift NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 Darin Morrison
@@ -1068,13 +1050,11 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF freebroccolo/atom-language-swift NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-HTML 5.1 W3C Working Draft 08 October 2015 - W3C Document License
-http://www.w3.org/TR/2015/WD-html51-20151008/
-
+%% HTML 5.1 W3C Working Draft NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright © 2015 W3C® (MIT, ERCIM, Keio, Beihang). This software or document includes material copied
 from or derived from HTML 5.1 W3C Working Draft (http://www.w3.org/TR/2015/WD-html51-20151008/.)
 
@@ -1088,13 +1068,11 @@ DOCUMENT OR THE PERFORMANCE OR IMPLEMENTATION OF THE CONTENTS THEREOF.
 
 The name and trademarks of copyright holders may NOT be used in advertising or publicity pertaining to this document or its contents
 without specific, written prior permission. Title to copyright in this document will at all times remain with copyright holders.
----------------------------------------------------------
+=========================================
+END OF HTML 5.1 W3C Working Draft NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Ikuyadeu/vscode-R 2.3.8 - MIT
-https://github.com/Ikuyadeu/vscode-R
-
+%% Ikuyadeu/vscode-R NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2022 REditorSupport
@@ -1116,13 +1094,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF Ikuyadeu/vscode-R NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Ionic documentation 1.2.4 - Apache2
-https://github.com/ionic-team/ionic-site
-
+%% Ionic documentation NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright Drifty Co. http://drifty.com/.
 
 Apache License
@@ -1180,13 +1156,11 @@ If the Work includes a "NOTICE" text file as part of its distribution, then any 
 9. Accepting Warranty or Additional Liability. While redistributing the Work or Derivative Works thereof, You may choose to offer, and charge a fee for, acceptance of support, warranty, indemnity, or other liability obligations and/or rights consistent with this License. However, in accepting such obligations, You may act only on Your own behalf and on Your sole responsibility, not on behalf of any other Contributor, and only if You agree to indemnify, defend, and hold each Contributor harmless for any liability incurred by, or claims asserted against, such Contributor by reason of your accepting any such warranty or additional liability.
 
 END OF TERMS AND CONDITIONS
----------------------------------------------------------
+=========================================
+END OF Ionic documentation NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-ionide/ionide-fsgrammar 0.0.0 - MIT
-https://github.com/ionide/ionide-fsgrammar
-
+%% ionide/ionide-fsgrammar NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2015 Krzysztof Cieslak
@@ -1208,13 +1182,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF ionide/ionide-fsgrammar NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-James-Yu/LaTeX-Workshop 8.19.1 - MIT
-https://github.com/James-Yu/LaTeX-Workshop
-
+%% James-Yu/LaTeX-Workshop NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2016 James Yu
@@ -1236,13 +1208,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF James-Yu/LaTeX-Workshop NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-jeff-hykin/better-c-syntax 1.13.2 - MIT
-https://github.com/jeff-hykin/better-c-syntax
-
+%% jeff-hykin/better-c-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2019 Jeff Hykin
@@ -1264,13 +1234,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF jeff-hykin/better-c-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-jeff-hykin/better-cpp-syntax 1.16.1 - MIT
-https://github.com/jeff-hykin/better-cpp-syntax
-
+%% jeff-hykin/better-cpp-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2019 Jeff Hykin
@@ -1292,13 +1260,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF jeff-hykin/better-cpp-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-jeff-hykin/better-objc-syntax 0.2.0 - MIT
-https://github.com/jeff-hykin/better-objc-syntax
-
+%% jeff-hykin/better-objc-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2019 Jeff Hykin
@@ -1320,13 +1286,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF jeff-hykin/better-objc-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-jeff-hykin/better-objcpp-syntax 0.1.0 - MIT
-https://github.com/jeff-hykin/better-objcpp-syntax
-
+%% jeff-hykin/better-objcpp-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2019 Jeff Hykin
@@ -1348,13 +1312,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF jeff-hykin/better-objcpp-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-jlelong/vscode-latex-basics 1.4.0 - MIT
-https://github.com/jlelong/vscode-latex-basics
-
+%% jlelong/vscode-latex-basics NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) vscode-latex-basics authors
 
 If not otherwise specified (see below), files in this repository fall under the MIT License
@@ -1373,13 +1335,11 @@ included in VSCode and falls under the license described in markdown-latex-combi
 
 The file syntaxes/cpp-grammar-bailout.tmLanguage.json is generated from https://github.com/jeff-hykin/better-cpp-syntax
 and falls under the license described in cpp-bailout-license.txt.
----------------------------------------------------------
+=========================================
+END OF jlelong/vscode-latex-basics NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-js-beautify 1.6.8 - MIT
-https://github.com/beautify-web/js-beautify
-
+%% js-beautify NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2007-2018 Einar Lielmanis, Liam Newman, and contributors.
@@ -1389,13 +1349,11 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF js-beautify NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-JuliaEditorSupport/atom-language-julia 0.22.1 - MIT
-https://github.com/JuliaEditorSupport/atom-language-julia
-
+%% JuliaEditorSupport/atom-language-julia NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The atom-language-julia package is licensed under the MIT "Expat" License:
 
 > Copyright (c) 2015
@@ -1418,13 +1376,11 @@ The atom-language-julia package is licensed under the MIT "Expat" License:
 > CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 > TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 > SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF JuliaEditorSupport/atom-language-julia NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Jxck/assert 1.0.0 - MIT
-https://github.com/Jxck/assert
-
+%% Jxck/assert NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2011 Jxck
@@ -1448,13 +1404,11 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF Jxck/assert NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-language-docker 0.0.0 - Apache2
-https://github.com/moby/moby
-
+%% language-docker NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Apache License
                            Version 2.0, January 2004
                         https://www.apache.org/licenses/
@@ -1645,13 +1599,11 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
----------------------------------------------------------
+=========================================
+END OF language-docker NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-language-less 0.34.2 - MIT
-https://github.com/atom/language-less
-
+%% language-less NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -1699,13 +1651,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF language-less NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-language-php 0.48.1 - MIT
-https://github.com/atom/language-php
-
+%% language-php NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2014 GitHub Inc.
@@ -1738,13 +1688,11 @@ Permission to copy, use, modify, sell and distribute this
 software is granted. This software is provided "as is" without
 express or implied warranty, and with no claim as to its
 suitability for any purpose.
----------------------------------------------------------
+=========================================
+END OF language-php NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-MagicStack/MagicPython 1.1.1 - MIT
-https://github.com/MagicStack/MagicPython
-
+%% MagicStack/MagicPython NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License
 
 Copyright (c) 2015-present MagicStack Inc.  http://magic.io
@@ -1766,13 +1714,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF MagicStack/MagicPython NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-marked 4.1.0 - MIT
-https://github.com/markedjs/marked
-
+%% marked NOTICES AND INFORMATION BEGIN HERE
+=========================================
 information
 
 ## Contribution License Agreement
@@ -1817,13 +1763,11 @@ Redistribution and use in source and binary forms, with or without modification,
 * Neither the name "Markdown" nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 This software is provided by the copyright holders and contributors "as is" and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall the copyright owner or contributors be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
----------------------------------------------------------
+=========================================
+END OF marked NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-mdn-data 1.1.12 - MPL
-https://github.com/mdn/data
-
+%% mdn-data NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Mozilla Public License Version 2.0
 
 Copyright (c) 2018 Mozilla Corporation
@@ -2200,13 +2144,11 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
----------------------------------------------------------
+=========================================
+END OF mdn-data NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-microsoft/TypeScript-TmLanguage 0.0.1 - MIT
-https://github.com/microsoft/TypeScript-TmLanguage
-
+%% microsoft/TypeScript-TmLanguage NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) Microsoft Corporation
 All rights reserved.
 
@@ -2229,13 +2171,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF microsoft/TypeScript-TmLanguage NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-microsoft/vscode-JSON.tmLanguage 0.0.0 - MIT
-https://github.com/microsoft/vscode-JSON.tmLanguage
-
+%% microsoft/vscode-JSON.tmLanguage NOTICES AND INFORMATION BEGIN HERE
+=========================================
 vscode-JSON.tmLanguage
 
 Copyright (c) Microsoft Corporation
@@ -2255,13 +2195,11 @@ THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
 CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF microsoft/vscode-JSON.tmLanguage NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-microsoft/vscode-markdown-tm-grammar 1.0.0 - MIT
-https://github.com/microsoft/vscode-markdown-tm-grammar
-
+%% microsoft/vscode-markdown-tm-grammar NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) Microsoft 2018
@@ -2283,13 +2221,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF microsoft/vscode-markdown-tm-grammar NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-microsoft/vscode-mssql 1.17.0 - MIT
-https://github.com/microsoft/vscode-mssql
-
+%% microsoft/vscode-mssql NOTICES AND INFORMATION BEGIN HERE
+=========================================
 ------------------------------------------ START OF LICENSE -----------------------------------------
 vscode-mssql
 Copyright (c) Microsoft Corporation
@@ -2300,13 +2236,11 @@ Copyright (c) 2016 Microsoft
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ----------------------------------------------- END OF LICENSE -----------------------------------------
----------------------------------------------------------
+=========================================
+END OF microsoft/vscode-mssql NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-mmims/language-batchfile 0.7.6 - MIT
-https://github.com/mmims/language-batchfile
-
+%% mmims/language-batchfile NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2021 Michael Mims
@@ -2328,13 +2262,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF mmims/language-batchfile NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-NVIDIA/cuda-cpp-grammar 0.0.0 - MIT
-https://github.com/NVIDIA/cuda-cpp-grammar
-
+%% NVIDIA/cuda-cpp-grammar NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright 2021 NVIDIA Corporation
@@ -2344,13 +2276,11 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF NVIDIA/cuda-cpp-grammar NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-PowerShell/EditorSyntax 1.0.0 - MIT
-https://github.com/PowerShell/EditorSyntax
-
+%% PowerShell/EditorSyntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) Microsoft Corporation
 
 All rights reserved.
@@ -2374,13 +2304,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF PowerShell/EditorSyntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-rust-syntax 0.5.0 - MIT
-https://github.com/dustypomerleau/rust-syntax
-
+%% rust-syntax NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2020 Dustin Pomerleau
@@ -2402,13 +2330,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF rust-syntax NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-semver 5.5.0 - The ISC License
-https://github.com/npm/node-semver
-
+%% semver NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The ISC License
 
 Copyright (c) Isaac Z. Schlueter and Contributors
@@ -2424,13 +2350,11 @@ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR
 IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF semver NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-seti-ui 0.1.0
-https://github.com/jesseweed/seti-ui
-
+%% seti-ui NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) 2014 Jesse Weed
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -2451,13 +2375,11 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF seti-ui NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-shaders-tmLanguage 0.1.0 - MIT
-https://github.com/tgjones/shaders-tmLanguage
-
+%% shaders-tmLanguage NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) 2017 Tim Jones
@@ -2479,13 +2401,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF shaders-tmLanguage NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-sumneko/lua.tmbundle 1.0.0 - TextMate Bundle License
-https://github.com/sumneko/lua.tmbundle
-
+%% sumneko/lua.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) sumneko-lua.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2499,13 +2419,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF sumneko/lua.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/asp.vb.net.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/asp.vb.net.tmbundle
-
+%% textmate/asp.vb.net.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-asp.vb.net.tmbundle project authors
 
 If not otherwise specified (see below), files in this folder fall under the following license:
@@ -2519,13 +2437,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/asp.vb.net.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/c.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/c.tmbundle
-
+%% textmate/c.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-c.tmbundle authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2539,13 +2455,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/c.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/diff.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/diff.tmbundle
-
+%% textmate/diff.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-diff.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2559,13 +2473,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/diff.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/git.tmbundle 0.0.0 - MIT
-https://github.com/textmate/git.tmbundle
-
+%% textmate/git.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2008 Tim Harper
@@ -2588,13 +2500,11 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF textmate/git.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/groovy.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/groovy.tmbundle
-
+%% textmate/groovy.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-groovy.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2608,13 +2518,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/groovy.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/html.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/html.tmbundle
-
+%% textmate/html.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-html.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2628,13 +2536,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/html.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/ini.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/ini.tmbundle
-
+%% textmate/ini.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-ini.tmbundle project authors
 
 If not otherwise specified (see below), files in this folder fall under the following license:
@@ -2648,13 +2554,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/ini.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/javascript.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/javascript.tmbundle
-
+%% textmate/javascript.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-javascript.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2668,13 +2572,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/javascript.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/markdown.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/markdown.tmbundle
-
+%% textmate/markdown.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) markdown.tmbundle authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2688,13 +2590,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/markdown.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/perl.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/perl.tmbundle
-
+%% textmate/perl.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-perl.tmbundle project authors
 
 If not otherwise specified (see below), files in this repository fall under the following license:
@@ -2708,13 +2608,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/perl.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/ruby.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/ruby.tmbundle
-
+%% textmate/ruby.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) textmate-ruby.tmbundle project authors
 
 If not otherwise specified (see below), files in this folder fall under the following license:
@@ -2728,13 +2626,11 @@ An exception is made for files in readable text which contain their own license 
 or files where an accompanying file exists (in the same directory) with a "-license" suffix added
 to the base-name name of the original file, and an extension of txt, html, or similar. For example
 "tidy" is accompanied by "tidy-license.txt".
----------------------------------------------------------
+=========================================
+END OF textmate/ruby.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-textmate/yaml.tmbundle 0.0.0 - TextMate Bundle License
-https://github.com/textmate/yaml.tmbundle
-
+%% textmate/yaml.tmbundle NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) 2015 FichteFoll <fichtefoll2@googlemail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -2753,13 +2649,11 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF textmate/yaml.tmbundle NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-trond-snekvik/vscode-rst 1.5.1 - MIT
-https://github.com/trond-snekvik/vscode-rst
-
+%% trond-snekvik/vscode-rst NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright 2021 Trond Snekvik
@@ -2769,14 +2663,11 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF trond-snekvik/vscode-rst NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-TypeScript-TmLanguage 0.1.8 - MIT
-TypeScript-TmLanguage 1.0.0 - MIT
-https://github.com/microsoft/TypeScript-TmLanguage
-
+%% TypeScript-TmLanguage NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Copyright (c) Microsoft Corporation
 All rights reserved.
 
@@ -2799,13 +2690,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF TypeScript-TmLanguage NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Unicode 12.0.0 - UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
-https://home.unicode.org/
-
+%% Unicode NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Unicode Data Files include all data files under the directories
 https://www.unicode.org/Public/, https://www.unicode.org/reports/,
 https://cldr.unicode.org, https://github.com/unicode-org/icu, and
@@ -2861,13 +2750,11 @@ Except as contained in this notice, the name of a copyright holder
 shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
----------------------------------------------------------
+=========================================
+END OF Unicode NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-vscode-codicons 0.0.14 - MIT and Creative Commons Attribution 4.0
-https://github.com/microsoft/vscode-codicons
-
+%% vscode-codicons NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Attribution 4.0 International
 
 =======================================================================
@@ -3263,13 +3150,11 @@ the avoidance of doubt, this paragraph does not form part of the
 public licenses.
 
 Creative Commons may be contacted at creativecommons.org.
----------------------------------------------------------
+=========================================
+END OF vscode-codicons NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-vscode-logfile-highlighter 2.15.0 - MIT
-https://github.com/emilast/vscode-logfile-highlighter
-
+%% vscode-logfile-highlighter NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2015 emilast
@@ -3291,13 +3176,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF vscode-logfile-highlighter NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-vscode-swift 0.0.1 - MIT
-https://github.com/owensd/vscode-swift
-
+%% vscode-swift NOTICES AND INFORMATION BEGIN HERE
+=========================================
 The MIT License (MIT)
 
 Copyright (c) 2015 David Owens II
@@ -3318,13 +3201,11 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
----------------------------------------------------------
+=========================================
+END OF vscode-swift NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-vscode-win32-app-container-tokens
-https://github.com/microsoft/vscode-win32-app-container-tokens
-
+%% vscode-win32-app-container-tokens NOTICES AND INFORMATION BEGIN HERE
+=========================================
 MIT License
 
 Copyright (c) Microsoft Corporation.
@@ -3346,13 +3227,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE
----------------------------------------------------------
+=========================================
+END OF vscode-win32-app-container-tokens NOTICES AND INFORMATION
 
----------------------------------------------------------
-
-Web Background Synchronization  - Apache2
-https://github.com/WICG/background-sync
-
+%% Web Background Synchronization NOTICES AND INFORMATION BEGIN HERE
+=========================================
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3554,4 +3433,5 @@ Apache License
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
----------------------------------------------------------
+=========================================
+END OF Web Background Synchronization NOTICES AND INFORMATION

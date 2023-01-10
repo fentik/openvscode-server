@@ -208,23 +208,9 @@ export class OneSnippet {
 		return this._snippet.placeholders.length > 0;
 	}
 
-	/**
-	 * A snippet is trivial when it has no placeholder or only a final placeholder at
-	 * its very end
-	 */
 	get isTrivialSnippet(): boolean {
-		if (this._snippet.placeholders.length === 0) {
-			return true;
-		}
-		if (this._snippet.placeholders.length === 1) {
-			const [placeholder] = this._snippet.placeholders;
-			if (placeholder.isFinalTabstop) {
-				if (this._snippet.rightMostDescendant === placeholder) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return this._snippet.placeholders.length === 0
+			|| (this._snippet.placeholders.length === 1 && this._snippet.placeholders[0].isFinalTabstop);
 	}
 
 	computePossibleSelections() {
@@ -380,7 +366,7 @@ export interface ISnippetEdit {
 
 export class SnippetSession {
 
-	static adjustWhitespace(model: ITextModel, position: IPosition, adjustIndentation: boolean, snippet: TextmateSnippet, filter?: Set<Marker>): string {
+	static adjustWhitespace(model: ITextModel, position: IPosition, snippet: TextmateSnippet, adjustIndentation: boolean, adjustNewlines: boolean): string {
 		const line = model.getLineContent(position.lineNumber);
 		const lineLeadingWhitespace = getLeadingWhitespace(line, 0, position.column - 1);
 
@@ -390,11 +376,6 @@ export class SnippetSession {
 		snippet.walk(marker => {
 			// all text elements that are not inside choice
 			if (!(marker instanceof Text) || marker.parent instanceof Choice) {
-				return true;
-			}
-
-			// check with filter (iff provided)
-			if (filter && !filter.has(marker)) {
 				return true;
 			}
 
@@ -515,9 +496,9 @@ export class SnippetSession {
 			// cursor and the leading whitespace is different
 			const start = snippetSelection.getStartPosition();
 			const snippetLineLeadingWhitespace = SnippetSession.adjustWhitespace(
-				model, start,
+				model, start, snippet,
 				adjustWhitespace || (idx > 0 && firstLineFirstNonWhitespace !== model.getLineFirstNonWhitespaceColumn(selection.positionLineNumber)),
-				snippet,
+				true
 			);
 
 			snippet.resolveVariables(new CompositeSnippetVariableResolver([
@@ -582,8 +563,7 @@ export class SnippetSession {
 				offset += textNode.value.length;
 			}
 
-			const newNodes = parser.parseFragment(template, snippet);
-			SnippetSession.adjustWhitespace(model, range.getStartPosition(), true, snippet, new Set(newNodes));
+			parser.parseFragment(template, snippet);
 			snippet.resolveVariables(resolver);
 
 			const snippetText = snippet.toString();

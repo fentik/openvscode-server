@@ -2,31 +2,28 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { Queue } from 'vs/base/common/async';
-import { IStringDictionary } from 'vs/base/common/collections';
-import { Schemas } from 'vs/base/common/network';
-import { IProcessEnvironment } from 'vs/base/common/platform';
-import * as Types from 'vs/base/common/types';
 import { URI as uri } from 'vs/base/common/uri';
-import { ICodeEditor, isCodeEditor, isDiffEditor } from 'vs/editor/browser/editorBrowser';
 import * as nls from 'vs/nls';
+import * as Types from 'vs/base/common/types';
+import { Schemas } from 'vs/base/common/network';
+import { SideBySideEditor, EditorResourceAccessor } from 'vs/workbench/common/editor';
+import { IStringDictionary } from 'vs/base/common/collections';
+import { IConfigurationService, IConfigurationOverrides, ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { ConfigurationTarget, IConfigurationOverrides, IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ILabelService } from 'vs/platform/label/common/label';
-import { IInputOptions, IPickOptions, IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
-import { IWorkspaceContextService, IWorkspaceFolder, WorkbenchState } from 'vs/platform/workspace/common/workspace';
-import { EditorResourceAccessor, SideBySideEditor } from 'vs/workbench/common/editor';
-import { ConfiguredInput } from 'vs/workbench/services/configurationResolver/common/configurationResolver';
-import { AbstractVariableResolverService } from 'vs/workbench/services/configurationResolver/common/variableResolver';
+import { IWorkspaceFolder, IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
+import { AbstractVariableResolverService } from 'vs/workbench/services/configurationResolver/common/variableResolver';
+import { ICodeEditor, isCodeEditor, isDiffEditor } from 'vs/editor/browser/editorBrowser';
+import { IQuickInputService, IInputOptions, IQuickPickItem, IPickOptions } from 'vs/platform/quickinput/common/quickInput';
+import { ConfiguredInput } from 'vs/workbench/services/configurationResolver/common/configurationResolver';
+import { IProcessEnvironment } from 'vs/base/common/platform';
+import { ILabelService } from 'vs/platform/label/common/label';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
+import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 
 export abstract class BaseConfigurationResolverService extends AbstractVariableResolverService {
 
 	static readonly INPUT_OR_COMMAND_VARIABLES_PATTERN = /\${((input|command):(.*?))}/g;
-
-	private userInputAccessQueue = new Queue<string | IQuickPickItem | undefined>();
 
 	constructor(
 		context: {
@@ -264,7 +261,7 @@ export abstract class BaseConfigurationResolverService extends AbstractVariableR
 					variables.push(contributed);
 				}
 			}
-		} else if (Array.isArray(object)) {
+		} else if (Types.isArray(object)) {
 			for (const value of object) {
 				this.findVariables(value, variables);
 
@@ -309,8 +306,8 @@ export abstract class BaseConfigurationResolverService extends AbstractVariableR
 					if (info.password) {
 						inputOptions.password = info.password;
 					}
-					return this.userInputAccessQueue.queue(() => this.quickInputService.input(inputOptions)).then(resolvedInput => {
-						return resolvedInput as string;
+					return this.quickInputService.input(inputOptions).then(resolvedInput => {
+						return resolvedInput;
 					});
 				}
 
@@ -318,7 +315,7 @@ export abstract class BaseConfigurationResolverService extends AbstractVariableR
 					if (!Types.isString(info.description)) {
 						missingAttribute('description');
 					}
-					if (Array.isArray(info.options)) {
+					if (Types.isArray(info.options)) {
 						for (const pickOption of info.options) {
 							if (!Types.isString(pickOption) && !Types.isString(pickOption.value)) {
 								missingAttribute('value');
@@ -349,9 +346,9 @@ export abstract class BaseConfigurationResolverService extends AbstractVariableR
 						}
 					}
 					const pickOptions: IPickOptions<PickStringItem> = { placeHolder: info.description, matchOnDetail: true, ignoreFocusLost: true };
-					return this.userInputAccessQueue.queue(() => this.quickInputService.pick(picks, pickOptions, undefined)).then(resolvedInput => {
+					return this.quickInputService.pick(picks, pickOptions, undefined).then(resolvedInput => {
 						if (resolvedInput) {
-							return (resolvedInput as PickStringItem).value;
+							return resolvedInput.value;
 						}
 						return undefined;
 					});
@@ -361,7 +358,7 @@ export abstract class BaseConfigurationResolverService extends AbstractVariableR
 					if (!Types.isString(info.command)) {
 						missingAttribute('command');
 					}
-					return this.userInputAccessQueue.queue(() => this.commandService.executeCommand<string>(info.command, info.args)).then(result => {
+					return this.commandService.executeCommand<string>(info.command, info.args).then(result => {
 						if (typeof result === 'string' || Types.isUndefinedOrNull(result)) {
 							return result;
 						}

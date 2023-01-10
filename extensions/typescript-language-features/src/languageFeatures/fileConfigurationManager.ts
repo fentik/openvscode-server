@@ -77,27 +77,24 @@ export default class FileConfigurationManager extends Disposable {
 		const cachedOptions = this.formatOptions.get(document.uri);
 		if (cachedOptions) {
 			const cachedOptionsValue = await cachedOptions;
-			if (token.isCancellationRequested) {
-				return;
-			}
-
 			if (cachedOptionsValue && areFileConfigurationsEqual(cachedOptionsValue, currentOptions)) {
 				return;
 			}
 		}
 
-		const task = (async () => {
-			try {
-				const response = await this.client.execute('configure', { file, ...currentOptions }, token);
-				return response.type === 'response' ? currentOptions : undefined;
-			} catch {
-				return undefined;
-			}
-		})();
+		let resolve: (x: FileConfiguration | undefined) => void;
+		this.formatOptions.set(document.uri, new Promise<FileConfiguration | undefined>(r => resolve = r));
 
-		this.formatOptions.set(document.uri, task);
-
-		await task;
+		const args: Proto.ConfigureRequestArguments = {
+			file,
+			...currentOptions,
+		};
+		try {
+			const response = await this.client.execute('configure', args, token);
+			resolve!(response.type === 'response' ? currentOptions : undefined);
+		} finally {
+			resolve!(undefined);
+		}
 	}
 
 	public async setGlobalConfigurationFromDocument(
@@ -165,6 +162,10 @@ export default class FileConfigurationManager extends Disposable {
 	}
 
 	private getPreferences(document: vscode.TextDocument): Proto.UserPreferences {
+		if (this.client.apiVersion.lt(API.v290)) {
+			return {};
+		}
+
 		const config = vscode.workspace.getConfiguration(
 			isTypeScriptDocument(document) ? 'typescript' : 'javascript',
 			document);
@@ -189,6 +190,7 @@ export default class FileConfigurationManager extends Disposable {
 			includeCompletionsWithSnippetText: config.get<boolean>('suggest.includeCompletionsWithSnippetText', true),
 			includeCompletionsWithClassMemberSnippets: config.get<boolean>('suggest.classMemberSnippets.enabled', true),
 			includeCompletionsWithObjectLiteralMethodSnippets: config.get<boolean>('suggest.objectLiteralMethodSnippets.enabled', true),
+			// @ts-expect-error until TS 4.8
 			autoImportFileExcludePatterns: this.getAutoImportFileExcludePatternsPreference(preferencesConfig, vscode.workspace.getWorkspaceFolder(document.uri)?.uri),
 			useLabelDetailsInCompletionEntries: true,
 			allowIncompleteCompletions: true,

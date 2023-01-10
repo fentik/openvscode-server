@@ -6,9 +6,7 @@
 import * as dom from 'vs/base/browser/dom';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
-import { FindInput } from 'vs/base/browser/ui/findinput/findInput';
-import { IInputBoxStyles, IRange, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
-import { IToggleStyles, Toggle } from 'vs/base/browser/ui/toggle/toggle';
+import { IInputBoxStyles, InputBox, IRange, MessageType } from 'vs/base/browser/ui/inputbox/inputBox';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import Severity from 'vs/base/common/severity';
 import 'vs/css!./media/quickInput';
@@ -18,123 +16,113 @@ const $ = dom.$;
 export class QuickInputBox extends Disposable {
 
 	private container: HTMLElement;
-	private findInput: FindInput;
+	private inputBox: InputBox;
 
 	constructor(
-		private parent: HTMLElement,
-		inputBoxStyles: IInputBoxStyles,
-		toggleStyles: IToggleStyles
+		private parent: HTMLElement
 	) {
 		super();
 		this.container = dom.append(this.parent, $('.quick-input-box'));
-		this.findInput = this._register(new FindInput(this.container, undefined, { label: '', inputBoxStyles, toggleStyles }));
+		this.inputBox = this._register(new InputBox(this.container, undefined));
 	}
 
 	onKeyDown = (handler: (event: StandardKeyboardEvent) => void): IDisposable => {
-		return dom.addDisposableListener(this.findInput.inputBox.inputElement, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
+		return dom.addDisposableListener(this.inputBox.inputElement, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
 			handler(new StandardKeyboardEvent(e));
 		});
 	};
 
 	onMouseDown = (handler: (event: StandardMouseEvent) => void): IDisposable => {
-		return dom.addDisposableListener(this.findInput.inputBox.inputElement, dom.EventType.MOUSE_DOWN, (e: MouseEvent) => {
+		return dom.addDisposableListener(this.inputBox.inputElement, dom.EventType.MOUSE_DOWN, (e: MouseEvent) => {
 			handler(new StandardMouseEvent(e));
 		});
 	};
 
 	onDidChange = (handler: (event: string) => void): IDisposable => {
-		return this.findInput.onDidChange(handler);
+		return this.inputBox.onDidChange(handler);
 	};
 
 	get value() {
-		return this.findInput.getValue();
+		return this.inputBox.value;
 	}
 
 	set value(value: string) {
-		this.findInput.setValue(value);
+		this.inputBox.value = value;
 	}
 
 	select(range: IRange | null = null): void {
-		this.findInput.inputBox.select(range);
+		this.inputBox.select(range);
 	}
 
 	isSelectionAtEnd(): boolean {
-		return this.findInput.inputBox.isSelectionAtEnd();
+		return this.inputBox.isSelectionAtEnd();
 	}
 
 	setPlaceholder(placeholder: string): void {
-		this.findInput.inputBox.setPlaceHolder(placeholder);
+		this.inputBox.setPlaceHolder(placeholder);
 	}
 
 	get placeholder() {
-		return this.findInput.inputBox.inputElement.getAttribute('placeholder') || '';
+		return this.inputBox.inputElement.getAttribute('placeholder') || '';
 	}
 
 	set placeholder(placeholder: string) {
-		this.findInput.inputBox.setPlaceHolder(placeholder);
+		this.inputBox.setPlaceHolder(placeholder);
 	}
 
 	get ariaLabel() {
-		return this.findInput.inputBox.getAriaLabel();
+		return this.inputBox.getAriaLabel();
 	}
 
 	set ariaLabel(ariaLabel: string) {
-		this.findInput.inputBox.setAriaLabel(ariaLabel);
+		this.inputBox.setAriaLabel(ariaLabel);
 	}
 
 	get password() {
-		return this.findInput.inputBox.inputElement.type === 'password';
+		return this.inputBox.inputElement.type === 'password';
 	}
 
 	set password(password: boolean) {
-		this.findInput.inputBox.inputElement.type = password ? 'password' : 'text';
+		this.inputBox.inputElement.type = password ? 'password' : 'text';
 	}
 
 	set enabled(enabled: boolean) {
-		// We can't disable the input box because it is still used for
-		// navigating the list. Instead, we disable the list and the OK
-		// so that nothing can be selected.
-		// TODO: should this be what we do for all find inputs? Or maybe some _other_ API
-		// on findInput to change it to readonly?
-		this.findInput.inputBox.inputElement.toggleAttribute('readonly', !enabled);
-		// TODO: styles of the quick pick need to be moved to the CSS instead of being in line
-		// so things like this can be done in CSS
-		// this.findInput.inputBox.inputElement.classList.toggle('disabled', !enabled);
-	}
-
-	set toggles(toggles: Toggle[] | undefined) {
-		this.findInput.setAdditionalToggles(toggles);
+		this.inputBox.setEnabled(enabled);
 	}
 
 	hasFocus(): boolean {
-		return this.findInput.inputBox.hasFocus();
+		return this.inputBox.hasFocus();
 	}
 
 	setAttribute(name: string, value: string): void {
-		this.findInput.inputBox.inputElement.setAttribute(name, value);
+		this.inputBox.inputElement.setAttribute(name, value);
 	}
 
 	removeAttribute(name: string): void {
-		this.findInput.inputBox.inputElement.removeAttribute(name);
+		this.inputBox.inputElement.removeAttribute(name);
 	}
 
 	showDecoration(decoration: Severity): void {
 		if (decoration === Severity.Ignore) {
-			this.findInput.clearMessage();
+			this.inputBox.hideMessage();
 		} else {
-			this.findInput.showMessage({ type: decoration === Severity.Info ? MessageType.INFO : decoration === Severity.Warning ? MessageType.WARNING : MessageType.ERROR, content: '' });
+			this.inputBox.showMessage({ type: decoration === Severity.Info ? MessageType.INFO : decoration === Severity.Warning ? MessageType.WARNING : MessageType.ERROR, content: '' });
 		}
 	}
 
 	stylesForType(decoration: Severity) {
-		return this.findInput.inputBox.stylesForType(decoration === Severity.Info ? MessageType.INFO : decoration === Severity.Warning ? MessageType.WARNING : MessageType.ERROR);
+		return this.inputBox.stylesForType(decoration === Severity.Info ? MessageType.INFO : decoration === Severity.Warning ? MessageType.WARNING : MessageType.ERROR);
 	}
 
 	setFocus(): void {
-		this.findInput.focus();
+		this.inputBox.focus();
 	}
 
 	layout(): void {
-		this.findInput.inputBox.layout();
+		this.inputBox.layout();
+	}
+
+	style(styles: IInputBoxStyles): void {
+		this.inputBox.style(styles);
 	}
 }

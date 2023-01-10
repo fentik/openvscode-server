@@ -118,6 +118,7 @@
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.sizing-fit {
 	width: 120px;
 	min-width: fit-content;
+	min-width: -moz-fit-content;
 	flex-shrink: 0;
 }
 
@@ -130,6 +131,7 @@
 	flex-basis: 0; /* all tabs are even */
 	flex-grow: 1; /* all tabs grow even */
 	max-width: fit-content;
+	max-width: -moz-fit-content;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.sizing-fit.sticky-compact,
@@ -169,6 +171,10 @@
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container.disable-sticky-tabs > .tab.sizing-fit.sticky-shrink,
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container.disable-sticky-tabs > .tab.sizing-shrink.sticky-shrink {
 	position: static; /** disable sticky positions for sticky compact/shrink tabs if the available space is too little */
+}
+
+.monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.tab-actions-left .action-label {
+	margin-right: 4px !important;
 }
 
 .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.sizing-shrink.tab-actions-left::after,

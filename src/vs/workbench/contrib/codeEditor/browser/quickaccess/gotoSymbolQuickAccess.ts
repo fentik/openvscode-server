@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from 'vs/nls';
-import { IKeyMods, IQuickPickSeparator, IQuickInputService, IQuickPick, ItemActivation } from 'vs/platform/quickinput/common/quickInput';
+import { IKeyMods, IQuickPickSeparator, IQuickInputService, IQuickPick } from 'vs/platform/quickinput/common/quickInput';
+import { IEditor } from 'vs/editor/common/editorCommon';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IRange } from 'vs/editor/common/core/range';
 import { Registry } from 'vs/platform/registry/common/platform';
@@ -116,6 +117,14 @@ export class GotoSymbolQuickAccessProvider extends AbstractGotoSymbolQuickAccess
 		}
 
 		return this.doGetSymbolPicks(this.getDocumentSymbols(model, token), prepareQuery(filter), options, token);
+	}
+
+	override addDecorations(editor: IEditor, range: IRange): void {
+		super.addDecorations(editor, range);
+	}
+
+	override clearDecorations(editor: IEditor): void {
+		super.clearDecorations(editor);
 	}
 
 	//#endregion
@@ -261,7 +270,7 @@ class GotoSymbolAction extends Action2 {
 	}
 
 	run(accessor: ServicesAccessor) {
-		accessor.get(IQuickInputService).quickAccess.show(GotoSymbolQuickAccessProvider.PREFIX, { itemActivation: ItemActivation.NONE });
+		accessor.get(IQuickInputService).quickAccess.show(GotoSymbolQuickAccessProvider.PREFIX);
 	}
 }
 

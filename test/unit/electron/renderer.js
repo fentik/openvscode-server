@@ -72,13 +72,6 @@ if (util.inspect && util.inspect['defaultOptions']) {
 	util.inspect['defaultOptions'].customInspect = false;
 }
 
-// VSCODE_GLOBALS: node_modules
-globalThis._VSCODE_NODE_MODULES = new Proxy(Object.create(null), { get: (_target, mod) => (require.__$__nodeRequire ?? require)(String(mod)) });
-
-// VSCODE_GLOBALS: package/product.json
-globalThis._VSCODE_PRODUCT_JSON = (require.__$__nodeRequire ?? require)('../../../product.json');
-globalThis._VSCODE_PACKAGE_JSON = (require.__$__nodeRequire ?? require)('../../../package.json');
-
 const _tests_glob = '**/test/**/*.test.js';
 let loader;
 let _out;
@@ -91,6 +84,7 @@ function initLoader(opts) {
 	loader = require(`${_out}/vs/loader`);
 	const loaderConfig = {
 		nodeRequire: require,
+		nodeMain: __filename,
 		catchError: true,
 		baseUrl: bootstrap.fileUriFromPath(path.join(__dirname, '../../../src'), { isWindows: process.platform === 'win32' }),
 		paths: {
@@ -305,7 +299,7 @@ function runTests(opts) {
 			mocha.grep(opts.grep);
 		}
 
-		if (!opts.dev) {
+		if (!opts.debug) {
 			mocha.reporter(IPCReporter);
 		}
 
@@ -315,7 +309,7 @@ function runTests(opts) {
 			});
 		});
 
-		if (opts.dev) {
+		if (opts.debug) {
 			runner.on('fail', (test, err) => {
 
 				console.error(test.fullTitle());

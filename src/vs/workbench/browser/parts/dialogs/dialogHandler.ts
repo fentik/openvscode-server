@@ -9,6 +9,8 @@ import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { ILogService } from 'vs/platform/log/common/log';
 import Severity from 'vs/base/common/severity';
 import { Dialog, IDialogResult } from 'vs/base/browser/ui/dialog/dialog';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { attachDialogStyler } from 'vs/platform/theme/common/styler';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { EventHelper } from 'vs/base/browser/dom';
@@ -18,7 +20,6 @@ import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService
 import { fromNow } from 'vs/base/common/date';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { MarkdownRenderer } from 'vs/editor/contrib/markdownRenderer/browser/markdownRenderer';
-import { defaultButtonStyles, defaultCheckboxStyles, defaultDialogStyles, defaultInputBoxStyles } from 'vs/platform/theme/browser/defaultStyles';
 
 export class BrowserDialogHandler implements IDialogHandler {
 
@@ -36,6 +37,7 @@ export class BrowserDialogHandler implements IDialogHandler {
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@ILayoutService private readonly layoutService: ILayoutService,
+		@IThemeService private readonly themeService: IThemeService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IProductService private readonly productService: IProductService,
@@ -115,15 +117,11 @@ export class BrowserDialogHandler implements IDialogHandler {
 				buttonDetails: customOptions?.buttonDetails,
 				checkboxLabel: checkbox?.label,
 				checkboxChecked: checkbox?.checked,
-				inputs,
-				buttonStyles: defaultButtonStyles,
-				checkboxStyles: defaultCheckboxStyles,
-				inputBoxStyles: defaultInputBoxStyles,
-				dialogStyles: defaultDialogStyles
-			}
-		);
+				inputs
+			});
 
 		dialogDisposables.add(dialog);
+		dialogDisposables.add(attachDialogStyler(dialog, this.themeService));
 
 		const result = await dialog.show();
 		dialogDisposables.dispose();

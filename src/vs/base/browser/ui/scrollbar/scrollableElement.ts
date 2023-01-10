@@ -86,17 +86,6 @@ export class MouseWheelClassifier {
 		return (score <= 0.5);
 	}
 
-	public acceptStandardWheelEvent(e: StandardWheelEvent): void {
-		const osZoomFactor = window.devicePixelRatio / getZoomFactor();
-		if (platform.isWindows || platform.isLinux) {
-			// On Windows and Linux, the incoming delta events are multiplied with the OS zoom factor.
-			// The OS zoom factor can be reverse engineered by using the device pixel ratio and the configured zoom factor into account.
-			this.accept(Date.now(), e.deltaX / osZoomFactor, e.deltaY / osZoomFactor);
-		} else {
-			this.accept(Date.now(), e.deltaX, e.deltaY);
-		}
-	}
-
 	public accept(timestamp: number, deltaX: number, deltaY: number): void {
 		const item = new MouseWheelClassifierItem(timestamp, deltaX, deltaY);
 		item.score = this._computeScore(item);
@@ -345,7 +334,7 @@ export abstract class AbstractScrollableElement extends Widget {
 		this._revealOnScroll = value;
 	}
 
-	public delegateScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent) {
+	public triggerScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent) {
 		this._onMouseWheel(new StandardWheelEvent(browserEvent));
 	}
 
@@ -376,7 +365,14 @@ export abstract class AbstractScrollableElement extends Widget {
 
 		const classifier = MouseWheelClassifier.INSTANCE;
 		if (SCROLL_WHEEL_SMOOTH_SCROLL_ENABLED) {
-			classifier.acceptStandardWheelEvent(e);
+			const osZoomFactor = window.devicePixelRatio / getZoomFactor();
+			if (platform.isWindows || platform.isLinux) {
+				// On Windows and Linux, the incoming delta events are multiplied with the OS zoom factor.
+				// The OS zoom factor can be reverse engineered by using the device pixel ratio and the configured zoom factor into account.
+				classifier.accept(Date.now(), e.deltaX / osZoomFactor, e.deltaY / osZoomFactor);
+			} else {
+				classifier.accept(Date.now(), e.deltaX, e.deltaY);
+			}
 		}
 
 		// console.log(`${Date.now()}, ${e.deltaY}, ${e.deltaX}`);

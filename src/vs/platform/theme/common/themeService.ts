@@ -260,7 +260,7 @@ export class Themable extends Disposable {
 		this.updateStyles();
 	}
 
-	updateStyles(): void {
+	protected updateStyles(): void {
 		// Subclasses to override
 	}
 
@@ -276,7 +276,6 @@ export class Themable extends Disposable {
 }
 
 export interface IPartsSplash {
-	zoomLevel: number | undefined;
 	baseTheme: string;
 	colorInfo: {
 		background: string;

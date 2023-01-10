@@ -19,7 +19,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { EditorInputWithOptions, EditorInputWithOptionsAndGroup, IResourceDiffEditorInput, IResourceMergeEditorInput, IUntitledTextResourceEditorInput, IUntypedEditorInput } from 'vs/workbench/common/editor';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { PreferredGroup } from 'vs/workbench/services/editor/common/editorService';
-import { AtLeastOne } from 'vs/base/common/types';
 
 export const IEditorResolverService = createDecorator<IEditorResolverService>('editorResolverService');
 
@@ -43,7 +42,7 @@ const editorAssociationsConfigurationNode: IConfigurationNode = {
 	properties: {
 		'workbench.editorAssociations': {
 			type: 'object',
-			markdownDescription: localize('editor.editorAssociations', "Configure glob patterns to editors (for example `\"*.hex\": \"hexEditor.hexEdit\"`). These have precedence over the default behavior."),
+			markdownDescription: localize('editor.editorAssociations', "Configure glob patterns to editors (e.g. `\"*.hex\": \"hexEditor.hexEdit\"`). These have precedence over the default behavior."),
 			additionalProperties: {
 				type: 'string'
 			}
@@ -110,14 +109,12 @@ export type DiffEditorInputFactoryFunction = (diffEditorInput: IResourceDiffEdit
 
 export type MergeEditorInputFactoryFunction = (mergeEditorInput: IResourceMergeEditorInput, group: IEditorGroup) => EditorInputFactoryResult;
 
-type EditorInputFactories = {
-	createEditorInput?: EditorInputFactoryFunction;
+export type EditorInputFactoryObject = {
+	createEditorInput: EditorInputFactoryFunction;
 	createUntitledEditorInput?: UntitledEditorInputFactoryFunction;
 	createDiffEditorInput?: DiffEditorInputFactoryFunction;
 	createMergeEditorInput?: MergeEditorInputFactoryFunction;
 };
-
-export type EditorInputFactoryObject = AtLeastOne<EditorInputFactories>;
 
 export interface IEditorResolverService {
 	readonly _serviceBrand: undefined;
@@ -141,13 +138,7 @@ export interface IEditorResolverService {
 	readonly onDidChangeEditorRegistrations: Event<void>;
 
 	/**
-	 * Given a callback, run the callback pausing the registration emitter
-	 */
-	bufferChangeEvents(callback: Function): void;
-
-	/**
-	 * Registers a specific editor. Editors with the same glob pattern and ID will be grouped together by the resolver.
-	 * This allows for registration of the factories in different locations
+	 * Registers a specific editor.
 	 * @param globPattern The glob pattern for this registration
 	 * @param editorInfo Information about the registration
 	 * @param options Specific options which apply to this registration
@@ -161,12 +152,12 @@ export interface IEditorResolverService {
 	): IDisposable;
 
 	/**
-	 * Given an editor resolves it to the suitable ResolvedEitor based on user extensions, settings, and built-in editors
+	 * Given an editor resolves it to the suitable EditorInputWithOptionsAndGroup based on user extensions, settings, and built-in editors
 	 * @param editor The editor to resolve
 	 * @param preferredGroup The group you want to open the editor in
 	 * @returns An EditorInputWithOptionsAndGroup if there is an available editor or a status of how to proceed
 	 */
-	resolveEditor(editor: IUntypedEditorInput, preferredGroup: PreferredGroup | undefined): Promise<ResolvedEditor>;
+	resolveEditor(editor: EditorInputWithOptions | IUntypedEditorInput, preferredGroup: PreferredGroup | undefined): Promise<ResolvedEditor>;
 
 	/**
 	 * Given a resource returns all the editor ids that match that resource. If there is exclusive editor we return an empty array

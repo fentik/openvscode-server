@@ -19,8 +19,7 @@ export class SimpleBrowserManager {
 		this._activeView = undefined;
 	}
 
-	public show(inputUri: string | vscode.Uri, options?: ShowOptions): void {
-		const url = typeof inputUri === 'string' ? inputUri : inputUri.toString(true);
+	public show(url: string, options?: ShowOptions): void {
 		if (this._activeView) {
 			this._activeView.show(url, options);
 		} else {
@@ -35,7 +34,7 @@ export class SimpleBrowserManager {
 		const url = state?.url ?? '';
 		const view = SimpleBrowserView.restore(this.extensionUri, url, panel);
 		this.registerWebviewListeners(view);
-		this._activeView ??= view;
+		return;
 	}
 
 	private registerWebviewListeners(view: SimpleBrowserView) {
@@ -47,3 +46,4 @@ export class SimpleBrowserManager {
 	}
 
 }
+

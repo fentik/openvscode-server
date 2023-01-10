@@ -12,22 +12,19 @@ const shell = require('gulp-shell');
 const es = require('event-stream');
 const vfs = require('vinyl-fs');
 const util = require('./lib/util');
-const { getVersion } = require('./lib/getVersion');
 const task = require('./lib/task');
 const packageJson = require('../package.json');
 const product = require('../product.json');
-const dependenciesGenerator = require('./linux/dependencies-generator');
+const rpmDependenciesGenerator = require('./linux/rpm/dependencies-generator');
+const debianDependenciesGenerator = require('./linux/debian/dependencies-generator');
 const sysrootInstaller = require('./linux/debian/install-sysroot');
 const debianRecommendedDependencies = require('./linux/debian/dep-lists').recommendedDeps;
 const path = require('path');
 const root = path.dirname(__dirname);
-const commit = getVersion(root);
+const commit = util.getVersion(root);
 
 const linuxPackageRevision = Math.floor(new Date().getTime() / 1000);
 
-/**
- * @param {string} arch
- */
 function getDebPackageArch(arch) {
 	return { x64: 'amd64', armhf: 'armhf', arm64: 'arm64' }[arch];
 }
@@ -83,7 +80,7 @@ function prepareDebPackage(arch) {
 			async function () {
 				const that = this;
 				const sysroot = await sysrootInstaller.getSysroot(debArch);
-				const dependencies = dependenciesGenerator.getDependencies('deb', binaryDir, product.applicationName, debArch, sysroot);
+				const dependencies = debianDependenciesGenerator.getDependencies(binaryDir, product.applicationName, debArch, sysroot);
 				gulp.src('resources/linux/debian/control.template', { base: '.' })
 					.pipe(replace('@@NAME@@', product.applicationName))
 					.pipe(replace('@@VERSION@@', packageJson.version + '-' + linuxPackageRevision))
@@ -186,7 +183,7 @@ function prepareRpmPackage(arch) {
 		const code = gulp.src(binaryDir + '/**/*', { base: binaryDir })
 			.pipe(rename(function (p) { p.dirname = 'BUILD/usr/share/' + product.applicationName + '/' + p.dirname; }));
 
-		const dependencies = dependenciesGenerator.getDependencies('rpm', binaryDir, product.applicationName, rpmArch);
+		const dependencies = rpmDependenciesGenerator.getDependencies(binaryDir, product.applicationName, rpmArch);
 		const spec = gulp.src('resources/linux/rpm/code.spec.template', { base: '.' })
 			.pipe(replace('@@NAME@@', product.applicationName))
 			.pipe(replace('@@NAME_LONG@@', product.nameLong))

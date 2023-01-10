@@ -57,17 +57,12 @@ export class LocalProcessRunningLocation {
 }
 export class LocalWebWorkerRunningLocation {
 	public readonly kind = ExtensionHostKind.LocalWebWorker;
-	constructor(
-		public readonly affinity: number
-	) { }
+	public readonly affinity = 0;
 	public equals(other: ExtensionRunningLocation) {
-		return (this.kind === other.kind && this.affinity === other.affinity);
+		return (this.kind === other.kind);
 	}
 	public asString(): string {
-		if (this.affinity === 0) {
-			return 'LocalWebWorker';
-		}
-		return `LocalWebWorker${this.affinity}`;
+		return 'LocalWebWorker';
 	}
 }
 export class RemoteRunningLocation {
@@ -409,9 +404,6 @@ export class ExtensionPointContribution<T> {
 }
 
 export const ExtensionHostLogFileName = 'exthost';
-export const localExtHostLog = 'extHostLog';
-export const remoteExtHostLog = 'remoteExtHostLog';
-export const webWorkerExtHostLog = 'webWorkerExtHostLog';
 
 export interface IWillActivateEvent {
 	readonly event: string;
@@ -451,15 +443,7 @@ export interface IExtensionService {
 	/**
 	 * Fired when the available extensions change (i.e. when extensions are added or removed).
 	 */
-	onDidChangeExtensions: Event<{ readonly added: readonly IExtensionDescription[]; readonly removed: readonly IExtensionDescription[] }>;
-
-	/**
-	 * All registered extensions.
-	 * - List will be empty initially during workbench startup and will be filled with extensions as they are registered
-	 * - Listen to `onDidChangeExtensions` event for any changes to the extensions list. It will change as extensions get registered or de-reigstered.
-	 * - Listen to `onDidRegisterExtensions` event or wait for `whenInstalledExtensionsRegistered` promise to get the initial list of registered extensions.
-	 */
-	readonly extensions: readonly IExtensionDescription[];
+	onDidChangeExtensions: Event<void>;
 
 	/**
 	 * An event that is fired when activation happens.
@@ -496,6 +480,11 @@ export interface IExtensionService {
 	 * their extension points got handled.
 	 */
 	whenInstalledExtensionsRegistered(): Promise<boolean>;
+
+	/**
+	 * Return all registered extensions
+	 */
+	getExtensions(): Promise<IExtensionDescription[]>;
 
 	/**
 	 * Return a specific extension
@@ -556,6 +545,12 @@ export interface IExtensionService {
 	 * @param env New properties for the remote extension host
 	 */
 	setRemoteEnvironment(env: { [key: string]: string | null }): Promise<void>;
+
+	/**
+	 * Please do not use!
+	 * (This is public such that the extension host process can coordinate with and call back in the IExtensionService)
+	 */
+	_activateById(extensionId: ExtensionIdentifier, reason: ExtensionActivationReason): Promise<void>;
 }
 
 export interface IInternalExtensionService {
@@ -592,8 +587,7 @@ export function toExtensionDescription(extension: IExtension, isUnderDevelopment
 		extensionLocation: extension.location,
 		...extension.manifest,
 		uuid: extension.identifier.uuid,
-		targetPlatform: extension.targetPlatform,
-		browserNlsBundleUris: extension.browserNlsBundleUris
+		targetPlatform: extension.targetPlatform
 	};
 }
 
@@ -602,13 +596,13 @@ export class NullExtensionService implements IExtensionService {
 	declare readonly _serviceBrand: undefined;
 	onDidRegisterExtensions: Event<void> = Event.None;
 	onDidChangeExtensionsStatus: Event<ExtensionIdentifier[]> = Event.None;
-	onDidChangeExtensions = Event.None;
+	onDidChangeExtensions: Event<void> = Event.None;
 	onWillActivateByEvent: Event<IWillActivateEvent> = Event.None;
 	onDidChangeResponsiveChange: Event<IResponsiveStateChangeEvent> = Event.None;
-	readonly extensions = [];
 	activateByEvent(_activationEvent: string): Promise<void> { return Promise.resolve(undefined); }
 	activationEventIsDone(_activationEvent: string): boolean { return false; }
 	whenInstalledExtensionsRegistered(): Promise<boolean> { return Promise.resolve(true); }
+	getExtensions(): Promise<IExtensionDescription[]> { return Promise.resolve([]); }
 	getExtension() { return Promise.resolve(undefined); }
 	readExtensionPointContributions<T>(_extPoint: IExtensionPoint<T>): Promise<ExtensionPointContribution<T>[]> { return Promise.resolve(Object.create(null)); }
 	getExtensionsStatus(): { [id: string]: IExtensionsStatus } { return Object.create(null); }
@@ -620,4 +614,5 @@ export class NullExtensionService implements IExtensionService {
 	async setRemoteEnvironment(_env: { [key: string]: string | null }): Promise<void> { }
 	canAddExtension(): boolean { return false; }
 	canRemoveExtension(): boolean { return false; }
+	_activateById(_extensionId: ExtensionIdentifier, _reason: ExtensionActivationReason): Promise<void> { return Promise.resolve(); }
 }

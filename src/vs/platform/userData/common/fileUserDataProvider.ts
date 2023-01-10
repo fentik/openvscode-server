@@ -9,7 +9,7 @@ import { URI } from 'vs/base/common/uri';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { newWriteableStream, ReadableStreamEvents } from 'vs/base/common/stream';
 import { ILogService } from 'vs/platform/log/common/log';
-import { TernarySearchTree } from 'vs/base/common/ternarySearchTree';
+import { TernarySearchTree } from 'vs/base/common/map';
 import { VSBuffer } from 'vs/base/common/buffer';
 
 /**

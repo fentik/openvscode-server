@@ -11,7 +11,7 @@ import { workbenchInstantiationService, TestServiceAccessor, getLastResolvedFile
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IEditorFactoryRegistry, Verbosity, EditorExtensions, EditorInputCapabilities } from 'vs/workbench/common/editor';
 import { EncodingMode, TextFileOperationError, TextFileOperationResult } from 'vs/workbench/services/textfile/common/textfiles';
-import { FileOperationResult, NotModifiedSinceFileOperationError, TooLargeFileOperationError } from 'vs/platform/files/common/files';
+import { FileOperationResult, FileOperationError, NotModifiedSinceFileOperationError, FileSystemProviderCapabilities } from 'vs/platform/files/common/files';
 import { TextFileEditorModel } from 'vs/workbench/services/textfile/common/textFileEditorModel';
 import { timeout } from 'vs/base/common/async';
 import { PLAINTEXT_LANGUAGE_ID } from 'vs/editor/common/languages/modesRegistry';
@@ -35,10 +35,6 @@ suite('Files - FileEditorInput', () => {
 
 	class TestTextEditorService extends TextEditorService {
 		override createTextEditor(input: IResourceEditorInput) {
-			return createFileInput(input.resource);
-		}
-
-		override async resolveTextEditor(input: IResourceEditorInput) {
 			return createFileInput(input.resource);
 		}
 	}
@@ -127,10 +123,11 @@ suite('Files - FileEditorInput', () => {
 
 	test('reports as readonly with readonly file scheme', async function () {
 
-		const inMemoryFilesystemProvider = new InMemoryFileSystemProvider();
-		inMemoryFilesystemProvider.setReadOnly(true);
+		class ReadonlyInMemoryFileSystemProvider extends InMemoryFileSystemProvider {
+			override readonly capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.Readonly;
+		}
 
-		const disposable = accessor.fileService.registerProvider('someTestingReadonlyScheme', inMemoryFilesystemProvider);
+		const disposable = accessor.fileService.registerProvider('someTestingReadonlyScheme', new ReadonlyInMemoryFileSystemProvider());
 		try {
 			const input = createFileInput(toResource.call(this, '/foo/bar/file.js').with({ scheme: 'someTestingReadonlyScheme' }));
 
@@ -288,18 +285,14 @@ suite('Files - FileEditorInput', () => {
 		resolved.dispose();
 	});
 
-	test('resolve throws for too large files', async function () {
+	test('resolve handles too large files', async function () {
 		const input = createFileInput(toResource.call(this, '/foo/bar/updatefile.js'));
 
-		let e: Error | undefined = undefined;
-		accessor.textFileService.setReadStreamErrorOnce(new TooLargeFileOperationError('error', FileOperationResult.FILE_TOO_LARGE, 1000));
-		try {
-			await input.resolve();
-		} catch (error) {
-			e = error;
-		}
-		assert.ok(e);
-		input.dispose();
+		accessor.textFileService.setReadStreamErrorOnce(new FileOperationError('error', FileOperationResult.FILE_TOO_LARGE));
+
+		const resolved = await input.resolve();
+		assert.ok(resolved);
+		resolved.dispose();
 	});
 
 	test('attaches to model when created and reports dirty', async function () {

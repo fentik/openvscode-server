@@ -159,7 +159,7 @@ export class CompressedObjectTreeModel<T extends NonNullable<any>, TFilterData e
 		const compressedNode = this.nodes.get(element);
 
 		if (!compressedNode) {
-			throw new TreeError(this.user, 'Unknown compressed tree node');
+			throw new Error('Unknown compressed tree node');
 		}
 
 		const node = this.model.getNode(compressedNode) as ITreeNode<ICompressedTreeNode<T>, TFilterData>;

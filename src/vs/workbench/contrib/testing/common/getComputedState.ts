@@ -24,7 +24,7 @@ export interface IComputedStateAndDurationAccessor<T> extends IComputedStateAcce
 	setComputedDuration(item: T, duration: number | undefined): void;
 }
 
-const isDurationAccessor = <T>(accessor: IComputedStateAccessor<T>): accessor is IComputedStateAndDurationAccessor<T> => 'getOwnDuration' in accessor;
+export const isDurationAccessor = <T>(accessor: IComputedStateAccessor<T>): accessor is IComputedStateAndDurationAccessor<T> => 'getOwnDuration' in accessor;
 
 /**
  * Gets the computed state for the node.
@@ -32,7 +32,7 @@ const isDurationAccessor = <T>(accessor: IComputedStateAccessor<T>): accessor is
  * if it was previously set.
  */
 
-const getComputedState = <T>(accessor: IComputedStateAccessor<T>, node: T, force = false) => {
+export const getComputedState = <T>(accessor: IComputedStateAccessor<T>, node: T, force = false) => {
 	let computed = accessor.getCurrentComputedState(node);
 	if (computed === undefined || force) {
 		computed = accessor.getOwnState(node) ?? TestResultState.Unset;
@@ -50,7 +50,7 @@ const getComputedState = <T>(accessor: IComputedStateAccessor<T>, node: T, force
 	return computed;
 };
 
-const getComputedDuration = <T>(accessor: IComputedStateAndDurationAccessor<T>, node: T, force = false): number | undefined => {
+export const getComputedDuration = <T>(accessor: IComputedStateAndDurationAccessor<T>, node: T, force = false): number | undefined => {
 	let computed = accessor.getCurrentComputedDuration(node);
 	if (computed === undefined || force) {
 		const own = accessor.getOwnDuration(node);

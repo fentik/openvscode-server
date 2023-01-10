@@ -42,8 +42,7 @@ export class TestingContentProvider implements IWorkbenchContribution, ITextMode
 			return null;
 		}
 
-		const result = this.resultService.getResult(parsed.resultId);
-		const test = result?.getStateById(parsed.testExtId);
+		const test = this.resultService.getResult(parsed.resultId)?.getStateById(parsed.testExtId);
 
 		if (!test) {
 			return null;
@@ -64,19 +63,15 @@ export class TestingContentProvider implements IWorkbenchContribution, ITextMode
 			}
 			case TestUriType.ResultMessage: {
 				const message = test.tasks[parsed.taskIndex].messages[parsed.messageIndex];
-				if (!message) {
-					break;
+				if (message) {
+					if (typeof message.message === 'string') {
+						text = message.type === TestMessageType.Output ? removeAnsiEscapeCodes(message.message) : message.message;
+					} else {
+						text = message.message.value;
+						language = this.languageService.createById('markdown');
+					}
 				}
-
-				if (message.type === TestMessageType.Output) {
-					const content = await result!.getOutputRange(message.offset, message.length);
-					text = removeAnsiEscapeCodes(content.toString());
-				} else if (typeof message.message === 'string') {
-					text = message.message;
-				} else {
-					text = message.message.value;
-					language = this.languageService.createById('markdown');
-				}
+				break;
 			}
 		}
 

@@ -16,7 +16,6 @@ import { TokenClassificationExtensionPoints } from 'vs/workbench/services/themes
 import { LanguageConfigurationFileHandler } from 'vs/workbench/contrib/codeEditor/browser/languageConfigurationExtensionPoint';
 
 // --- mainThread participants
-import './mainThreadLocalization';
 import './mainThreadBulkEdits';
 import './mainThreadCodeInsets';
 import './mainThreadCLICommands';
@@ -75,7 +74,6 @@ import './mainThreadAuthentication';
 import './mainThreadTimeline';
 import './mainThreadTesting';
 import './mainThreadSecretState';
-import './mainThreadProfilContentHandlers';
 
 export class ExtensionPoints implements IWorkbenchContribution {
 

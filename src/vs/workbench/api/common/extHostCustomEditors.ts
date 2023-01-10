@@ -112,20 +112,21 @@ class CustomDocumentStore {
 	private key(viewType: string, resource: vscode.Uri): string {
 		return `${viewType}@@@${resource}`;
 	}
+
 }
 
-const enum CustomEditorType {
+const enum WebviewEditorType {
 	Text,
 	Custom
 }
 
 type ProviderEntry = {
 	readonly extension: IExtensionDescription;
-	readonly type: CustomEditorType.Text;
+	readonly type: WebviewEditorType.Text;
 	readonly provider: vscode.CustomTextEditorProvider;
 } | {
 	readonly extension: IExtensionDescription;
-	readonly type: CustomEditorType.Custom;
+	readonly type: WebviewEditorType.Custom;
 	readonly provider: vscode.CustomReadonlyEditorProvider;
 };
 
@@ -133,18 +134,18 @@ class EditorProviderStore {
 	private readonly _providers = new Map<string, ProviderEntry>();
 
 	public addTextProvider(viewType: string, extension: IExtensionDescription, provider: vscode.CustomTextEditorProvider): vscode.Disposable {
-		return this.add(CustomEditorType.Text, viewType, extension, provider);
+		return this.add(WebviewEditorType.Text, viewType, extension, provider);
 	}
 
 	public addCustomProvider(viewType: string, extension: IExtensionDescription, provider: vscode.CustomReadonlyEditorProvider): vscode.Disposable {
-		return this.add(CustomEditorType.Custom, viewType, extension, provider);
+		return this.add(WebviewEditorType.Custom, viewType, extension, provider);
 	}
 
 	public get(viewType: string): ProviderEntry | undefined {
 		return this._providers.get(viewType);
 	}
 
-	private add(type: CustomEditorType, viewType: string, extension: IExtensionDescription, provider: vscode.CustomTextEditorProvider | vscode.CustomReadonlyEditorProvider): vscode.Disposable {
+	private add(type: WebviewEditorType, viewType: string, extension: IExtensionDescription, provider: vscode.CustomTextEditorProvider | vscode.CustomReadonlyEditorProvider): vscode.Disposable {
 		if (this._providers.has(viewType)) {
 			throw new Error(`Provider for viewType:${viewType} already registered`);
 		}
@@ -186,7 +187,7 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 		} else {
 			disposables.add(this._editorProviders.addCustomProvider(viewType, extension, provider));
 
-			if (isCustomEditorProviderWithEditingCapability(provider)) {
+			if (this.supportEditing(provider)) {
 				disposables.add(provider.onDidChangeCustomDocument(e => {
 					const entry = this.getCustomDocumentEntry(viewType, e.document.uri);
 					if (isEditEvent(e)) {
@@ -214,7 +215,7 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 			throw new Error(`No provider found for '${viewType}'`);
 		}
 
-		if (entry.type !== CustomEditorType.Custom) {
+		if (entry.type !== WebviewEditorType.Custom) {
 			throw new Error(`Invalid provide type for '${viewType}'`);
 		}
 
@@ -222,12 +223,12 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 		const document = await entry.provider.openCustomDocument(revivedResource, { backupId, untitledDocumentData: untitledDocumentData?.buffer }, cancellation);
 
 		let storageRoot: URI | undefined;
-		if (isCustomEditorProviderWithEditingCapability(entry.provider) && this._extensionStoragePaths) {
+		if (this.supportEditing(entry.provider) && this._extensionStoragePaths) {
 			storageRoot = this._extensionStoragePaths.workspaceValue(entry.extension) ?? this._extensionStoragePaths.globalValue(entry.extension);
 		}
 		this._documents.add(viewType, document, storageRoot);
 
-		return { editable: isCustomEditorProviderWithEditingCapability(entry.provider) };
+		return { editable: this.supportEditing(entry.provider) };
 	}
 
 	async $disposeCustomDocument(resource: UriComponents, viewType: string): Promise<void> {
@@ -236,7 +237,7 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 			throw new Error(`No provider found for '${viewType}'`);
 		}
 
-		if (entry.type !== CustomEditorType.Custom) {
+		if (entry.type !== WebviewEditorType.Custom) {
 			throw new Error(`Invalid provider type for '${viewType}'`);
 		}
 
@@ -246,19 +247,18 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 		document.dispose();
 	}
 
-	async $resolveCustomEditor(
+	async $resolveWebviewEditor(
 		resource: UriComponents,
 		handle: extHostProtocol.WebviewHandle,
 		viewType: string,
 		initData: {
 			title: string;
-			contentOptions: extHostProtocol.IWebviewContentOptions;
-			options: extHostProtocol.IWebviewPanelOptions;
+			webviewOptions: extHostProtocol.IWebviewContentOptions;
+			panelOptions: extHostProtocol.IWebviewPanelOptions;
 		},
 		position: EditorGroupColumn,
 		cancellation: CancellationToken,
 	): Promise<void> {
-		console.log('xxxx');
 		const entry = this._editorProviders.get(viewType);
 		if (!entry) {
 			throw new Error(`No provider found for '${viewType}'`);
@@ -266,23 +266,26 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 
 		const viewColumn = typeConverters.ViewColumn.to(position);
 
-		const webview = this._extHostWebview.createNewWebview(handle, initData.contentOptions, entry.extension);
-		const panel = this._extHostWebviewPanels.createNewWebviewPanel(handle, viewType, initData.title, viewColumn, initData.options, webview, true);
+		const webview = this._extHostWebview.createNewWebview(handle, initData.webviewOptions, entry.extension);
+		const panel = this._extHostWebviewPanels.createNewWebviewPanel(handle, viewType, initData.title, viewColumn, initData.panelOptions, webview, true);
 
 		const revivedResource = URI.revive(resource);
 
 		switch (entry.type) {
-			case CustomEditorType.Custom: {
-				const { document } = this.getCustomDocumentEntry(viewType, revivedResource);
-				return entry.provider.resolveCustomEditor(document, panel, cancellation);
-			}
-			case CustomEditorType.Text: {
-				const document = this._extHostDocuments.getDocument(revivedResource);
-				return entry.provider.resolveCustomTextEditor(document, panel, cancellation);
-			}
-			default: {
-				throw new Error('Unknown webview provider type');
-			}
+			case WebviewEditorType.Custom:
+				{
+					const { document } = this.getCustomDocumentEntry(viewType, revivedResource);
+					return entry.provider.resolveCustomEditor(document, panel, cancellation);
+				}
+			case WebviewEditorType.Text:
+				{
+					const document = this._extHostDocuments.getDocument(revivedResource);
+					return entry.provider.resolveCustomTextEditor(document, panel, cancellation);
+				}
+			default:
+				{
+					throw new Error('Unknown webview provider type');
+				}
 		}
 	}
 
@@ -363,15 +366,17 @@ export class ExtHostCustomEditors implements extHostProtocol.ExtHostCustomEditor
 	private getCustomEditorProvider(viewType: string): vscode.CustomEditorProvider {
 		const entry = this._editorProviders.get(viewType);
 		const provider = entry?.provider;
-		if (!provider || !isCustomEditorProviderWithEditingCapability(provider)) {
+		if (!provider || !this.supportEditing(provider)) {
 			throw new Error('Custom document is not editable');
 		}
 		return provider;
 	}
-}
 
-function isCustomEditorProviderWithEditingCapability(provider: vscode.CustomTextEditorProvider | vscode.CustomEditorProvider | vscode.CustomReadonlyEditorProvider): provider is vscode.CustomEditorProvider {
-	return !!(provider as vscode.CustomEditorProvider).onDidChangeCustomDocument;
+	private supportEditing(
+		provider: vscode.CustomTextEditorProvider | vscode.CustomEditorProvider | vscode.CustomReadonlyEditorProvider
+	): provider is vscode.CustomEditorProvider {
+		return !!(provider as vscode.CustomEditorProvider).onDidChangeCustomDocument;
+	}
 }
 
 function isCustomTextEditorProvider(provider: vscode.CustomReadonlyEditorProvider<vscode.CustomDocument> | vscode.CustomTextEditorProvider): provider is vscode.CustomTextEditorProvider {
@@ -387,3 +392,4 @@ function hashPath(resource: URI): string {
 	const str = resource.scheme === Schemas.file || resource.scheme === Schemas.untitled ? resource.fsPath : resource.toString();
 	return hash(str) + '';
 }
+

@@ -93,7 +93,6 @@ export class ViewModel extends Disposable implements IViewModel {
 			const wrappingStrategy = options.get(EditorOption.wrappingStrategy);
 			const wrappingInfo = options.get(EditorOption.wrappingInfo);
 			const wrappingIndent = options.get(EditorOption.wrappingIndent);
-			const wordBreak = options.get(EditorOption.wordBreak);
 
 			this._lines = new ViewModelLinesFromProjectedModel(
 				this._editorId,
@@ -104,8 +103,7 @@ export class ViewModel extends Disposable implements IViewModel {
 				this.model.getOptions().tabSize,
 				wrappingStrategy,
 				wrappingInfo.wrappingColumn,
-				wrappingIndent,
-				wordBreak
+				wrappingIndent
 			);
 		}
 
@@ -214,33 +212,34 @@ export class ViewModel extends Disposable implements IViewModel {
 		this._eventDispatcher.emitSingleViewEvent(new viewEvents.ViewCompositionEndEvent());
 	}
 
-	private _captureStableViewport(): StableViewport {
-		// We might need to restore the current start view range, so save it (if available)
-		// But only if the scroll position is not at the top of the file
-		if (this._viewportStart.isValid && this.viewLayout.getCurrentScrollTop() > 0) {
-			const previousViewportStartViewPosition = new Position(this._viewportStart.viewLineNumber, this.getLineMinColumn(this._viewportStart.viewLineNumber));
-			const previousViewportStartModelPosition = this.coordinatesConverter.convertViewPositionToModelPosition(previousViewportStartViewPosition);
-			return new StableViewport(previousViewportStartModelPosition, this._viewportStart.startLineDelta);
-		}
-		return new StableViewport(null, 0);
-	}
-
 	private _onConfigurationChanged(eventsCollector: ViewModelEventsCollector, e: ConfigurationChangedEvent): void {
-		const stableViewport = this._captureStableViewport();
+
+		// We might need to restore the current centered view range, so save it (if available)
+		let previousViewportStartModelPosition: Position | null = null;
+		if (this._viewportStart.isValid) {
+			const previousViewportStartViewPosition = new Position(this._viewportStart.viewLineNumber, this.getLineMinColumn(this._viewportStart.viewLineNumber));
+			previousViewportStartModelPosition = this.coordinatesConverter.convertViewPositionToModelPosition(previousViewportStartViewPosition);
+		}
+		let restorePreviousViewportStart = false;
+
 		const options = this._configuration.options;
 		const fontInfo = options.get(EditorOption.fontInfo);
 		const wrappingStrategy = options.get(EditorOption.wrappingStrategy);
 		const wrappingInfo = options.get(EditorOption.wrappingInfo);
 		const wrappingIndent = options.get(EditorOption.wrappingIndent);
-		const wordBreak = options.get(EditorOption.wordBreak);
 
-		if (this._lines.setWrappingSettings(fontInfo, wrappingStrategy, wrappingInfo.wrappingColumn, wrappingIndent, wordBreak)) {
+		if (this._lines.setWrappingSettings(fontInfo, wrappingStrategy, wrappingInfo.wrappingColumn, wrappingIndent)) {
 			eventsCollector.emitViewEvent(new viewEvents.ViewFlushedEvent());
 			eventsCollector.emitViewEvent(new viewEvents.ViewLineMappingChangedEvent());
 			eventsCollector.emitViewEvent(new viewEvents.ViewDecorationsChangedEvent(null));
 			this._cursor.onLineMappingChanged(eventsCollector);
 			this._decorations.onLineMappingChanged();
 			this.viewLayout.onFlushed(this.getLineCount());
+
+			if (this.viewLayout.getCurrentScrollTop() !== 0) {
+				// Never change the scroll position from 0 to something else...
+				restorePreviousViewportStart = true;
+			}
 
 			this._updateConfigurationViewLineCount.schedule();
 		}
@@ -254,7 +253,11 @@ export class ViewModel extends Disposable implements IViewModel {
 		eventsCollector.emitViewEvent(new viewEvents.ViewConfigurationChangedEvent(e));
 		this.viewLayout.onConfigurationChanged(e);
 
-		stableViewport.recoverViewportStart(this.coordinatesConverter, this.viewLayout);
+		if (restorePreviousViewportStart && previousViewportStartModelPosition) {
+			const viewPosition = this.coordinatesConverter.convertModelPositionToViewPosition(previousViewportStartModelPosition);
+			const viewPositionTop = this.viewLayout.getVerticalOffsetForLineNumber(viewPosition.lineNumber);
+			this.viewLayout.setScrollPosition({ scrollTop: viewPositionTop + this._viewportStart.startLineDelta }, ScrollType.Immediate);
+		}
 
 		if (CursorConfiguration.shouldRecreate(e)) {
 			this.cursorConfig = new CursorConfiguration(this.model.getLanguageId(), this.model.getOptions(), this._configuration, this.languageConfigurationService);
@@ -462,24 +465,11 @@ export class ViewModel extends Disposable implements IViewModel {
 		}));
 	}
 
-	private readonly hiddenAreasModel = new HiddenAreasModel();
-	private previousHiddenAreas: readonly Range[] = [];
-
-	public setHiddenAreas(ranges: Range[], source?: unknown): void {
-		this.hiddenAreasModel.setHiddenAreas(source, ranges);
-		const mergedRanges = this.hiddenAreasModel.getMergedRanges();
-		if (mergedRanges === this.previousHiddenAreas) {
-			return;
-		}
-
-		this.previousHiddenAreas = mergedRanges;
-
-		const stableViewport = this._captureStableViewport();
-
+	public setHiddenAreas(ranges: Range[]): void {
 		let lineMappingChanged = false;
 		try {
 			const eventsCollector = this._eventDispatcher.beginEmitViewEvents();
-			lineMappingChanged = this._lines.setHiddenAreas(mergedRanges);
+			lineMappingChanged = this._lines.setHiddenAreas(ranges);
 			if (lineMappingChanged) {
 				eventsCollector.emitViewEvent(new viewEvents.ViewFlushedEvent());
 				eventsCollector.emitViewEvent(new viewEvents.ViewLineMappingChangedEvent());
@@ -489,7 +479,6 @@ export class ViewModel extends Disposable implements IViewModel {
 				this.viewLayout.onFlushed(this.getLineCount());
 				this.viewLayout.onHeightMaybeChanged();
 			}
-			stableViewport.recoverViewportStart(this.coordinatesConverter, this.viewLayout);
 		} finally {
 			this._eventDispatcher.endEmitViewEvents();
 		}
@@ -686,8 +675,8 @@ export class ViewModel extends Disposable implements IViewModel {
 		return result + 2;
 	}
 
-	public getDecorationsInViewport(visibleRange: Range, onlyMinimapDecorations: boolean = false): ViewModelDecoration[] {
-		return this._decorations.getDecorationsViewportData(visibleRange, onlyMinimapDecorations).decorations;
+	public getDecorationsInViewport(visibleRange: Range): ViewModelDecoration[] {
+		return this._decorations.getDecorationsViewportData(visibleRange).decorations;
 	}
 
 	public getInjectedTextAt(viewPosition: Position): InjectedText | null {
@@ -772,25 +761,19 @@ export class ViewModel extends Disposable implements IViewModel {
 		const decorations = this.model.getOverviewRulerDecorations();
 		for (const decoration of decorations) {
 			const opts1 = <ModelDecorationOverviewRulerOptions>decoration.options.overviewRuler;
-			opts1?.invalidateCachedColor();
+			if (opts1) {
+				opts1.invalidateCachedColor();
+			}
 			const opts2 = <ModelDecorationMinimapOptions>decoration.options.minimap;
-			opts2?.invalidateCachedColor();
+			if (opts2) {
+				opts2.invalidateCachedColor();
+			}
 		}
 	}
 
 	public getValueInRange(range: Range, eol: EndOfLinePreference): string {
 		const modelRange = this.coordinatesConverter.convertViewRangeToModelRange(range);
 		return this.model.getValueInRange(modelRange, eol);
-	}
-
-	public getValueLengthInRange(range: Range, eol: EndOfLinePreference): number {
-		const modelRange = this.coordinatesConverter.convertViewRangeToModelRange(range);
-		return this.model.getValueLengthInRange(modelRange, eol);
-	}
-
-	public modifyPosition(position: Position, offset: number): Position {
-		const modelPosition = this.coordinatesConverter.convertViewPositionToModelPosition(position);
-		return this.model.modifyPosition(modelPosition, offset);
 	}
 
 	public deduceModelPositionRelativeToViewPosition(viewAnchorPosition: Position, deltaOffset: number, lineFeedCnt: number): Position {
@@ -1182,93 +1165,3 @@ class OverviewRulerDecorations {
 	}
 }
 
-class HiddenAreasModel {
-	private readonly hiddenAreas = new Map<unknown, Range[]>();
-	private shouldRecompute = false;
-	private ranges: Range[] = [];
-
-	setHiddenAreas(source: unknown, ranges: Range[]): void {
-		const existing = this.hiddenAreas.get(source);
-		if (existing && rangeArraysEqual(existing, ranges)) {
-			return;
-		}
-		this.hiddenAreas.set(source, ranges);
-		this.shouldRecompute = true;
-	}
-
-	/**
-	 * The returned array is immutable.
-	*/
-	getMergedRanges(): readonly Range[] {
-		if (!this.shouldRecompute) {
-			return this.ranges;
-		}
-		this.shouldRecompute = false;
-		const newRanges = Array.from(this.hiddenAreas.values()).reduce((r, hiddenAreas) => mergeLineRangeArray(r, hiddenAreas), []);
-		if (rangeArraysEqual(this.ranges, newRanges)) {
-			return this.ranges;
-		}
-		this.ranges = newRanges;
-		return this.ranges;
-	}
-}
-
-function mergeLineRangeArray(arr1: Range[], arr2: Range[]): Range[] {
-	const result = [];
-	let i = 0;
-	let j = 0;
-	while (i < arr1.length && j < arr2.length) {
-		const item1 = arr1[i];
-		const item2 = arr2[j];
-
-		if (item1.endLineNumber < item2.startLineNumber - 1) {
-			result.push(arr1[i++]);
-		} else if (item2.endLineNumber < item1.startLineNumber - 1) {
-			result.push(arr2[j++]);
-		} else {
-			const startLineNumber = Math.min(item1.startLineNumber, item2.startLineNumber);
-			const endLineNumber = Math.max(item1.endLineNumber, item2.endLineNumber);
-			result.push(new Range(startLineNumber, 1, endLineNumber, 1));
-			i++;
-			j++;
-		}
-	}
-	while (i < arr1.length) {
-		result.push(arr1[i++]);
-	}
-	while (j < arr2.length) {
-		result.push(arr2[j++]);
-	}
-	return result;
-}
-
-function rangeArraysEqual(arr1: Range[], arr2: Range[]): boolean {
-	if (arr1.length !== arr2.length) {
-		return false;
-	}
-	for (let i = 0; i < arr1.length; i++) {
-		if (!arr1[i].equalsRange(arr2[i])) {
-			return false;
-		}
-	}
-	return true;
-}
-
-/**
- * Maintain a stable viewport by trying to keep the first line in the viewport constant.
- */
-class StableViewport {
-	constructor(
-		public readonly viewportStartModelPosition: Position | null,
-		public readonly startLineDelta: number
-	) { }
-
-	public recoverViewportStart(coordinatesConverter: ICoordinatesConverter, viewLayout: ViewLayout): void {
-		if (!this.viewportStartModelPosition) {
-			return;
-		}
-		const viewPosition = coordinatesConverter.convertModelPositionToViewPosition(this.viewportStartModelPosition);
-		const viewPositionTop = viewLayout.getVerticalOffsetForLineNumber(viewPosition.lineNumber);
-		viewLayout.setScrollPosition({ scrollTop: viewPositionTop + this.startLineDelta }, ScrollType.Immediate);
-	}
-}

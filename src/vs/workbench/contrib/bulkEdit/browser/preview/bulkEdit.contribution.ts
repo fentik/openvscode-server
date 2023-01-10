@@ -189,7 +189,9 @@ registerAction2(class ApplyAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<any> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.accept();
+		if (view) {
+			view.accept();
+		}
 	}
 });
 
@@ -213,7 +215,9 @@ registerAction2(class DiscardAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.discard();
+		if (view) {
+			view.discard();
+		}
 	}
 });
 
@@ -242,7 +246,9 @@ registerAction2(class ToggleAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.toggleChecked();
+		if (view) {
+			view.toggleChecked();
+		}
 	}
 });
 
@@ -269,7 +275,9 @@ registerAction2(class GroupByFile extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.groupByFile();
+		if (view) {
+			view.groupByFile();
+		}
 	}
 });
 
@@ -294,7 +302,9 @@ registerAction2(class GroupByType extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.groupByType();
+		if (view) {
+			view.groupByType();
+		}
 	}
 });
 
@@ -318,7 +328,9 @@ registerAction2(class ToggleGrouping extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const viewsService = accessor.get(IViewsService);
 		const view = await getBulkEditPane(viewsService);
-		view?.toggleGrouping();
+		if (view) {
+			view.toggleGrouping();
+		}
 	}
 });
 
@@ -334,7 +346,7 @@ const container = Registry.as<IViewContainersRegistry>(ViewContainerExtensions.V
 	hideIfEmpty: true,
 	ctorDescriptor: new SyncDescriptor(
 		ViewPaneContainer,
-		[BulkEditPane.ID, { mergeViewWithContainerWhenSingleView: true }]
+		[BulkEditPane.ID, { mergeViewWithContainerWhenSingleView: true, donotShowContainerTitleWhenMergedWithContainer: true }]
 	),
 	icon: refactorPreviewViewIcon,
 	storageId: BulkEditPane.ID

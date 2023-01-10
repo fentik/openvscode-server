@@ -251,22 +251,22 @@ export class ExtHostConfigProvider {
 			},
 			inspect: <T>(key: string): ConfigurationInspect<T> | undefined => {
 				key = section ? `${section}.${key}` : key;
-				const config = this._configuration.inspect<T>(key, overrides, this._extHostWorkspace.workspace);
+				const config = deepClone(this._configuration.inspect<T>(key, overrides, this._extHostWorkspace.workspace));
 				if (config) {
 					return {
 						key,
 
-						defaultValue: deepClone(config.policy?.value ?? config.default?.value),
-						globalValue: deepClone(config.user?.value ?? config.application?.value),
-						workspaceValue: deepClone(config.workspace?.value),
-						workspaceFolderValue: deepClone(config.workspaceFolder?.value),
+						defaultValue: config.policy?.value ?? config.default?.value,
+						globalValue: config.user?.value ?? config.application?.value,
+						workspaceValue: config.workspace?.value,
+						workspaceFolderValue: config.workspaceFolder?.value,
 
-						defaultLanguageValue: deepClone(config.default?.override),
-						globalLanguageValue: deepClone(config.user?.override ?? config.application?.override),
-						workspaceLanguageValue: deepClone(config.workspace?.override),
-						workspaceFolderLanguageValue: deepClone(config.workspaceFolder?.override),
+						defaultLanguageValue: config.default?.override,
+						globalLanguageValue: config.user?.override ?? config.application?.override,
+						workspaceLanguageValue: config.workspace?.override,
+						workspaceFolderLanguageValue: config.workspaceFolder?.override,
 
-						languageIds: deepClone(config.overrideIdentifiers)
+						languageIds: config.overrideIdentifiers
 					};
 				}
 				return undefined;

@@ -23,7 +23,7 @@ import { ExtHostCommands } from './extHostCommands';
 
 type ProviderHandle = number;
 
-interface ExtHostComments {
+export interface ExtHostComments {
 	createCommentController(extension: IExtensionDescription, id: string, label: string): vscode.CommentController;
 }
 
@@ -66,7 +66,7 @@ export function createExtHostComments(mainContext: IMainContext, commands: ExtHo
 						}
 
 						return commentThread.value;
-					} else if (arg && (arg.$mid === MarshalledId.CommentThreadReply || arg.$mid === MarshalledId.CommentThreadInstance)) {
+					} else if (arg && arg.$mid === MarshalledId.CommentThreadReply) {
 						const commentController = this._commentControllers.get(arg.thread.commentControlHandle);
 
 						if (!commentController) {
@@ -77,10 +77,6 @@ export function createExtHostComments(mainContext: IMainContext, commands: ExtHo
 
 						if (!commentThread) {
 							return arg;
-						}
-
-						if (arg.$mid === MarshalledId.CommentThreadInstance) {
-							return commentThread.value;
 						}
 
 						return {
@@ -123,7 +119,7 @@ export function createExtHostComments(mainContext: IMainContext, commands: ExtHo
 							return arg;
 						}
 
-						const body: string = arg.text;
+						const body = arg.text;
 						const commentUniqueId = arg.commentUniqueId;
 
 						const comment = commentThread.getCommentByUniqueId(commentUniqueId);
@@ -132,12 +128,7 @@ export function createExtHostComments(mainContext: IMainContext, commands: ExtHo
 							return arg;
 						}
 
-						// If the old comment body was a markdown string, use a markdown string here too.
-						if (typeof comment.body === 'string') {
-							comment.body = body;
-						} else {
-							comment.body = new types.MarkdownString(body);
-						}
+						comment.body = body;
 						return comment;
 					}
 
@@ -629,7 +620,9 @@ export function createExtHostComments(mainContext: IMainContext, commands: ExtHo
 		$deleteCommentThread(threadHandle: number): void {
 			const thread = this._threads.get(threadHandle);
 
-			thread?.dispose();
+			if (thread) {
+				thread.dispose();
+			}
 
 			this._threads.delete(threadHandle);
 		}

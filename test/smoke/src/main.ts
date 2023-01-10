@@ -263,31 +263,30 @@ async function setupRepository(): Promise<void> {
 async function ensureStableCode(): Promise<void> {
 	let stableCodePath = opts['stable-build'];
 	if (!stableCodePath) {
-		const current = parseVersion(version!);
-		const versionsReq = await retry(() => measureAndLog(() => fetch('https://update.code.visualstudio.com/api/releases/stable'), 'versionReq', logger), 1000, 20);
+		const { major, minor } = parseVersion(version!);
+		const majorMinorVersion = `${major}.${minor - 1}`;
+		const versionsReq = await retry(() => measureAndLog(fetch('https://update.code.visualstudio.com/api/releases/stable', { headers: { 'x-api-version': '2' } }), 'versionReq', logger), 1000, 20);
 
 		if (!versionsReq.ok) {
 			throw new Error('Could not fetch releases from update server');
 		}
 
-		const versions: string[] = await measureAndLog(() => versionsReq.json(), 'versionReq.json()', logger);
-		const stableVersion = versions.find(raw => {
-			const version = parseVersion(raw);
-			return version.major < current.major || (version.major === current.major && version.minor < current.minor);
-		});
+		const versions: { version: string }[] = await measureAndLog(versionsReq.json(), 'versionReq.json()', logger);
+		const prefix = `${majorMinorVersion}.`;
+		const previousVersion = versions.find(v => v.version.startsWith(prefix));
 
-		if (!stableVersion) {
-			throw new Error(`Could not find suitable stable version for ${version}`);
+		if (!previousVersion) {
+			throw new Error(`Could not find suitable stable version ${majorMinorVersion}`);
 		}
 
-		logger.log(`Found VS Code v${version}, downloading previous VS Code version ${stableVersion}...`);
+		logger.log(`Found VS Code v${version}, downloading previous VS Code version ${previousVersion.version}...`);
 
 		let lastProgressMessage: string | undefined = undefined;
 		let lastProgressReportedAt = 0;
 		const stableCodeDestination = path.join(testDataPath, 's');
-		const stableCodeExecutable = await retry(() => measureAndLog(() => vscodetest.download({
+		const stableCodeExecutable = await retry(() => measureAndLog(vscodetest.download({
 			cachePath: stableCodeDestination,
-			version: stableVersion,
+			version: previousVersion.version,
 			extractSync: true,
 			reporter: {
 				report: report => {
@@ -340,9 +339,9 @@ async function setup(): Promise<void> {
 
 	if (!opts.web && !opts.remote && opts.build) {
 		// only enabled when running with --build and not in web or remote
-		await measureAndLog(() => ensureStableCode(), 'ensureStableCode', logger);
+		await measureAndLog(ensureStableCode(), 'ensureStableCode', logger);
 	}
-	await measureAndLog(() => setupRepository(), 'setupRepository', logger);
+	await measureAndLog(setupRepository(), 'setupRepository', logger);
 
 	logger.log('Smoketest setup done!\n');
 }
@@ -376,7 +375,7 @@ before(async function () {
 after(async function () {
 	try {
 		let deleted = false;
-		await measureAndLog(() => Promise.race([
+		await measureAndLog(Promise.race([
 			new Promise<void>((resolve, reject) => rimraf(testDataPath, { maxBusyTries: 10 }, error => {
 				if (error) {
 					reject(error);

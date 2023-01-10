@@ -114,7 +114,7 @@ class DropOverlay extends Themable {
 		this.updateStyles();
 	}
 
-	override updateStyles(): void {
+	protected override updateStyles(): void {
 		const overlay = assertIsDefined(this.overlay);
 
 		// Overlay drop background

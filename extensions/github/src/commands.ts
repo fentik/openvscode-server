@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { API as GitAPI } from './typings/git';
 import { publishRepository } from './publish';
 import { DisposableStore } from './util';
-import { getLink } from './links';
+import { getPermalink } from './links';
 
 function getVscodeDevHost(): string {
 	return `https://${vscode.env.appName.toLowerCase().includes('insiders') ? 'insiders.' : ''}vscode.dev/github`;
@@ -15,7 +15,7 @@ function getVscodeDevHost(): string {
 
 async function copyVscodeDevLink(gitAPI: GitAPI, useSelection: boolean) {
 	try {
-		const permalink = getLink(gitAPI, useSelection, getVscodeDevHost());
+		const permalink = getPermalink(gitAPI, useSelection, getVscodeDevHost());
 		if (permalink) {
 			return vscode.env.clipboard.writeText(permalink);
 		}
@@ -26,8 +26,8 @@ async function copyVscodeDevLink(gitAPI: GitAPI, useSelection: boolean) {
 
 async function openVscodeDevLink(gitAPI: GitAPI): Promise<vscode.Uri | undefined> {
 	try {
-		const headlink = getLink(gitAPI, true, getVscodeDevHost(), 'headlink');
-		return headlink ? vscode.Uri.parse(headlink) : undefined;
+		const permalink = getPermalink(gitAPI, true, getVscodeDevHost());
+		return permalink ? vscode.Uri.parse(permalink) : undefined;
 	} catch (err) {
 		vscode.window.showErrorMessage(err.message);
 		return undefined;

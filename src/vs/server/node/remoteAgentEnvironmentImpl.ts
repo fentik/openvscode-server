@@ -21,14 +21,13 @@ import { getMachineInfo, collectWorkspaceStats } from 'vs/platform/diagnostics/n
 import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
 import { basename, isAbsolute, join, resolve } from 'vs/base/common/path';
 import { ProcessItem } from 'vs/base/common/processes';
-import { InstallOptions } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionManagementCLIService, InstallOptions } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { cwd } from 'vs/base/common/process';
 import { ServerConnectionToken, ServerConnectionTokenType } from 'vs/server/node/serverConnectionToken';
 import { IExtensionHostStatusService } from 'vs/server/node/extensionHostStatusService';
 import { IExtensionsScannerService, toExtensionDescription } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 import { dedupExtensions } from 'vs/workbench/services/extensions/common/extensionsUtil';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
-import { ExtensionManagementCLI } from 'vs/platform/extensionManagement/common/extensionManagementCLI';
 
 export class RemoteAgentEnvironmentChannel implements IServerChannel {
 
@@ -40,14 +39,14 @@ export class RemoteAgentEnvironmentChannel implements IServerChannel {
 		private readonly _connectionToken: ServerConnectionToken,
 		private readonly _environmentService: IServerEnvironmentService,
 		private readonly _userDataProfilesService: IUserDataProfilesService,
-		extensionManagementCLI: ExtensionManagementCLI,
+		extensionManagementCLIService: IExtensionManagementCLIService,
 		private readonly _logService: ILogService,
 		private readonly _extensionHostStatusService: IExtensionHostStatusService,
 		private readonly _extensionsScannerService: IExtensionsScannerService,
 	) {
 		if (_environmentService.args['install-builtin-extension']) {
 			const installOptions: InstallOptions = { isMachineScoped: !!_environmentService.args['do-not-sync'], installPreReleaseVersion: !!_environmentService.args['pre-release'] };
-			this.whenExtensionsReady = extensionManagementCLI.installExtensions([], _environmentService.args['install-builtin-extension'], installOptions, !!_environmentService.args['force'])
+			this.whenExtensionsReady = extensionManagementCLIService.installExtensions([], _environmentService.args['install-builtin-extension'], installOptions, !!_environmentService.args['force'])
 				.then(null, error => {
 					_logService.error(error);
 				});
@@ -59,7 +58,7 @@ export class RemoteAgentEnvironmentChannel implements IServerChannel {
 		if (extensionsToInstall) {
 			const idsOrVSIX = extensionsToInstall.map(input => /\.vsix$/i.test(input) ? URI.file(isAbsolute(input) ? input : join(cwd(), input)) : input);
 			this.whenExtensionsReady
-				.then(() => extensionManagementCLI.installExtensions(idsOrVSIX, [], { isMachineScoped: !!_environmentService.args['do-not-sync'], installPreReleaseVersion: !!_environmentService.args['pre-release'] }, !!_environmentService.args['force']))
+				.then(() => extensionManagementCLIService.installExtensions(idsOrVSIX, [], { isMachineScoped: !!_environmentService.args['do-not-sync'], installPreReleaseVersion: !!_environmentService.args['pre-release'] }, !!_environmentService.args['force']))
 				.then(null, error => {
 					_logService.error(error);
 				});
@@ -334,7 +333,7 @@ export class RemoteAgentEnvironmentChannel implements IServerChannel {
 	}
 
 	private async _scanInstalledExtensions(language: string): Promise<IExtensionDescription[]> {
-		const scannedExtensions = await this._extensionsScannerService.scanUserExtensions({ profileLocation: this._userDataProfilesService.defaultProfile.extensionsResource, language, useCache: true });
+		const scannedExtensions = await this._extensionsScannerService.scanUserExtensions({ language, useCache: true });
 		return scannedExtensions.map(e => toExtensionDescription(e, false));
 	}
 

@@ -33,7 +33,7 @@ export class HighlightedLabel {
 	private readonly domNode: HTMLElement;
 	private text: string = '';
 	private title: string = '';
-	private highlights: readonly IHighlight[] = [];
+	private highlights: IHighlight[] = [];
 	private supportIcons: boolean;
 	private didEverRender: boolean = false;
 
@@ -63,7 +63,7 @@ export class HighlightedLabel {
 	 * @param escapeNewLines Whether to escape new lines.
 	 * @returns
 	 */
-	set(text: string | undefined, highlights: readonly IHighlight[] = [], title: string = '', escapeNewLines?: boolean) {
+	set(text: string | undefined, highlights: IHighlight[] = [], title: string = '', escapeNewLines?: boolean) {
 		if (!text) {
 			text = '';
 		}
@@ -85,7 +85,7 @@ export class HighlightedLabel {
 
 	private render(): void {
 
-		const children: Array<HTMLSpanElement | string> = [];
+		const children: HTMLSpanElement[] = [];
 		let pos = 0;
 
 		for (const highlight of this.highlights) {
@@ -95,15 +95,11 @@ export class HighlightedLabel {
 
 			if (pos < highlight.start) {
 				const substring = this.text.substring(pos, highlight.start);
-				if (this.supportIcons) {
-					children.push(...renderLabelWithIcons(substring));
-				} else {
-					children.push(substring);
-				}
-				pos = highlight.start;
+				children.push(dom.$('span', undefined, ...this.supportIcons ? renderLabelWithIcons(substring) : [substring]));
+				pos = highlight.end;
 			}
 
-			const substring = this.text.substring(pos, highlight.end);
+			const substring = this.text.substring(highlight.start, highlight.end);
 			const element = dom.$('span.highlight', undefined, ...this.supportIcons ? renderLabelWithIcons(substring) : [substring]);
 
 			if (highlight.extraClasses) {
@@ -116,11 +112,7 @@ export class HighlightedLabel {
 
 		if (pos < this.text.length) {
 			const substring = this.text.substring(pos,);
-			if (this.supportIcons) {
-				children.push(...renderLabelWithIcons(substring));
-			} else {
-				children.push(substring);
-			}
+			children.push(dom.$('span', undefined, ...this.supportIcons ? renderLabelWithIcons(substring) : [substring]));
 		}
 
 		dom.reset(this.domNode, ...children);
@@ -134,7 +126,7 @@ export class HighlightedLabel {
 		this.didEverRender = true;
 	}
 
-	static escapeNewLines(text: string, highlights: readonly IHighlight[]): string {
+	static escapeNewLines(text: string, highlights: IHighlight[]): string {
 		let total = 0;
 		let extra = 0;
 

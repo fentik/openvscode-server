@@ -20,7 +20,7 @@ import { Action2, MenuId } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { VIEWLET_ID } from 'vs/workbench/contrib/remote/browser/remoteExplorer';
 
-interface IRemoteSelectItem extends ISelectOptionItem {
+export interface IRemoteSelectItem extends ISelectOptionItem {
 	authority: string[];
 }
 

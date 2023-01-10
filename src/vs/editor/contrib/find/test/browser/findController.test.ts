@@ -22,7 +22,7 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 
-class TestFindController extends CommonFindController {
+export class TestFindController extends CommonFindController {
 
 	public hasFocus: boolean;
 	public delayUpdateHistory: boolean = false;
@@ -81,8 +81,7 @@ suite('FindController', async () => {
 		flush: () => { return Promise.resolve(); },
 		keys: () => [],
 		log: () => { },
-		switch: () => { throw new Error(); },
-		hasScope() { return false; }
+		switch: () => { throw new Error(); }
 	} as IStorageService);
 
 	if (platform.isMacintosh) {
@@ -513,8 +512,7 @@ suite('FindController query options persistence', async () => {
 		flush: () => { return Promise.resolve(); },
 		keys: () => [],
 		log: () => { },
-		switch: () => { throw new Error(); },
-		hasScope() { return false; }
+		switch: () => { throw new Error(); }
 	} as IStorageService);
 
 	test('matchCase', async () => {

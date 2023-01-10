@@ -3,19 +3,19 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DisposableMap, IDisposable } from 'vs/base/common/lifecycle';
-import { revive } from 'vs/base/common/marshalling';
-import { CommandsRegistry, ICommandHandlerDescription, ICommandService } from 'vs/platform/commands/common/commands';
-import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
+import { ICommandService, CommandsRegistry, ICommandHandlerDescription } from 'vs/platform/commands/common/commands';
+import { IDisposable, dispose } from 'vs/base/common/lifecycle';
+import { ExtHostContext, MainThreadCommandsShape, ExtHostCommandsShape, MainContext } from '../common/extHost.protocol';
 import { extHostNamedCustomer, IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
-import { Dto, SerializableObjectWithBuffers } from 'vs/workbench/services/extensions/common/proxyIdentifier';
-import { ExtHostCommandsShape, ExtHostContext, MainContext, MainThreadCommandsShape } from '../common/extHost.protocol';
+import { revive } from 'vs/base/common/marshalling';
+import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
+import { SerializableObjectWithBuffers, Dto } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 
 
 @extHostNamedCustomer(MainContext.MainThreadCommands)
 export class MainThreadCommands implements MainThreadCommandsShape {
 
-	private readonly _commandRegistrations = new DisposableMap<string>();
+	private readonly _commandRegistrations = new Map<string, IDisposable>();
 	private readonly _generateCommandsDocumentationRegistration: IDisposable;
 	private readonly _proxy: ExtHostCommandsShape;
 
@@ -30,7 +30,9 @@ export class MainThreadCommands implements MainThreadCommandsShape {
 	}
 
 	dispose() {
-		this._commandRegistrations.dispose();
+		dispose(this._commandRegistrations.values());
+		this._commandRegistrations.clear();
+
 		this._generateCommandsDocumentationRegistration.dispose();
 	}
 
@@ -65,7 +67,11 @@ export class MainThreadCommands implements MainThreadCommandsShape {
 	}
 
 	$unregisterCommand(id: string): void {
-		this._commandRegistrations.deleteAndDispose(id);
+		const command = this._commandRegistrations.get(id);
+		if (command) {
+			command.dispose();
+			this._commandRegistrations.delete(id);
+		}
 	}
 
 	$fireCommandActivationEvent(id: string): void {

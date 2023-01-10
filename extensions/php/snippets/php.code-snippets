@@ -12,7 +12,6 @@
 	},
 	"PHPDoc class …": {
 		"prefix": "doc_class",
-		"isFileTemplate": true,
 		"body": [
 			"/**",
 			" * ${6:undocumented class}",
@@ -43,7 +42,6 @@
 	},
 	"PHPDoc function …": {
 		"prefix": "doc_f",
-		"isFileTemplate": true,
 		"body": [
 			"/**",
 			" * ${1:undocumented function summary}",

@@ -3,11 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { URI } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { matchesScheme } from 'vs/platform/opener/common/opener';
-import { IProductService } from 'vs/platform/product/common/productService';
-import { TerminalSettingId } from 'vs/platform/terminal/common/terminal';
 import { ITerminalSimpleLink, ITerminalLinkDetector, TerminalBuiltinLinkType } from 'vs/workbench/contrib/terminal/browser/links/links';
 import { convertLinkRangeToBuffer, getXtermLineContent } from 'vs/workbench/contrib/terminal/browser/links/terminalLinkHelpers';
 import { ITerminalConfiguration, TERMINAL_CONFIG_SECTION } from 'vs/workbench/contrib/terminal/common/terminal';
@@ -33,23 +29,15 @@ export class TerminalWordLinkDetector implements ITerminalLinkDetector {
 	// quite small.
 	readonly maxLinkLength = 100;
 
-	private _separatorCodes!: Uint32Array;
-
 	constructor(
 		readonly xterm: Terminal,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
-		@IProductService private readonly _productService: IProductService,
 	) {
-		this._refreshSeparatorCodes();
-		this._configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration(TerminalSettingId.WordSeparators)) {
-				this._refreshSeparatorCodes();
-			}
-		});
 	}
 
 	detect(lines: IBufferLine[], startLine: number, endLine: number): ITerminalSimpleLink[] {
 		const links: ITerminalSimpleLink[] = [];
+		const wordSeparators = this._configurationService.getValue<ITerminalConfiguration>(TERMINAL_CONFIG_SECTION).wordSeparators;
 
 		// Get the text representation of the wrapped line
 		const text = getXtermLineContent(this.xterm.buffer.active, startLine, endLine, this.xterm.cols);
@@ -58,7 +46,7 @@ export class TerminalWordLinkDetector implements ITerminalLinkDetector {
 		}
 
 		// Parse out all words from the wrapped line
-		const words: Word[] = this._parseWords(text);
+		const words: Word[] = this._parseWords(text, wordSeparators);
 
 		// Map the words to ITerminalLink objects
 		for (const word of words) {
@@ -80,22 +68,6 @@ export class TerminalWordLinkDetector implements ITerminalLinkDetector {
 				},
 				startLine
 			);
-
-			// Support this product's URL protocol
-			if (matchesScheme(word.text, this._productService.urlProtocol)) {
-				const uri = URI.parse(word.text);
-				if (uri) {
-					links.push({
-						text: word.text,
-						uri,
-						bufferRange,
-						type: TerminalBuiltinLinkType.Url
-					});
-				}
-				continue;
-			}
-
-			// Search links
 			links.push({
 				text: word.text,
 				bufferRange,
@@ -106,12 +78,15 @@ export class TerminalWordLinkDetector implements ITerminalLinkDetector {
 		return links;
 	}
 
-	private _parseWords(text: string): Word[] {
+	private _parseWords(text: string, separators: string): Word[] {
 		const words: Word[] = [];
+
+		const wordSeparators: string[] = separators.split('');
+		const characters = text.split('');
 
 		let startIndex = 0;
 		for (let i = 0; i < text.length; i++) {
-			if (this._separatorCodes.includes(text.charCodeAt(i))) {
+			if (wordSeparators.includes(characters[i])) {
 				words.push({ startIndex, endIndex: i, text: text.substring(startIndex, i) });
 				startIndex = i + 1;
 			}
@@ -121,13 +96,5 @@ export class TerminalWordLinkDetector implements ITerminalLinkDetector {
 		}
 
 		return words;
-	}
-
-	private _refreshSeparatorCodes(): void {
-		const separators = this._configurationService.getValue<ITerminalConfiguration>(TERMINAL_CONFIG_SECTION).wordSeparators;
-		this._separatorCodes = new Uint32Array(separators.length);
-		for (let i = 0; i < separators.length; i++) {
-			this._separatorCodes[i] = separators.charCodeAt(i);
-		}
 	}
 }

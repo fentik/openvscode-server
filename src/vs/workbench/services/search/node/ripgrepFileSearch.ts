@@ -82,12 +82,12 @@ function getRgArgs(config: IFileQuery, folderQuery: IFolderQuery, includePattern
 	};
 }
 
-interface IRgGlobResult {
+export interface IRgGlobResult {
 	globArgs: string[];
 	siblingClauses: glob.IExpression;
 }
 
-function foldersToRgExcludeGlobs(folderQueries: IFolderQuery[], globalExclude?: glob.IExpression, excludesToSkip?: Set<string>, absoluteGlobs = true): IRgGlobResult {
+export function foldersToRgExcludeGlobs(folderQueries: IFolderQuery[], globalExclude?: glob.IExpression, excludesToSkip?: Set<string>, absoluteGlobs = true): IRgGlobResult {
 	const globArgs: string[] = [];
 	let siblingClauses: glob.IExpression = {};
 	folderQueries.forEach(folderQuery => {
@@ -102,7 +102,7 @@ function foldersToRgExcludeGlobs(folderQueries: IFolderQuery[], globalExclude?: 
 	return { globArgs, siblingClauses };
 }
 
-function foldersToIncludeGlobs(folderQueries: IFolderQuery[], globalInclude?: glob.IExpression, absoluteGlobs = true): string[] {
+export function foldersToIncludeGlobs(folderQueries: IFolderQuery[], globalInclude?: glob.IExpression, absoluteGlobs = true): string[] {
 	const globArgs: string[] = [];
 	folderQueries.forEach(folderQuery => {
 		const totalIncludePattern = Object.assign({}, globalInclude || {}, folderQuery.includePattern || {});

@@ -13,7 +13,7 @@
 }
 
 .search-editor .query-container {
-	margin: 0px 12px 12px 19px;
+	margin: 0px 12px 12px 2px;
 	padding-top: 6px;
 }
 
@@ -34,6 +34,7 @@
 
 .search-editor .search-widget .search-container,
 .search-editor .search-widget .replace-container {
+	margin-left: 18px;
 	display: flex;
 	align-items: center;
 }
@@ -51,7 +52,7 @@
 .search-editor .search-widget .monaco-inputbox > .ibwrapper > .mirror,
 .search-editor .search-widget .monaco-inputbox > .ibwrapper > textarea.input {
 	padding: 3px;
-	padding-left: 6px;
+	padding-left: 4px;
 }
 
 .search-editor .search-widget .monaco-inputbox > .ibwrapper > .mirror {
@@ -61,7 +62,7 @@
 /* NOTE: height is also used in searchWidget.ts as a constant*/
 .search-editor .search-widget .monaco-inputbox > .ibwrapper > textarea.input {
 	overflow: initial;
-	height: 26px; /* set initial height before measure */
+	height: 24px; /* set initial height before measure */
 }
 
 .search-editor .monaco-inputbox > .ibwrapper > textarea.input {
@@ -78,10 +79,6 @@
 	max-width: 50px;
 }
 
-.search-editor .search-widget .context-lines-input input[type=number]::-webkit-inner-spin-button {
-	/* Hide arrow button that shows in type=number fields */
-	-webkit-appearance: none !important;
-}
 
 .search-editor .search-widget .replace-container {
 	margin-top: 6px;
@@ -128,6 +125,7 @@
 .search-editor .includes-excludes {
 	min-height: 1em;
 	position: relative;
+	margin: 0 0 0 17px;
 }
 
 .search-editor .includes-excludes .expand {
@@ -167,22 +165,11 @@
 }
 
 .search-editor .message {
-	padding-left: 7px;
+	padding-left: 22px;
 	padding-right: 22px;
 	padding-top: 0px;
 }
 
 .search-editor a.prominent {
 	text-decoration: underline;
-}
-
-.monaco-editor .searchEditorFindMatch {
-	box-sizing: border-box;
-	background-color: var(--vscode-searchEditor-findMatchBackground);
-	border: 1px solid var(--vscode-searchEditor-findMatchBorder);
-}
-
-.monaco-editor.hc-black .searchEditorFindMatch,
-.monaco-editor.hc-light .searchEditorFindMatch {
-	border: 1px dotted var(--vscode-searchEditor-findMatchBorder);
 }

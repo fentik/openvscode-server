@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkspacesService, IWorkspaceFolderCreationData, IEnterWorkspaceResult, IRecentlyOpened, restoreRecentlyOpened, IRecent, isRecentFile, isRecentFolder, toStoreData, IStoredWorkspaceFolder, getStoredWorkspaceFolder, IStoredWorkspace, isRecentWorkspace } from 'vs/platform/workspaces/common/workspaces';
 import { URI } from 'vs/base/common/uri';
 import { Emitter } from 'vs/base/common/event';
@@ -16,6 +16,7 @@ import { IFileService, FileOperationError, FileOperationResult } from 'vs/platfo
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { joinPath } from 'vs/base/common/resources';
 import { VSBuffer } from 'vs/base/common/buffer';
+import { isWindows } from 'vs/base/common/platform';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IWorkspaceBackupInfo, IFolderBackupInfo } from 'vs/platform/backup/common/backup';
 import { Schemas } from 'vs/base/common/network';
@@ -178,7 +179,7 @@ export class BrowserWorkspacesService extends Disposable implements IWorkspacesS
 		const storedWorkspaceFolder: IStoredWorkspaceFolder[] = [];
 		if (folders) {
 			for (const folder of folders) {
-				storedWorkspaceFolder.push(getStoredWorkspaceFolder(folder.uri, true, folder.name, this.environmentService.untitledWorkspacesHome, this.uriIdentityService.extUri));
+				storedWorkspaceFolder.push(getStoredWorkspaceFolder(folder.uri, true, folder.name, this.environmentService.untitledWorkspacesHome, !isWindows, this.uriIdentityService.extUri));
 			}
 		}
 
@@ -215,4 +216,4 @@ export class BrowserWorkspacesService extends Disposable implements IWorkspacesS
 	//#endregion
 }
 
-registerSingleton(IWorkspacesService, BrowserWorkspacesService, InstantiationType.Delayed);
+registerSingleton(IWorkspacesService, BrowserWorkspacesService, true);

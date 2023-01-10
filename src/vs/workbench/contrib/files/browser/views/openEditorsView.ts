@@ -28,9 +28,10 @@ import { ResourceLabels, IResourceLabel } from 'vs/workbench/browser/labels';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
-import { MenuId, Action2, registerAction2, MenuRegistry } from 'vs/platform/actions/common/actions';
+import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
+import { IMenuService, MenuId, IMenu, Action2, registerAction2, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { OpenEditorsDirtyEditorContext, OpenEditorsGroupContext, OpenEditorsReadonlyEditorContext, SAVE_ALL_LABEL, SAVE_ALL_COMMAND_ID, NEW_UNTITLED_FILE_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileConstants';
-import { ResourceContextKey, MultipleEditorGroupsContext } from 'vs/workbench/common/contextkeys';
+import { ResourceContextKey } from 'vs/workbench/common/contextkeys';
 import { CodeDataTransfers, containsDragType } from 'vs/platform/dnd/browser/dnd';
 import { ResourcesDropHandler, fillEditorsDragData } from 'vs/workbench/browser/dnd';
 import { ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
@@ -68,6 +69,7 @@ export class OpenEditorsView extends ViewPane {
 	private structuralRefreshDelay: number;
 	private list!: WorkbenchList<OpenEditor | IEditorGroup>;
 	private listLabels: ResourceLabels | undefined;
+	private contributedContextMenu!: IMenu;
 	private needsRefresh = false;
 	private elements: (OpenEditor | IEditorGroup)[] = [];
 	private sortOrder: 'editorOrder' | 'alphabetical' | 'fullPath';
@@ -87,6 +89,7 @@ export class OpenEditorsView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IThemeService themeService: IThemeService,
 		@ITelemetryService telemetryService: ITelemetryService,
+		@IMenuService private readonly menuService: IMenuService,
 		@IWorkingCopyService private readonly workingCopyService: IWorkingCopyService,
 		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService,
 		@IOpenerService openerService: IOpenerService,
@@ -96,10 +99,6 @@ export class OpenEditorsView extends ViewPane {
 		this.structuralRefreshDelay = 0;
 		let labelChangeListeners: IDisposable[] = [];
 		this.listRefreshScheduler = new RunOnceScheduler(() => {
-			// No need to refresh the list if it's not rendered
-			if (!this.list) {
-				return;
-			}
 			labelChangeListeners = dispose(labelChangeListeners);
 			const previousLength = this.list.length;
 			const elements = this.getElements();
@@ -215,7 +214,7 @@ export class OpenEditorsView extends ViewPane {
 		this.updateDirtyIndicator();
 	}
 
-	protected override renderBody(container: HTMLElement): void {
+	override renderBody(container: HTMLElement): void {
 		super.renderBody(container);
 
 		container.classList.add('open-editors');
@@ -243,6 +242,9 @@ export class OpenEditorsView extends ViewPane {
 		}) as WorkbenchList<OpenEditor | IEditorGroup>;
 		this._register(this.list);
 		this._register(this.listLabels);
+
+		this.contributedContextMenu = this.menuService.createMenu(MenuId.OpenEditorsContext, this.list.contextKeyService);
+		this._register(this.contributedContextMenu);
 
 		this.updateSize();
 
@@ -394,13 +396,14 @@ export class OpenEditorsView extends ViewPane {
 		}
 
 		const element = e.element;
+		const actions: IAction[] = [];
+		const actionsDisposable = createAndFillInContextMenuActions(this.contributedContextMenu, { shouldForwardArgs: true, arg: element instanceof OpenEditor ? EditorResourceAccessor.getOriginalUri(element.editor) : {} }, actions);
 
 		this.contextMenuService.showContextMenu({
-			menuId: MenuId.OpenEditorsContext,
-			menuActionOptions: { shouldForwardArgs: true, arg: element instanceof OpenEditor ? EditorResourceAccessor.getOriginalUri(element.editor) : {} },
-			contextKeyService: this.list.contextKeyService,
 			getAnchor: () => e.anchor,
-			getActionsContext: () => element instanceof OpenEditor ? { groupId: element.groupId, editorIndex: element.group.getIndexOfEditor(element.editor) } : { groupId: element.id }
+			getActions: () => actions,
+			getActionsContext: () => element instanceof OpenEditor ? { groupId: element.groupId, editorIndex: element.group.getIndexOfEditor(element.editor) } : { groupId: element.id },
+			onHide: () => dispose(actionsDisposable)
 		});
 	}
 
@@ -749,7 +752,7 @@ registerAction2(class extends Action2 {
 			menu: {
 				id: MenuId.ViewTitle,
 				group: 'navigation',
-				when: ContextKeyExpr.and(ContextKeyExpr.equals('view', OpenEditorsView.ID), MultipleEditorGroupsContext),
+				when: ContextKeyExpr.equals('view', OpenEditorsView.ID),
 				order: 10
 			}
 		});
@@ -824,7 +827,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'openEditors.newUntitledFile',
-			title: { value: nls.localize('newUntitledFile', "New Untitled Text File"), original: 'New Untitled Text File' },
+			title: { value: nls.localize('newUntitledFile', "New Untitled File"), original: 'New Untitled File' },
 			f1: false,
 			icon: Codicon.newFile,
 			menu: {
