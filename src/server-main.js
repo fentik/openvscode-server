@@ -217,25 +217,6 @@ async function parsePort(host, strPort, strPickPort) {
 			process.exit(1);
 		}
 	}
-	// pick-port is deprecated and will be removed soon
-	if (strPickPort) {
-		const range = parseRange(strPickPort);
-		if (range) {
-			if (range.start <= specificPort && specificPort <= range.end) {
-				return specificPort;
-			} else {
-				const port = await findFreePort(host, range.start, range.end);
-				if (port !== undefined) {
-					return port;
-				}
-				console.log(`--pick-port: Could not find free port in range: ${range.start} - ${range.end}.`);
-				process.exit(1);
-			}
-		} else {
-			console.log(`--pick-port "${strPickPort}" is not a valid range. Ranges must be in the form 'from-to' with 'from' an integer larger than 0 and not larger than 'end'.`);
-			process.exit(1);
-		}
-	}
 	return 3000;
 }
 

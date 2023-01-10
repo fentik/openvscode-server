@@ -99,8 +99,21 @@ export class FolderMatchRenderer extends Disposable implements ITreeRenderer<Fol
 		const badge = new CountBadge(DOM.append(folderMatchElement, DOM.$('.badge')));
 		disposables.push(attachBadgeStyler(badge, this.themeService));
 		const actionBarContainer = DOM.append(folderMatchElement, DOM.$('.actionBarContainer'));
-		const actions = new ActionBar(actionBarContainer, { animated: false });
-		disposables.push(actions);
+
+		const disposableElements = new DisposableStore();
+		disposables.add(disposableElements);
+
+		const contextKeyService = this.contextKeyService.createOverlay([[FolderFocusKey.key, true], [FileFocusKey.key, false], [MatchFocusKey.key, false]]);
+		const instantiationService = this.instantiationService.createChild(new ServiceCollection([IContextKeyService, contextKeyService]));
+		const actions = disposables.add(instantiationService.createInstance(MenuWorkbenchToolBar, actionBarContainer, MenuId.SearchActionMenu, {
+			menuOptions: {
+				shouldForwardArgs: true
+			},
+			hiddenItemStrategy: HiddenItemStrategy.Ignore,
+			toolbarOptions: {
+				primaryGroup: (g: string) => /^inline/.test(g),
+			},
+		}));
 
 		return {
 			label,
@@ -169,8 +182,18 @@ export class FileMatchRenderer extends Disposable implements ITreeRenderer<FileM
 		const badge = new CountBadge(DOM.append(fileMatchElement, DOM.$('.badge')));
 		disposables.push(attachBadgeStyler(badge, this.themeService));
 		const actionBarContainer = DOM.append(fileMatchElement, DOM.$('.actionBarContainer'));
-		const actions = new ActionBar(actionBarContainer, { animated: false });
-		disposables.push(actions);
+
+		const contextKeyService = this.contextKeyService.createOverlay([[FileFocusKey.key, true], [FolderFocusKey.key, false], [MatchFocusKey.key, false]]);
+		const instantiationService = this.instantiationService.createChild(new ServiceCollection([IContextKeyService, contextKeyService]));
+		const actions = disposables.add(instantiationService.createInstance(MenuWorkbenchToolBar, actionBarContainer, MenuId.SearchActionMenu, {
+			menuOptions: {
+				shouldForwardArgs: true
+			},
+			hiddenItemStrategy: HiddenItemStrategy.Ignore,
+			toolbarOptions: {
+				primaryGroup: (g: string) => /^inline/.test(g),
+			},
+		}));
 
 		return {
 			el: fileMatchElement,
@@ -232,7 +255,20 @@ export class MatchRenderer extends Disposable implements ITreeRenderer<Match, vo
 		const after = DOM.append(parent, DOM.$('span'));
 		const lineNumber = DOM.append(container, DOM.$('span.matchLineNum'));
 		const actionBarContainer = DOM.append(container, DOM.$('span.actionBarContainer'));
-		const actions = new ActionBar(actionBarContainer, { animated: false });
+
+		const disposables = new DisposableStore();
+
+		const contextKeyService = this.contextKeyService.createOverlay([[MatchFocusKey.key, true], [FileFocusKey.key, false], [FolderFocusKey.key, false]]);
+		const instantiationService = this.instantiationService.createChild(new ServiceCollection([IContextKeyService, contextKeyService]));
+		const actions = disposables.add(instantiationService.createInstance(MenuWorkbenchToolBar, actionBarContainer, MenuId.SearchActionMenu, {
+			menuOptions: {
+				shouldForwardArgs: true
+			},
+			hiddenItemStrategy: HiddenItemStrategy.Ignore,
+			toolbarOptions: {
+				primaryGroup: (g: string) => /^inline/.test(g),
+			},
+		}));
 
 		return {
 			parent,

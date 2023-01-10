@@ -33,6 +33,32 @@ if [ -z "$VSCODE_SHELL_INTEGRATION" ]; then
 	builtin return
 fi
 
+# The property (P) and command (E) codes embed values which require escaping.
+# Backslashes are doubled. Non-alphanumeric characters are converted to escaped hex.
+__vsc_escape_value() {
+	builtin emulate -L zsh
+
+	# Process text byte by byte, not by codepoint.
+	builtin local LC_ALL=C str="$1" i byte token out=''
+
+	for (( i = 0; i < ${#str}; ++i )); do
+		byte="${str:$i:1}"
+
+		# Escape backslashes and semi-colons
+		if [ "$byte" = "\\" ]; then
+			token="\\\\"
+		elif [ "$byte" = ";" ]; then
+			token="\\x3b"
+		else
+			token="$byte"
+		fi
+
+		out+="$token"
+	done
+
+	builtin print -r "$out"
+}
+
 __vsc_in_command_execution="1"
 __vsc_current_command=""
 

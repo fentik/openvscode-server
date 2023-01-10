@@ -6,7 +6,7 @@
 import 'vs/css!./media/extensionEditor';
 import { localize } from 'vs/nls';
 import * as arrays from 'vs/base/common/arrays';
-import { OS, locale } from 'vs/base/common/platform';
+import { OS, language } from 'vs/base/common/platform';
 import { Event, Emitter } from 'vs/base/common/event';
 import { Cache, CacheResult } from 'vs/base/common/cache';
 import { Action, IAction } from 'vs/base/common/actions';
@@ -930,12 +930,20 @@ export class ExtensionEditor extends EditorPane {
 		if (gallery) {
 			append(moreInfo,
 				$('.more-info-entry', undefined,
-					$('div', undefined, localize('release date', "Released on")),
-					$('div', undefined, new Date(gallery.releaseDate).toLocaleString(locale, { hourCycle: 'h23' }))
+					$('div', undefined, localize('published', "Published")),
+					$('div', undefined, new Date(gallery.releaseDate).toLocaleString(language, { hourCycle: 'h23' }))
 				),
 				$('.more-info-entry', undefined,
+					$('div', undefined, localize('last released', "Last released")),
+					$('div', undefined, new Date(gallery.lastUpdated).toLocaleString(language, { hourCycle: 'h23' }))
+				)
+			);
+		}
+		if (extension.local && extension.local.installedTimestamp) {
+			append(moreInfo,
+				$('.more-info-entry', undefined,
 					$('div', undefined, localize('last updated', "Last updated")),
-					$('div', undefined, new Date(gallery.lastUpdated).toLocaleString(locale, { hourCycle: 'h23' }))
+					$('div', undefined, new Date(extension.local.installedTimestamp).toLocaleString(language, { hourCycle: 'h23' }))
 				)
 			);
 		}

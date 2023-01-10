@@ -113,7 +113,7 @@ export class InstallCountWidget extends ExtensionWidget {
 			}
 		}
 		else {
-			installLabel = installCount.toLocaleString(platform.locale);
+			installLabel = installCount.toLocaleString(platform.language);
 		}
 
 		return installLabel;

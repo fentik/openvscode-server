@@ -34,7 +34,36 @@ export class ExtHostTelemetry implements ExtHostTelemetryShape {
 
 	$initializeTelemetryLevel(level: TelemetryLevel, productConfig?: { usage: boolean; error: boolean }): void {
 		this._level = level;
-		this._productConfig = productConfig || { usage: true, error: true };
+		this._inLoggingOnlyMode = loggingOnlyMode;
+		this._productConfig = productConfig ?? { usage: true, error: true };
+	}
+
+	getBuiltInCommonProperties(extension: IExtensionDescription): Record<string, string | boolean | number | undefined> {
+		const commonProperties: Record<string, string | boolean | number | undefined> = {};
+		// TODO @lramos15, does os info like node arch, platform version, etc exist here.
+		// Or will first party extensions just mix this in
+		commonProperties['common.extname'] = `${extension.publisher}.${extension.name}`;
+		commonProperties['common.extversion'] = extension.version;
+		commonProperties['common.vscodemachineid'] = this.initData.telemetryInfo.machineId;
+		commonProperties['common.vscodesessionid'] = this.initData.telemetryInfo.sessionId;
+		commonProperties['common.vscodeversion'] = this.initData.version;
+		commonProperties['common.isnewappinstall'] = isNewAppInstall(this.initData.telemetryInfo.firstSessionDate);
+		commonProperties['common.product'] = this.initData.environment.appHost;
+
+		switch (this.initData.uiKind) {
+			case UIKind.Web:
+				commonProperties['common.uikind'] = 'web';
+				break;
+			case UIKind.Desktop:
+				commonProperties['common.uikind'] = 'desktop';
+				break;
+			default:
+				commonProperties['common.uikind'] = 'unknown';
+		}
+
+		commonProperties['common.remotename'] = getRemoteName(cleanRemoteAuthority(this.initData.remote.authority));
+
+		return commonProperties;
 	}
 
 	$onDidChangeTelemetryLevel(level: TelemetryLevel): void {

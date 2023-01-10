@@ -23,8 +23,8 @@ import { Color, RGBA } from 'vs/base/common/color';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
-import { Disposable, DisposableStore, dispose, toDisposable } from 'vs/base/common/lifecycle';
-import { isIOS } from 'vs/base/common/platform';
+import { Disposable, DisposableStore, dispose, isDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { isIOS, language } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { isArray, isDefined, isUndefinedOrNull } from 'vs/base/common/types';
 import { localize } from 'vs/nls';
@@ -1798,7 +1798,9 @@ export class SettingNumberRenderer extends AbstractSettingRenderer implements IT
 			? ((v: string) => v === '' ? null : numParseFn(v)) : numParseFn;
 
 		template.onChange = undefined;
-		template.inputBox.value = dataElement.value;
+		template.inputBox.value = typeof dataElement.value === 'number' ?
+			dataElement.value.toLocaleString(language) : '';
+		template.inputBox.step = dataElement.valueType.includes('integer') ? '1' : 'any';
 		template.inputBox.setAriaLabel(dataElement.setting.key);
 		template.inputBox.setEnabled(!dataElement.hasPolicyValue);
 		template.onChange = value => {

@@ -22,6 +22,7 @@ const watch = require('./watch');
 const packageJson = require('../../package.json');
 const productJson = require('../../product.json');
 const replace = require('gulp-replace');
+// --- gulp-tsb: compile and transpile --------------------------------
 const reporter = (0, reporter_1.createReporter)();
 function getTypeScriptCompilerOptions(src) {
     const rootDir = path.join(__dirname, `../../${src}`);
@@ -64,9 +65,8 @@ function createCompile(src, build, emitError, transpileOnly) {
             .pipe(productJsFilter)
             .pipe(replace(/{\s*\/\*BUILD->INSERT_PRODUCT_CONFIGURATION\*\/\s*}/, productConfiguration, { skipBinary: true }))
             .pipe(productJsFilter.restore)
-            .pipe(utf8Filter)
-            .pipe(bom()) // this is required to preserve BOM in test files that loose it otherwise
-            .pipe(utf8Filter.restore)
+            .pipe(util.$if(isUtf8Test, bom())) // this is required to preserve BOM in test files that loose it otherwise
+            .pipe(util.$if(!build && isRuntimeJs, util.appendOwnPathSourceURL()))
             .pipe(tsFilter)
             .pipe(util.loadSourcemaps())
             .pipe(compilation(token))

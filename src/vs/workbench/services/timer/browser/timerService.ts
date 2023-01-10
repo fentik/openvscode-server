@@ -413,6 +413,13 @@ export interface ITimerService {
 	 * returned tuples but the marks of a tuple are guaranteed to be sorted by start times.
 	 */
 	getPerformanceMarks(): [source: string, marks: readonly perf.PerformanceMark[]][];
+
+	/**
+	 * Return the duration between two marks.
+	 * @param from from mark name
+	 * @param to to mark name
+	 */
+	getDuration(from: string, to: string): number;
 }
 
 export const ITimerService = createDecorator<ITimerService>('timerService');
@@ -508,6 +515,10 @@ export abstract class AbstractTimerService implements ITimerService {
 
 	getPerformanceMarks(): [source: string, marks: readonly perf.PerformanceMark[]][] {
 		return this._marks.getEntries();
+	}
+
+	getDuration(from: string, to: string): number {
+		return this._marks.getDuration(from, to);
 	}
 
 	private _reportStartupTimes(metrics: IStartupMetrics): void {

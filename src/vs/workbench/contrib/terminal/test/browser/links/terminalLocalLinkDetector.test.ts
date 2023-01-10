@@ -144,10 +144,29 @@ suite('Workbench - TerminalLocalLinkDetector', () => {
 		});
 	});
 
-	suite('Windows', () => {
-		setup(() => {
-			detector = instantiationService.createInstance(TerminalLocalLinkDetector, xterm, new TerminalCapabilityStore(), OperatingSystem.Windows, resolveLinkForTest);
-		});
+	// Only test these when on Windows because there is special behavior around replacing separators
+	// in URI that cannot be changed
+	if (isWindows) {
+		suite('Windows', () => {
+			const wslUnixToWindowsPathMap: Map<string, string> = new Map();
+
+			setup(() => {
+				detector = instantiationService.createInstance(TerminalLocalLinkDetector, xterm, new TerminalCapabilityStore(), {
+					initialCwd: 'C:\\Parent\\Cwd',
+					os: OperatingSystem.Windows,
+					remoteAuthority: undefined,
+					userHome: 'C:\\Home',
+					backend: {
+						async getWslPath(original: string, direction: 'unix-to-win' | 'win-to-unix') {
+							if (direction === 'unix-to-win') {
+								return wslUnixToWindowsPathMap.get(original) ?? original;
+							}
+							return original;
+						},
+					}
+				});
+				wslUnixToWindowsPathMap.clear();
+			});
 
 		for (const baseLink of windowsLinks) {
 			suite(`Link "${baseLink}"`, () => {
