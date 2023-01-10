@@ -60,7 +60,7 @@ export const enum CacheControl {
 /**
  * Serve a file at a given path or 404 if the file is missing.
  */
-export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void | http.ServerResponse> {
+export async function serveFile(filePath: string, cacheControl: CacheControl, logService: ILogService, req: http.IncomingMessage, res: http.ServerResponse, responseHeaders: Record<string, string>): Promise<void> {
 	const getFirstHeader = (headerName: string) => {
 		const val = req.headers[headerName];
 		return Array.isArray(val) ? val[0] : val;
