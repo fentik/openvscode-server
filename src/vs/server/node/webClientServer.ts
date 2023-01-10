@@ -137,7 +137,7 @@ export class WebClientServer {
 	 * **NOTE**: This method is only invoked when the server has web bits.
 	 * **NOTE**: This method is only invoked after the connection token has been validated.
 	 */
-	async handle(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
+	async handle(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
 		try {
 			const pathname = parsedUrl.pathname!;
 
@@ -167,7 +167,7 @@ export class WebClientServer {
 	/**
 	 * Handle HTTP requests for /static/*
 	 */
-	private async _handleStatic(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
+	private async _handleStatic(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
 		const headers: Record<string, string> = Object.create(null);
 
 		// Strip the this._staticRoute from the path
@@ -190,7 +190,7 @@ export class WebClientServer {
 	/**
 	 * Handle extension resources
 	 */
-	private async _handleWebExtensionResource(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
+	private async _handleWebExtensionResource(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
 		if (!this._webExtensionResourceUrlTemplate) {
 			return serveError(req, res, 500, 'No extension gallery service configured.');
 		}
@@ -256,7 +256,7 @@ export class WebClientServer {
 	/**
 	 * Handle HTTP requests for /
 	 */
-	private async _handleRoot(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void | http.ServerResponse> {
+	private async _handleRoot(req: http.IncomingMessage, res: http.ServerResponse, parsedUrl: url.UrlWithParsedQuery): Promise<void> {
 
 		const queryConnectionToken = parsedUrl.query[connectionTokenQueryName];
 		if (typeof queryConnectionToken === 'string') {
@@ -418,7 +418,7 @@ export class WebClientServer {
 	/**
 	 * Handle HTTP requests for /callback
 	 */
-	private async _handleCallback(res: http.ServerResponse): Promise<void | http.ServerResponse> {
+	private async _handleCallback(res: http.ServerResponse): Promise<void> {
 		const filePath = FileAccess.asFileUri('vs/code/browser/workbench/callback.html', require).fsPath;
 		const data = (await fsp.readFile(filePath)).toString();
 		const cspDirectives = [
