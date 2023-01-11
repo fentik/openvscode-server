@@ -622,49 +622,6 @@
 					"name": "GitLens"
 				}
 			}
-		},
-		"maven": {
-			"configPath": "pom.xml",
-			"configName": "Maven",
-			"recommendations": {
-				"vscjava.vscode-java-pack": {
-					"name": "Java",
-					"important": true,
-					"isExtensionPack": true,
-					"whenNotInstalled": [
-						"ASF.apache-netbeans-java"
-					]
-				},
-				"Pivotal.vscode-boot-dev-pack": {
-					"name": "Spring Boot Extension Pack",
-					"isExtensionPack": true
-				}
-			}
-		},
-		"gradle": {
-			"configPath": "build.gradle",
-			"configName": "Gradle",
-			"recommendations": {
-				"vscjava.vscode-java-pack": {
-					"name": "Java",
-					"important": true,
-					"isExtensionPack": true,
-					"whenNotInstalled": [
-						"ASF.apache-netbeans-java"
-					]
-				}
-			}
-		},
-		"github-pull-request": {
-			"configPath": ".vscode/.github-pull-request.rec",
-			"configName": "GitHub",
-			"configScheme": "vscode-vfs",
-			"recommendations": {
-				"github.vscode-pull-request-github": {
-					"name": "GitHub Pull Request",
-					"important": true
-				}
-			}
 		}
 	],
 	"extensionsGallery": {
