@@ -10,7 +10,7 @@ import 'vs/css!./media/widgets';
 import 'vs/css!./media/xterm';
 import { KeybindingWeight, KeybindingsRegistry, IKeybindings } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { registerTerminalActions, terminalSendSequenceCommand } from 'vs/workbench/contrib/terminal/browser/terminalActions';
-import { TerminalCommandId, ITerminalProfileService, ITerminalQuickFixService } from 'vs/workbench/contrib/terminal/common/terminal';
+import { TerminalCommandId, ITerminalProfileService } from 'vs/workbench/contrib/terminal/common/terminal';
 import { registerColors } from 'vs/workbench/contrib/terminal/common/terminalColorRegistry';
 import { TerminalService } from 'vs/workbench/contrib/terminal/browser/terminalService';
 import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
@@ -26,9 +26,6 @@ import { TerminalEditorService } from 'vs/workbench/contrib/terminal/browser/ter
 import { TerminalGroupService } from 'vs/workbench/contrib/terminal/browser/terminalGroupService';
 import { TerminalContextKeys, TerminalContextKeyStrings } from 'vs/workbench/contrib/terminal/common/terminalContextKey';
 import { TerminalProfileService } from 'vs/workbench/contrib/terminal/browser/terminalProfileService';
-import { TerminalQuickFixService } from 'vs/workbench/contrib/terminal/browser/terminalQuickFixService';
-import { TerminalLinkResolverService } from 'vs/workbench/contrib/terminal/browser/links/terminalLinkResolverService';
-import { ITerminalLinkResolverService } from 'vs/workbench/contrib/terminal/browser/links/links';
 import { ContextKeyExpression, ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 
 // Register services
@@ -37,8 +34,8 @@ registerSingleton(ITerminalEditorService, TerminalEditorService, InstantiationTy
 registerSingleton(ITerminalGroupService, TerminalGroupService, InstantiationType.Delayed);
 registerSingleton(ITerminalInstanceService, TerminalInstanceService, InstantiationType.Delayed);
 registerSingleton(ITerminalProfileService, TerminalProfileService, InstantiationType.Delayed);
-registerSingleton(ITerminalQuickFixService, TerminalQuickFixService, InstantiationType.Delayed);
-registerSingleton(ITerminalLinkResolverService, TerminalLinkResolverService, InstantiationType.Delayed);
+// registerSingleton(ITerminalQuickFixService, TerminalQuickFixService, InstantiationType.Delayed);
+// registerSingleton(ITerminalLinkResolverService, TerminalLinkResolverService, InstantiationType.Delayed);
 
 /*
 // Register quick accesses
