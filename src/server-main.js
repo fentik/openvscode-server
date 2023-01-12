@@ -10,6 +10,10 @@ const performance = require('perf_hooks').performance;
 const product = require('../product.json');
 const readline = require('readline');
 const http = require('http');
+const connect = require('connect');
+// gzip/deflate outgoing responses
+var compression = require('compression');
+
 
 perf.mark('code/server/start');
 // @ts-ignore
@@ -97,7 +101,11 @@ async function start() {
 
 	/** @type {string | import('net').AddressInfo | null} */
 	let address = null;
-	const server = http.createServer(async (req, res) => {
+	var app = connect();
+
+ 	app.use(compression());
+	app.use(async (req, res) => {
+//	const server = http.createServer(async (req, res) => {
 		if (firstRequest) {
 			firstRequest = false;
 			perf.mark('code/server/firstRequest');
@@ -105,6 +113,7 @@ async function start() {
 		const remoteExtensionHostAgentServer = await getRemoteExtensionHostAgentServer();
 		return remoteExtensionHostAgentServer.handleRequest(req, res);
 	});
+	const server = http.createServer(app);
 	server.on('upgrade', async (req, socket) => {
 		if (firstWebSocket) {
 			firstWebSocket = false;
