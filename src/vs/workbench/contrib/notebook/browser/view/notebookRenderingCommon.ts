@@ -14,10 +14,11 @@ import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { Range } from 'vs/editor/common/core/range';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ICellOutputViewModel, ICellViewModel } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
-import { CellPart } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
+import { CellRevealRangeType, CellRevealSyncType, CellRevealType, ICellOutputViewModel, ICellViewModel } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
+import { CellPartsCollection } from 'vs/workbench/contrib/notebook/browser/view/cellPart';
 import { CellViewModel, NotebookViewModel } from 'vs/workbench/contrib/notebook/browser/viewModel/notebookViewModelImpl';
 import { ICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
+
 
 export interface INotebookCellList {
 	isDisposed: boolean;
@@ -58,31 +59,21 @@ export interface INotebookCellList {
 	selectElements(elements: ICellViewModel[]): void;
 	getFocusedElements(): ICellViewModel[];
 	getSelectedElements(): ICellViewModel[];
-	revealElementsInView(range: ICellRange): void;
-	isScrolledToBottom(): boolean;
+	revealCellsInView(range: ICellRange): void;
 	scrollToBottom(): void;
-	revealElementInView(element: ICellViewModel): void;
-	revealElementInViewAtTop(element: ICellViewModel): void;
-	revealElementInCenterIfOutsideViewport(element: ICellViewModel): void;
-	revealElementInCenter(element: ICellViewModel): void;
-	revealElementInCenterIfOutsideViewportAsync(element: ICellViewModel): Promise<void>;
-	revealNearTopIfOutsideViewportAync(element: ICellViewModel): Promise<void>;
-	revealElementLineInViewAsync(element: ICellViewModel, line: number): Promise<void>;
-	revealElementLineInCenterAsync(element: ICellViewModel, line: number): Promise<void>;
-	revealElementLineInCenterIfOutsideViewportAsync(element: ICellViewModel, line: number): Promise<void>;
-	revealElementRangeInViewAsync(element: ICellViewModel, range: Range): Promise<void>;
-	revealElementRangeInCenterAsync(element: ICellViewModel, range: Range): Promise<void>;
-	revealElementRangeInCenterIfOutsideViewportAsync(element: ICellViewModel, range: Range): Promise<void>;
-	revealElementOffsetInCenterAsync(element: ICellViewModel, offset: number): Promise<void>;
+	revealCell(cell: ICellViewModel, revealType: CellRevealSyncType): void;
+	revealCellAsync(cell: ICellViewModel, revealType: CellRevealType): Promise<void>;
+	revealCellRangeAsync(cell: ICellViewModel, range: Range, revealType: CellRevealRangeType): Promise<void>;
+	revealCellOffsetInCenterAsync(element: ICellViewModel, offset: number): Promise<void>;
 	setHiddenAreas(_ranges: ICellRange[], triggerViewUpdate: boolean): boolean;
 	domElementOfElement(element: ICellViewModel): HTMLElement | null;
 	focusView(): void;
 	getAbsoluteTopOfElement(element: ICellViewModel): number;
 	triggerScrollFromMouseWheelEvent(browserEvent: IMouseWheelEvent): void;
-	updateElementHeight2(element: ICellViewModel, size: number): void;
+	updateElementHeight2(element: ICellViewModel, size: number, anchorElementIndex?: number | null): void;
 	domFocus(): void;
 	focusContainer(): void;
-	setCellSelection(element: ICellViewModel, range: Range): void;
+	setCellEditorSelection(element: ICellViewModel, range: Range): void;
 	style(styles: IListStyles): void;
 	getRenderHeight(): number;
 	getScrollHeight(): number;
@@ -92,22 +83,22 @@ export interface INotebookCellList {
 }
 
 export interface BaseCellRenderTemplate {
-	rootContainer: HTMLElement;
-	editorPart: HTMLElement;
-	cellInputCollapsedContainer: HTMLElement;
-	instantiationService: IInstantiationService;
-	container: HTMLElement;
-	cellContainer: HTMLElement;
+	readonly rootContainer: HTMLElement;
+	readonly editorPart: HTMLElement;
+	readonly cellInputCollapsedContainer: HTMLElement;
+	readonly instantiationService: IInstantiationService;
+	readonly container: HTMLElement;
+	readonly cellContainer: HTMLElement;
 	readonly templateDisposables: DisposableStore;
 	readonly elementDisposables: DisposableStore;
 	currentRenderedCell?: ICellViewModel;
-	cellParts: CellPart[];
+	cellParts: CellPartsCollection;
 	toJSON: () => object;
 }
 
 export interface MarkdownCellRenderTemplate extends BaseCellRenderTemplate {
-	editorContainer: HTMLElement;
-	foldingIndicator: HTMLElement;
+	readonly editorContainer: HTMLElement;
+	readonly foldingIndicator: HTMLElement;
 	currentEditor?: ICodeEditor;
 }
 

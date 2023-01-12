@@ -12,7 +12,8 @@ import { SelectBox, ISelectOptionItem } from 'vs/base/browser/ui/selectBox/selec
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IDebugService, IDebugSession, IDebugConfiguration, IConfig, ILaunch, State } from 'vs/workbench/contrib/debug/common/debug';
-import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
+import { IThemeService } from 'vs/platform/theme/common/themeService';
+import { ThemeIcon } from 'vs/base/common/themables';
 import { attachSelectBoxStyler, attachStylerCallback } from 'vs/platform/theme/common/styler';
 import { selectBorder, selectBackground } from 'vs/platform/theme/common/colorRegistry';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
@@ -99,9 +100,6 @@ export class StartDebugActionViewItem extends BaseActionViewItem {
 
 		this.toDispose.push(dom.addDisposableListener(this.start, dom.EventType.KEY_DOWN, (e: KeyboardEvent) => {
 			const event = new StandardKeyboardEvent(e);
-			if (event.equals(KeyCode.Enter) && this.debugService.state !== State.Initializing) {
-				this.actionRunner.run(this.action, this.context);
-			}
 			if (event.equals(KeyCode.RightArrow)) {
 				this.start.tabIndex = -1;
 				this.selectBox.focus();

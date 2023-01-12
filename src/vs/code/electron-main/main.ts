@@ -34,7 +34,7 @@ import { DiagnosticsService } from 'vs/platform/diagnostics/node/diagnosticsServ
 import { NativeParsedArgs } from 'vs/platform/environment/common/argv';
 import { EnvironmentMainService, IEnvironmentMainService } from 'vs/platform/environment/electron-main/environmentMainService';
 import { addArg, parseMainProcessArgv } from 'vs/platform/environment/node/argvHelper';
-import { createWaitMarkerFile } from 'vs/platform/environment/node/wait';
+import { createWaitMarkerFileSync } from 'vs/platform/environment/node/wait';
 import { IFileService } from 'vs/platform/files/common/files';
 import { FileService } from 'vs/platform/files/common/fileService';
 import { DiskFileSystemProvider } from 'vs/platform/files/node/diskFileSystemProvider';
@@ -44,10 +44,8 @@ import { InstantiationService } from 'vs/platform/instantiation/common/instantia
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { ILaunchMainService } from 'vs/platform/launch/electron-main/launchMainService';
 import { ILifecycleMainService, LifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifecycleMainService';
-import { BufferLogService } from 'vs/platform/log/common/bufferLog';
-import { ConsoleMainLogger, getLogLevel, ILoggerService, ILogService, MultiplexLogService } from 'vs/platform/log/common/log';
-import { LoggerService } from 'vs/platform/log/node/loggerService';
-import { SpdLogLogger } from 'vs/platform/log/node/spdlogLog';
+import { BufferLogger } from 'vs/platform/log/common/bufferLog';
+import { ConsoleMainLogger, getLogLevel, ILoggerService, ILogService } from 'vs/platform/log/common/log';
 import product from 'vs/platform/product/common/product';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IProtocolMainService } from 'vs/platform/protocol/electron-main/protocol';
@@ -70,6 +68,8 @@ import { DisposableStore } from 'vs/base/common/lifecycle';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { PROFILES_ENABLEMENT_CONFIG } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { ILoggerMainService, LoggerMainService } from 'vs/platform/log/electron-main/loggerService';
+import { LogService } from 'vs/platform/log/common/logService';
 
 /**
  * The main VS Code entry point.
@@ -103,7 +103,7 @@ class CodeMain {
 
 			// Init services
 			try {
-				await this.initServices(environmentMainService, userDataProfilesMainService, configurationService, stateMainService);
+				await this.initServices(environmentMainService, userDataProfilesMainService, configurationService, stateMainService, productService);
 			} catch (error) {
 
 				// Show a dialog for errors that can be resolved by the user
@@ -117,6 +117,7 @@ class CodeMain {
 				const logService = accessor.get(ILogService);
 				const lifecycleMainService = accessor.get(ILifecycleMainService);
 				const fileService = accessor.get(IFileService);
+				const loggerService = accessor.get(ILoggerService);
 
 				// Create the main IPC server by trying to be the server
 				// If this throws an error it means we are not the first
@@ -129,7 +130,7 @@ class CodeMain {
 				});
 
 				// Delay creation of spdlog for perf reasons (https://github.com/microsoft/vscode/issues/72906)
-				bufferLogService.logger = new SpdLogLogger('main', join(environmentMainService.logsPath, 'main.log'), true, false, bufferLogService.getLevel());
+				bufferLogService.logger = loggerService.createLogger(URI.file(join(environmentMainService.logsPath, 'main.log')), { id: 'mainLog', name: localize('mainLog', "Main") });
 
 				// Lifecycle
 				once(lifecycleMainService.onWillShutdown)(evt => {
@@ -145,7 +146,7 @@ class CodeMain {
 		}
 	}
 
-	private createServices(): [IInstantiationService, IProcessEnvironment, IEnvironmentMainService, ConfigurationService, StateMainService, BufferLogService, IProductService, UserDataProfilesMainService] {
+	private createServices(): [IInstantiationService, IProcessEnvironment, IEnvironmentMainService, ConfigurationService, StateMainService, BufferLogger, IProductService, UserDataProfilesMainService] {
 		const services = new ServiceCollection();
 		const disposables = new DisposableStore();
 		process.once('exit', () => disposables.dispose());
@@ -159,11 +160,15 @@ class CodeMain {
 		const instanceEnvironment = this.patchEnvironment(environmentMainService); // Patch `process.env` with the instance's environment
 		services.set(IEnvironmentMainService, environmentMainService);
 
+		// Logger
+		const loggerService = new LoggerMainService(getLogLevel(environmentMainService));
+		services.set(ILoggerMainService, loggerService);
+
 		// Log: We need to buffer the spdlog logs until we are sure
 		// we are the only instance running, otherwise we'll have concurrent
 		// log file access on Windows (https://github.com/microsoft/vscode/issues/41218)
-		const bufferLogService = new BufferLogService();
-		const logService = disposables.add(new MultiplexLogService([new ConsoleMainLogger(getLogLevel(environmentMainService)), bufferLogService]));
+		const bufferLogger = new BufferLogger(loggerService.getLogLevel());
+		const logService = disposables.add(new LogService(bufferLogger, [new ConsoleMainLogger(loggerService.getLogLevel())]));
 		services.set(ILogService, logService);
 
 		// Files
@@ -176,9 +181,6 @@ class CodeMain {
 		const uriIdentityService = new UriIdentityService(fileService);
 		services.set(IUriIdentityService, uriIdentityService);
 
-		// Logger
-		services.set(ILoggerService, new LoggerService(logService, fileService));
-
 		// State
 		const stateMainService = new StateMainService(environmentMainService, logService, fileService);
 		services.set(IStateMainService, stateMainService);
@@ -188,7 +190,7 @@ class CodeMain {
 		services.set(IUserDataProfilesMainService, userDataProfilesMainService);
 
 		// Policy
-		const policyService = isWindows && productService.win32RegValueName ? disposables.add(new NativePolicyService(productService.win32RegValueName))
+		const policyService = isWindows && productService.win32RegValueName ? disposables.add(new NativePolicyService(logService, productService.win32RegValueName))
 			: environmentMainService.policyFile ? disposables.add(new FilePolicyService(environmentMainService.policyFile, fileService, logService))
 				: new NullPolicyService();
 		services.set(IPolicyService, policyService);
@@ -198,24 +200,24 @@ class CodeMain {
 		services.set(IConfigurationService, configurationService);
 
 		// Lifecycle
-		services.set(ILifecycleMainService, new SyncDescriptor(LifecycleMainService));
+		services.set(ILifecycleMainService, new SyncDescriptor(LifecycleMainService, undefined, false));
 
 		// Request
-		services.set(IRequestService, new SyncDescriptor(RequestMainService));
+		services.set(IRequestService, new SyncDescriptor(RequestMainService, undefined, true));
 
 		// Themes
 		services.set(IThemeMainService, new SyncDescriptor(ThemeMainService));
 
 		// Signing
-		services.set(ISignService, new SyncDescriptor(SignService));
+		services.set(ISignService, new SyncDescriptor(SignService, undefined, false /* proxied to other processes */));
 
 		// Tunnel
 		services.set(ITunnelService, new SyncDescriptor(TunnelService));
 
-		// Protocol
-		services.set(IProtocolMainService, new SyncDescriptor(ProtocolMainService));
+		// Protocol (instantiated early and not using sync descriptor for security reasons)
+		services.set(IProtocolMainService, new ProtocolMainService(environmentMainService, userDataProfilesMainService, logService));
 
-		return [new InstantiationService(services, true), instanceEnvironment, environmentMainService, configurationService, stateMainService, bufferLogService, productService, userDataProfilesMainService];
+		return [new InstantiationService(services, true), instanceEnvironment, environmentMainService, configurationService, stateMainService, bufferLogger, productService, userDataProfilesMainService];
 	}
 
 	private patchEnvironment(environmentMainService: IEnvironmentMainService): IProcessEnvironment {
@@ -235,7 +237,7 @@ class CodeMain {
 		return instanceEnvironment;
 	}
 
-	private async initServices(environmentMainService: IEnvironmentMainService, userDataProfilesMainService: UserDataProfilesMainService, configurationService: ConfigurationService, stateMainService: StateMainService): Promise<void> {
+	private async initServices(environmentMainService: IEnvironmentMainService, userDataProfilesMainService: UserDataProfilesMainService, configurationService: ConfigurationService, stateMainService: StateMainService, productService: IProductService): Promise<void> {
 		await Promises.settled<unknown>([
 
 			// Environment service (paths)
@@ -256,7 +258,7 @@ class CodeMain {
 			configurationService.initialize()
 		]);
 
-		userDataProfilesMainService.setEnablement(!!configurationService.getValue(PROFILES_ENABLEMENT_CONFIG));
+		userDataProfilesMainService.setEnablement(productService.quality !== 'stable' || configurationService.getValue(PROFILES_ENABLEMENT_CONFIG));
 	}
 
 	private async claimInstance(logService: ILogService, environmentMainService: IEnvironmentMainService, lifecycleMainService: ILifecycleMainService, instantiationService: IInstantiationService, productService: IProductService, retry: boolean): Promise<NodeIPCServer> {
@@ -273,7 +275,7 @@ class CodeMain {
 		} catch (error) {
 
 			// Handle unexpected errors (the only expected error is EADDRINUSE that
-			// indicates a second instance of Code is running)
+			// indicates another instance of VS Code is running)
 			if (error.code !== 'EADDRINUSE') {
 
 				// Show a dialog for errors that can be resolved by the user
@@ -293,7 +295,7 @@ class CodeMain {
 				if (!retry || isWindows || error.code !== 'ECONNREFUSED') {
 					if (error.code === 'EPERM') {
 						this.showStartupWarningDialog(
-							localize('secondInstanceAdmin', "A second instance of {0} is already running as administrator.", productService.nameShort),
+							localize('secondInstanceAdmin', "Another instance of {0} is already running as administrator.", productService.nameShort),
 							localize('secondInstanceAdminDetail', "Please close the other instance and try again."),
 							productService.nameLong
 						);
@@ -318,7 +320,7 @@ class CodeMain {
 
 			// Tests from CLI require to be the only instance currently
 			if (environmentMainService.extensionTestsLocationURI && !environmentMainService.debugExtensionHost.break) {
-				const msg = 'Running extension tests from the command line is currently only supported if no other instance of Code is running.';
+				const msg = `Running extension tests from the command line is currently only supported if no other instance of ${productService.nameShort} is running.`;
 				logService.error(msg);
 				client.dispose();
 
@@ -346,9 +348,9 @@ class CodeMain {
 			if (environmentMainService.args.status) {
 				return instantiationService.invokeFunction(async () => {
 					const diagnosticsService = new DiagnosticsService(NullTelemetryService, productService);
-					const mainProcessInfo = await otherInstanceLaunchMainService.getMainProcessInfo();
+					const mainDiagnostics = await otherInstanceDiagnosticsMainService.getMainDiagnostics();
 					const remoteDiagnostics = await otherInstanceDiagnosticsMainService.getRemoteDiagnostics({ includeProcesses: true, includeWorkspaceMetadata: true });
-					const diagnostics = await diagnosticsService.getDiagnostics(mainProcessInfo, remoteDiagnostics);
+					const diagnostics = await diagnosticsService.getDiagnostics(mainDiagnostics, remoteDiagnostics);
 					console.log(diagnostics);
 
 					throw new ExpectedError();
@@ -377,7 +379,7 @@ class CodeMain {
 
 		// Print --status usage info
 		if (environmentMainService.args.status) {
-			logService.warn('Warning: The --status argument can only be used if Code is already running. Please run it again after Code has started.');
+			logService.warn(`Warning: The --status argument can only be used if ${productService.nameShort} is already running. Please run it again after {0} has started.`);
 
 			throw new ExpectedError('Terminating...');
 		}
@@ -468,9 +470,10 @@ class CodeMain {
 		// is closed and then exit the waiting process.
 		//
 		// Note: we are not doing this if the wait marker has been already
-		// added as argument. This can happen if Code was started from CLI.
+		// added as argument. This can happen if VS Code was started from CLI.
+
 		if (args.wait && !args.waitMarkerFilePath) {
-			const waitMarkerFilePath = createWaitMarkerFile(args.verbose);
+			const waitMarkerFilePath = createWaitMarkerFileSync(args.verbose);
 			if (waitMarkerFilePath) {
 				addArg(process.argv, '--waitMarkerFilePath', waitMarkerFilePath);
 				args.waitMarkerFilePath = waitMarkerFilePath;

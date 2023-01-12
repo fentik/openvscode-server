@@ -10,7 +10,7 @@ import { cloneAndChange } from 'vs/base/common/objects';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { DefaultURITransformer, IURITransformer, transformAndReviveIncomingURIs } from 'vs/base/common/uriIpc';
 import { IChannel, IServerChannel } from 'vs/base/parts/ipc/common/ipc';
-import { IExtensionIdentifier, IExtensionManagementService, IExtensionTipsService, IGalleryExtension, IGalleryMetadata, ILocalExtension, IExtensionsControlManifest, isTargetPlatformCompatible, IServerExtensionManagementService, ServerInstallOptions, ServerInstallVSIXOptions, ServerUninstallOptions, Metadata, ServerUninstallExtensionEvent, ServerInstallExtensionEvent, ServerInstallExtensionResult, ServerDidUninstallExtensionEvent } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionIdentifier, IExtensionTipsService, IGalleryExtension, ILocalExtension, IExtensionsControlManifest, isTargetPlatformCompatible, InstallOptions, InstallVSIXOptions, UninstallOptions, Metadata, IExtensionManagementService, DidUninstallExtensionEvent, InstallExtensionEvent, InstallExtensionResult, UninstallExtensionEvent, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionType, IExtensionManifest, TargetPlatform } from 'vs/platform/extensions/common/extensions';
 
 function transformIncomingURI(uri: UriComponents, transformer: IURITransformer | null): URI {
@@ -34,16 +34,18 @@ function transformOutgoingExtension(extension: ILocalExtension, transformer: IUR
 
 export class ExtensionManagementChannel implements IServerChannel {
 
-	onInstallExtension: Event<ServerInstallExtensionEvent>;
-	onDidInstallExtensions: Event<readonly ServerInstallExtensionResult[]>;
-	onUninstallExtension: Event<ServerUninstallExtensionEvent>;
-	onDidUninstallExtension: Event<ServerDidUninstallExtensionEvent>;
+	onInstallExtension: Event<InstallExtensionEvent>;
+	onDidInstallExtensions: Event<readonly InstallExtensionResult[]>;
+	onUninstallExtension: Event<UninstallExtensionEvent>;
+	onDidUninstallExtension: Event<DidUninstallExtensionEvent>;
+	onDidUpdateExtensionMetadata: Event<ILocalExtension>;
 
-	constructor(private service: IServerExtensionManagementService, private getUriTransformer: (requestContext: any) => IURITransformer | null) {
+	constructor(private service: IExtensionManagementService, private getUriTransformer: (requestContext: any) => IURITransformer | null) {
 		this.onInstallExtension = Event.buffer(service.onInstallExtension, true);
 		this.onDidInstallExtensions = Event.buffer(service.onDidInstallExtensions, true);
 		this.onUninstallExtension = Event.buffer(service.onUninstallExtension, true);
 		this.onDidUninstallExtension = Event.buffer(service.onDidUninstallExtension, true);
+		this.onDidUpdateExtensionMetadata = Event.buffer(service.onDidUpdateExtensionMetadata, true);
 	}
 
 	listen(context: any, event: string): Event<any> {
@@ -53,6 +55,7 @@ export class ExtensionManagementChannel implements IServerChannel {
 			case 'onDidInstallExtensions': return Event.map(this.onDidInstallExtensions, results => results.map(i => ({ ...i, local: i.local ? transformOutgoingExtension(i.local, uriTransformer) : i.local })));
 			case 'onUninstallExtension': return this.onUninstallExtension;
 			case 'onDidUninstallExtension': return this.onDidUninstallExtension;
+			case 'onDidUpdateExtensionMetadata': return this.onDidUpdateExtensionMetadata;
 		}
 
 		throw new Error('Invalid listen');
@@ -64,6 +67,7 @@ export class ExtensionManagementChannel implements IServerChannel {
 			case 'zip': return this.service.zip(transformIncomingExtension(args[0], uriTransformer)).then(uri => transformOutgoingURI(uri, uriTransformer));
 			case 'unzip': return this.service.unzip(transformIncomingURI(args[0], uriTransformer));
 			case 'install': return this.service.install(transformIncomingURI(args[0], uriTransformer), revive(args[1]));
+			case 'installFromLocation': return this.service.installFromLocation(transformIncomingURI(args[0], uriTransformer), URI.revive(args[1]));
 			case 'getManifest': return this.service.getManifest(transformIncomingURI(args[0], uriTransformer));
 			case 'getTargetPlatform': return this.service.getTargetPlatform();
 			case 'canInstall': return this.service.canInstall(args[0]);
@@ -71,10 +75,10 @@ export class ExtensionManagementChannel implements IServerChannel {
 			case 'uninstall': return this.service.uninstall(transformIncomingExtension(args[0], uriTransformer), revive(args[1]));
 			case 'reinstallFromGallery': return this.service.reinstallFromGallery(transformIncomingExtension(args[0], uriTransformer));
 			case 'getInstalled': return this.service.getInstalled(args[0], URI.revive(args[1])).then(extensions => extensions.map(e => transformOutgoingExtension(e, uriTransformer)));
-			case 'getMetadata': return this.service.getMetadata(transformIncomingExtension(args[0], uriTransformer));
-			case 'updateMetadata': return this.service.updateMetadata(transformIncomingExtension(args[0], uriTransformer), args[1]).then(e => transformOutgoingExtension(e, uriTransformer));
-			case 'updateExtensionScope': return this.service.updateExtensionScope(transformIncomingExtension(args[0], uriTransformer), args[1]).then(e => transformOutgoingExtension(e, uriTransformer));
+			case 'getMetadata': return this.service.getMetadata(transformIncomingExtension(args[0], uriTransformer), URI.revive(args[1]));
+			case 'updateMetadata': return this.service.updateMetadata(transformIncomingExtension(args[0], uriTransformer), args[1], URI.revive(args[2])).then(e => transformOutgoingExtension(e, uriTransformer));
 			case 'getExtensionsControlManifest': return this.service.getExtensionsControlManifest();
+			case 'download': return this.service.download(args[0], args[1]);
 		}
 
 		throw new Error('Invalid call');
@@ -85,24 +89,28 @@ export class ExtensionManagementChannelClient extends Disposable implements IExt
 
 	declare readonly _serviceBrand: undefined;
 
-	private readonly _onInstallExtension = this._register(new Emitter<ServerInstallExtensionEvent>());
+	private readonly _onInstallExtension = this._register(new Emitter<InstallExtensionEvent>());
 	get onInstallExtension() { return this._onInstallExtension.event; }
 
-	private readonly _onDidInstallExtensions = this._register(new Emitter<readonly ServerInstallExtensionResult[]>());
+	private readonly _onDidInstallExtensions = this._register(new Emitter<readonly InstallExtensionResult[]>());
 	get onDidInstallExtensions() { return this._onDidInstallExtensions.event; }
 
-	private readonly _onUninstallExtension = this._register(new Emitter<ServerUninstallExtensionEvent>());
+	private readonly _onUninstallExtension = this._register(new Emitter<UninstallExtensionEvent>());
 	get onUninstallExtension() { return this._onUninstallExtension.event; }
 
-	private readonly _onDidUninstallExtension = this._register(new Emitter<ServerDidUninstallExtensionEvent>());
+	private readonly _onDidUninstallExtension = this._register(new Emitter<DidUninstallExtensionEvent>());
 	get onDidUninstallExtension() { return this._onDidUninstallExtension.event; }
+
+	private readonly _onDidUpdateExtensionMetadata = this._register(new Emitter<ILocalExtension>());
+	get onDidUpdateExtensionMetadata() { return this._onDidUpdateExtensionMetadata.event; }
 
 	constructor(private readonly channel: IChannel) {
 		super();
-		this._register(this.channel.listen<ServerInstallExtensionEvent>('onInstallExtension')(e => this._onInstallExtension.fire({ identifier: e.identifier, source: this.isUriComponents(e.source) ? URI.revive(e.source) : e.source, profileLocation: URI.revive(e.profileLocation) })));
-		this._register(this.channel.listen<readonly ServerInstallExtensionResult[]>('onDidInstallExtensions')(results => this._onDidInstallExtensions.fire(results.map(e => ({ ...e, local: e.local ? transformIncomingExtension(e.local, null) : e.local, source: this.isUriComponents(e.source) ? URI.revive(e.source) : e.source, profileLocation: URI.revive(e.profileLocation) })))));
-		this._register(this.channel.listen<ServerUninstallExtensionEvent>('onUninstallExtension')(e => this._onUninstallExtension.fire({ identifier: e.identifier, profileLocation: URI.revive(e.profileLocation) })));
-		this._register(this.channel.listen<ServerDidUninstallExtensionEvent>('onDidUninstallExtension')(e => this._onDidUninstallExtension.fire({ ...e, profileLocation: URI.revive(e.profileLocation) })));
+		this._register(this.channel.listen<InstallExtensionEvent>('onInstallExtension')(e => this._onInstallExtension.fire({ identifier: e.identifier, source: this.isUriComponents(e.source) ? URI.revive(e.source) : e.source, profileLocation: URI.revive(e.profileLocation) })));
+		this._register(this.channel.listen<readonly InstallExtensionResult[]>('onDidInstallExtensions')(results => this._onDidInstallExtensions.fire(results.map(e => ({ ...e, local: e.local ? transformIncomingExtension(e.local, null) : e.local, source: this.isUriComponents(e.source) ? URI.revive(e.source) : e.source, profileLocation: URI.revive(e.profileLocation) })))));
+		this._register(this.channel.listen<UninstallExtensionEvent>('onUninstallExtension')(e => this._onUninstallExtension.fire({ identifier: e.identifier, profileLocation: URI.revive(e.profileLocation) })));
+		this._register(this.channel.listen<DidUninstallExtensionEvent>('onDidUninstallExtension')(e => this._onDidUninstallExtension.fire({ ...e, profileLocation: URI.revive(e.profileLocation) })));
+		this._register(this.channel.listen<ILocalExtension>('onDidUpdateExtensionMetadata')(e => this._onDidUpdateExtensionMetadata.fire(transformIncomingExtension(e, null))));
 	}
 
 	private isUriComponents(thing: unknown): thing is UriComponents {
@@ -127,31 +135,35 @@ export class ExtensionManagementChannelClient extends Disposable implements IExt
 	}
 
 	zip(extension: ILocalExtension): Promise<URI> {
-		return Promise.resolve(this.channel.call('zip', [extension]).then(result => URI.revive(<UriComponents>result)));
+		return Promise.resolve(this.channel.call<UriComponents>('zip', [extension]).then(result => URI.revive(result)));
 	}
 
 	unzip(zipLocation: URI): Promise<IExtensionIdentifier> {
-		return Promise.resolve(this.channel.call('unzip', [zipLocation]));
+		return Promise.resolve(this.channel.call<IExtensionIdentifier>('unzip', [zipLocation]));
 	}
 
-	install(vsix: URI, options?: ServerInstallVSIXOptions): Promise<ILocalExtension> {
+	install(vsix: URI, options?: InstallVSIXOptions): Promise<ILocalExtension> {
 		return Promise.resolve(this.channel.call<ILocalExtension>('install', [vsix, options])).then(local => transformIncomingExtension(local, null));
+	}
+
+	installFromLocation(location: URI, profileLocation: URI): Promise<ILocalExtension> {
+		return Promise.resolve(this.channel.call<ILocalExtension>('installFromLocation', [location, profileLocation])).then(local => transformIncomingExtension(local, null));
 	}
 
 	getManifest(vsix: URI): Promise<IExtensionManifest> {
 		return Promise.resolve(this.channel.call<IExtensionManifest>('getManifest', [vsix]));
 	}
 
-	installFromGallery(extension: IGalleryExtension, installOptions?: ServerInstallOptions): Promise<ILocalExtension> {
+	installFromGallery(extension: IGalleryExtension, installOptions?: InstallOptions): Promise<ILocalExtension> {
 		return Promise.resolve(this.channel.call<ILocalExtension>('installFromGallery', [extension, installOptions])).then(local => transformIncomingExtension(local, null));
 	}
 
-	uninstall(extension: ILocalExtension, options?: ServerUninstallOptions): Promise<void> {
-		return Promise.resolve(this.channel.call('uninstall', [extension!, options]));
+	uninstall(extension: ILocalExtension, options?: UninstallOptions): Promise<void> {
+		return Promise.resolve(this.channel.call<void>('uninstall', [extension!, options]));
 	}
 
-	reinstallFromGallery(extension: ILocalExtension): Promise<void> {
-		return Promise.resolve(this.channel.call('reinstallFromGallery', [extension]));
+	reinstallFromGallery(extension: ILocalExtension): Promise<ILocalExtension> {
+		return Promise.resolve(this.channel.call<ILocalExtension>('reinstallFromGallery', [extension])).then(local => transformIncomingExtension(local, null));
 	}
 
 	getInstalled(type: ExtensionType | null = null, extensionsProfileResource?: URI): Promise<ILocalExtension[]> {
@@ -159,22 +171,22 @@ export class ExtensionManagementChannelClient extends Disposable implements IExt
 			.then(extensions => extensions.map(extension => transformIncomingExtension(extension, null)));
 	}
 
-	getMetadata(local: ILocalExtension): Promise<Metadata | undefined> {
-		return Promise.resolve(this.channel.call<Metadata>('getMetadata', [local]));
+	getMetadata(local: ILocalExtension, extensionsProfileResource?: URI): Promise<Metadata | undefined> {
+		return Promise.resolve(this.channel.call<Metadata>('getMetadata', [local, extensionsProfileResource]));
 	}
 
-	updateMetadata(local: ILocalExtension, metadata: IGalleryMetadata): Promise<ILocalExtension> {
-		return Promise.resolve(this.channel.call<ILocalExtension>('updateMetadata', [local, metadata]))
-			.then(extension => transformIncomingExtension(extension, null));
-	}
-
-	updateExtensionScope(local: ILocalExtension, isMachineScoped: boolean): Promise<ILocalExtension> {
-		return Promise.resolve(this.channel.call<ILocalExtension>('updateExtensionScope', [local, isMachineScoped]))
+	updateMetadata(local: ILocalExtension, metadata: Partial<Metadata>, extensionsProfileResource?: URI): Promise<ILocalExtension> {
+		return Promise.resolve(this.channel.call<ILocalExtension>('updateMetadata', [local, metadata, extensionsProfileResource]))
 			.then(extension => transformIncomingExtension(extension, null));
 	}
 
 	getExtensionsControlManifest(): Promise<IExtensionsControlManifest> {
-		return Promise.resolve(this.channel.call('getExtensionsControlManifest'));
+		return Promise.resolve(this.channel.call<IExtensionsControlManifest>('getExtensionsControlManifest'));
+	}
+
+	async download(extension: IGalleryExtension, operation: InstallOperation): Promise<URI> {
+		const result = await this.channel.call<UriComponents>('download', [extension, operation]);
+		return URI.revive(result);
 	}
 
 	registerParticipant() { throw new Error('Not Supported'); }
@@ -194,7 +206,6 @@ export class ExtensionTipsChannel implements IServerChannel {
 			case 'getConfigBasedTips': return this.service.getConfigBasedTips(URI.revive(args[0]));
 			case 'getImportantExecutableBasedTips': return this.service.getImportantExecutableBasedTips();
 			case 'getOtherExecutableBasedTips': return this.service.getOtherExecutableBasedTips();
-			case 'getAllWorkspacesTips': return this.service.getAllWorkspacesTips();
 		}
 
 		throw new Error('Invalid call');

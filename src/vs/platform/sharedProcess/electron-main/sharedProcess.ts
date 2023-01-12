@@ -24,6 +24,7 @@ import { WindowError } from 'vs/platform/window/electron-main/window';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IPolicyService } from 'vs/platform/policy/common/policy';
+import { ILoggerMainService } from 'vs/platform/log/electron-main/loggerService';
 
 export class SharedProcess extends Disposable implements ISharedProcess {
 
@@ -42,6 +43,7 @@ export class SharedProcess extends Disposable implements ISharedProcess {
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
 		@ILogService private readonly logService: ILogService,
+		@ILoggerMainService private readonly loggerMainService: ILoggerMainService,
 		@IPolicyService private readonly policyService: IPolicyService,
 		@IThemeMainService private readonly themeMainService: IThemeMainService,
 		@IProtocolMainService private readonly protocolMainService: IProtocolMainService
@@ -222,7 +224,7 @@ export class SharedProcess extends Disposable implements ISharedProcess {
 			show: false,
 			backgroundColor: this.themeMainService.getBackgroundColor(),
 			webPreferences: {
-				preload: FileAccess.asFileUri('vs/base/parts/sandbox/electron-browser/preload.js', require).fsPath,
+				preload: FileAccess.asFileUri('vs/base/parts/sandbox/electron-browser/preload.js').fsPath,
 				additionalArguments: [`--vscode-window-config=${configObjectUrl.resource.toString()}`, '--vscode-window-kind=shared-process'],
 				v8CacheOptions: this.environmentMainService.useCodeCache ? 'bypassHeatCheck' : 'none',
 				nodeIntegration: true,
@@ -241,17 +243,17 @@ export class SharedProcess extends Disposable implements ISharedProcess {
 			windowId: this.window.id,
 			appRoot: this.environmentMainService.appRoot,
 			codeCachePath: this.environmentMainService.codeCachePath,
-			backupWorkspacesPath: this.environmentMainService.backupWorkspacesPath,
 			profiles: this.userDataProfilesService.profiles,
 			userEnv: this.userEnv,
 			args: this.environmentMainService.args,
 			logLevel: this.logService.getLevel(),
+			loggers: this.loggerMainService.getRegisteredLoggers(),
 			product,
 			policiesData: this.policyService.serialize()
 		});
 
 		// Load with config
-		this.window.loadURL(FileAccess.asBrowserUri('vs/code/electron-browser/sharedProcess/sharedProcess.html', require).toString(true));
+		this.window.loadURL(FileAccess.asBrowserUri(`vs/code/electron-browser/sharedProcess/sharedProcess${this.environmentMainService.isBuilt ? '' : '-dev'}.html`).toString(true));
 	}
 
 	private registerWindowListeners(): void {
@@ -277,7 +279,7 @@ export class SharedProcess extends Disposable implements ISharedProcess {
 		// Crashes & Unresponsive & Failed to load
 		// We use `onUnexpectedError` explicitly because the error handler
 		// will send the error to the active window to log in devtools too
-		this.window.webContents.on('render-process-gone', (event, details) => this._onDidError.fire({ type: WindowError.CRASHED, details }));
+		this.window.webContents.on('render-process-gone', (event, details) => this._onDidError.fire({ type: WindowError.PROCESS_GONE, details }));
 		this.window.on('unresponsive', () => this._onDidError.fire({ type: WindowError.UNRESPONSIVE }));
 		this.window.webContents.on('did-fail-load', (event, exitCode, reason) => this._onDidError.fire({ type: WindowError.LOAD, details: { reason, exitCode } }));
 	}
