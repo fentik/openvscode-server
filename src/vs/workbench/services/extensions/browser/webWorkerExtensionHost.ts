@@ -112,14 +112,14 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				);
 
 				let res;
-				if (baseUrl === "") {
+				if (baseUrl === '') {
 					const relativeExtensionHostIframeSrc = FileAccess.asBrowserUri(iframeModulePath);
-					res = new URL(`${relativeExtensionHostIframeSrc.toString(true)}${suffix}`)
+					res = new URL(`${relativeExtensionHostIframeSrc.toString(true)}${suffix}`);
 				} else {
 					res = new URL(`${baseUrl}/out/${iframeModulePath}${suffix}`);
 				}
 				console.warn(window.origin);
-				console.warn(stableOriginUUID)
+				console.warn(stableOriginUUID);
 				res.searchParams.set('parentOrigin', window.origin);
 				res.searchParams.set('salt', stableOriginUUID);
 				return res.toString();

@@ -4,13 +4,7 @@
 	"applicationName": "openvscode-server",
 	"dataFolderName": ".openvscode-server",
 	"win32MutexName": "openvscodeserver",
-	"nameShort": "OpenVSCode Server",
-	"nameLong": "OpenVSCode Server",
-	"applicationName": "openvscode-server",
-	"dataFolderName": ".openvscode-server",
-	"win32MutexName": "openvscodeserver",
 	"licenseName": "MIT",
-	"licenseUrl": "https://github.com/gitpod-io/openvscode-server/blob/main/LICENSE.txt",
 	"licenseUrl": "https://github.com/gitpod-io/openvscode-server/blob/main/LICENSE.txt",
 	"serverGreeting": [],
 	"serverLicense": [],
@@ -611,52 +605,7 @@
 			"workspace"
 		]
 	},
-	"builtInExtensions": [
-		{
-			"name": "ms-vscode.js-debug-companion",
-			"version": "1.0.18",
-			"repo": "https://github.com/microsoft/vscode-js-debug-companion",
-			"metadata": {
-				"id": "99cb0b7f-7354-4278-b8da-6cc79972169d",
-				"publisherId": {
-					"publisherId": "5f5636e7-69ed-4afe-b5d6-8d231fb3d3ee",
-					"publisherName": "ms-vscode",
-					"displayName": "Microsoft",
-					"flags": "verified"
-				},
-				"eamodio.gitlens": {
-					"name": "GitLens"
-				}
-			}
-		},
-		{
-			"name": "ms-vscode.js-debug",
-			"version": "1.74.1",
-			"repo": "https://github.com/microsoft/vscode-js-debug",
-			"metadata": {
-				"id": "25629058-ddac-4e17-abba-74678e126c5d",
-				"publisherId": {
-					"publisherId": "5f5636e7-69ed-4afe-b5d6-8d231fb3d3ee",
-					"publisherName": "ms-vscode",
-					"displayName": "Microsoft",
-					"flags": "verified"
-				},
-				"Pivotal.vscode-boot-dev-pack": {
-					"name": "Spring Boot Extension Pack",
-					"isExtensionPack": true
-				}
-			}
-		}
-	],
-	"extensionsGallery": {
-		"serviceUrl": "https://open-vsx.org/vscode/gallery",
-		"itemUrl": "https://open-vsx.org/vscode/item",
-		"resourceUrlTemplate": "https://open-vsx.org/vscode/asset/{publisher}/{name}/{version}/Microsoft.VisualStudio.Code.WebResources/{path}",
-		"controlUrl": "",
-		"recommendationsUrl": "",
-		"nlsBaseUrl": "",
-		"publisherUrl": ""
-	},
+	"builtInExtensions": [],
 	"linkProtectionTrustedDomains": [
 		"https://open-vsx.org"
 	]

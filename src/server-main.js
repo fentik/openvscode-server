@@ -12,7 +12,7 @@ const readline = require('readline');
 const http = require('http');
 const connect = require('connect');
 // gzip/deflate outgoing responses
-var compression = require('compression');
+const compression = require('compression');
 
 
 perf.mark('code/server/start');
@@ -101,9 +101,9 @@ async function start() {
 
 	/** @type {string | import('net').AddressInfo | null} */
 	let address = null;
-	var app = connect();
+	const app = connect();
 
- 	app.use(compression());
+	app.use(compression());
 	app.use(async (req, res) => {
 //	const server = http.createServer(async (req, res) => {
 		if (firstRequest) {
