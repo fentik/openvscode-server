@@ -26,7 +26,7 @@ jobs:
         with:
           # slightly overlapping to protect against issues slipping through the cracks if a run is delayed
           until: 5
-          excludeLabels: feature-request|testplan-item
+          # excludeLabels: feature-request|testplan-item
           configPath: classifier
           blobContainerName: vscode-issue-classifier
           blobStorageKey: ${{secrets.AZURE_BLOB_STORAGE_CONNECTION_STRING}}
