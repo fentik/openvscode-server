@@ -103,7 +103,7 @@ interface IUserFriendlyViewDescriptor {
 	group?: string;
 	remoteName?: string | string[];
 	order?: number;
-	canMoveView?: boolean
+	canMoveView?: boolean;
 }
 
 enum InitialVisibility {
