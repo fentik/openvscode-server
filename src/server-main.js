@@ -10,6 +10,7 @@ const performance = require('perf_hooks').performance;
 const product = require('../product.json');
 const readline = require('readline');
 const http = require('http');
+
 const connect = require('connect');
 // gzip/deflate outgoing responses
 const compression = require('compression');
@@ -105,7 +106,7 @@ async function start() {
 
 	app.use(compression());
 	app.use(async (req, res) => {
-//	const server = http.createServer(async (req, res) => {
+		//	const server = http.createServer(async (req, res) => {
 		if (firstRequest) {
 			firstRequest = false;
 			perf.mark('code/server/firstRequest');

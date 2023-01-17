@@ -8,11 +8,11 @@ import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { List } from 'vs/base/browser/ui/list/listWidget';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { IListService } from 'vs/platform/list/browser/listService';
-import { IDebugService, IEnablement, CONTEXT_BREAKPOINTS_FOCUSED, CONTEXT_WATCH_EXPRESSIONS_FOCUSED, CONTEXT_VARIABLES_FOCUSED, EDITOR_CONTRIBUTION_ID, IDebugEditorContribution, CONTEXT_IN_DEBUG_MODE, CONTEXT_EXPRESSION_SELECTED, IConfig, IStackFrame, IThread, IDebugSession, CONTEXT_DEBUG_STATE, IDebugConfiguration, CONTEXT_JUMP_TO_CURSOR_SUPPORTED, REPL_VIEW_ID, CONTEXT_DEBUGGERS_AVAILABLE, State, getStateLabel, CONTEXT_BREAKPOINT_INPUT_FOCUSED, CONTEXT_FOCUSED_SESSION_IS_ATTACH, VIEWLET_ID, CONTEXT_DISASSEMBLY_VIEW_FOCUS, CONTEXT_IN_DEBUG_REPL, CONTEXT_STEP_INTO_TARGETS_SUPPORTED } from 'vs/workbench/contrib/debug/common/debug';
+import { IDebugService, IEnablement, CONTEXT_BREAKPOINTS_FOCUSED, CONTEXT_WATCH_EXPRESSIONS_FOCUSED, CONTEXT_VARIABLES_FOCUSED, CONTEXT_IN_DEBUG_MODE, CONTEXT_EXPRESSION_SELECTED, IConfig, IStackFrame, IThread, IDebugSession, CONTEXT_DEBUG_STATE, IDebugConfiguration, CONTEXT_JUMP_TO_CURSOR_SUPPORTED, REPL_VIEW_ID, CONTEXT_DEBUGGERS_AVAILABLE, State, getStateLabel, CONTEXT_BREAKPOINT_INPUT_FOCUSED, CONTEXT_FOCUSED_SESSION_IS_ATTACH, VIEWLET_ID, CONTEXT_DISASSEMBLY_VIEW_FOCUS, CONTEXT_IN_DEBUG_REPL, CONTEXT_STEP_INTO_TARGETS_SUPPORTED } from 'vs/workbench/contrib/debug/common/debug';
 import { Expression, Variable, Breakpoint, FunctionBreakpoint, DataBreakpoint, Thread } from 'vs/workbench/contrib/debug/common/debugModel';
 import { IExtensionsViewPaneContainer, VIEWLET_ID as EXTENSIONS_VIEWLET_ID } from 'vs/workbench/contrib/extensions/common/extensions';
 import { ICodeEditor, isCodeEditor } from 'vs/editor/browser/editorBrowser';
-import { MenuRegistry, MenuId, Action2, registerAction2 } from 'vs/platform/actions/common/actions';
+import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
 import { ContextKeyExpr, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -20,7 +20,7 @@ import { openBreakpointSource } from 'vs/workbench/contrib/debug/browser/breakpo
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { InputFocusedContext } from 'vs/platform/contextkey/common/contextkeys';
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
-import { ActiveEditorContext, PanelFocusContext, ResourceContextKey } from 'vs/workbench/common/contextkeys';
+import { PanelFocusContext } from 'vs/workbench/common/contextkeys';
 import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/commands';
 import { ITextResourcePropertiesService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
@@ -33,7 +33,6 @@ import { saveAllBeforeDebugStart } from 'vs/workbench/contrib/debug/common/debug
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { showLoadedScriptMenu } from 'vs/workbench/contrib/debug/common/loadedScriptsPicker';
 import { showDebugSessionMenu } from 'vs/workbench/contrib/debug/browser/debugSessionPicker';
-import { TEXT_FILE_EDITOR_ID } from 'vs/workbench/contrib/files/common/files';
 import { ILocalizedString } from 'vs/platform/action/common/action';
 
 export const ADD_CONFIGURATION_ID = 'debug.addConfiguration';
@@ -920,37 +919,37 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	}
 });
 
-registerAction2(class AddConfigurationAction extends Action2 {
-	constructor() {
-		super({
-			id: ADD_CONFIGURATION_ID,
-			title: { value: nls.localize('addConfiguration', "Add Configuration..."), original: 'Add Configuration...' },
-			category: DEBUG_COMMAND_CATEGORY,
-			f1: true,
-			menu: {
-				id: MenuId.EditorContent,
-				when: ContextKeyExpr.and(
-					ContextKeyExpr.regex(ResourceContextKey.Path.key, /\.vscode[/\\]launch\.json$/),
-					ActiveEditorContext.isEqualTo(TEXT_FILE_EDITOR_ID))
-			}
-		});
-	}
+// registerAction2(class AddConfigurationAction extends Action2 {
+// 	constructor() {
+// 		super({
+// 			id: ADD_CONFIGURATION_ID,
+// 			title: { value: nls.localize('addConfiguration', "Add Configuration..."), original: 'Add Configuration...' },
+// 			category: DEBUG_COMMAND_CATEGORY,
+// 			f1: true,
+// 			menu: {
+// 				id: MenuId.EditorContent,
+// 				when: ContextKeyExpr.and(
+// 					ContextKeyExpr.regex(ResourceContextKey.Path.key, /\.vscode[/\\]launch\.json$/),
+// 					ActiveEditorContext.isEqualTo(TEXT_FILE_EDITOR_ID))
+// 			}
+// 		});
+// 	}
 
-	async run(accessor: ServicesAccessor, launchUri: string): Promise<void> {
-		const manager = accessor.get(IDebugService).getConfigurationManager();
+// 	async run(accessor: ServicesAccessor, launchUri: string): Promise<void> {
+// 		const manager = accessor.get(IDebugService).getConfigurationManager();
 
-		const launch = manager.getLaunches().find(l => l.uri.toString() === launchUri) || manager.selectedConfiguration.launch;
-		if (launch) {
-			const { editor, created } = await launch.openConfigFile({ preserveFocus: false });
-			if (editor && !created) {
-				const codeEditor = <ICodeEditor>editor.getControl();
-				if (codeEditor) {
-					await codeEditor.getContribution<IDebugEditorContribution>(EDITOR_CONTRIBUTION_ID)?.addLaunchConfiguration();
-				}
-			}
-		}
-	}
-});
+// 		const launch = manager.getLaunches().find(l => l.uri.toString() === launchUri) || manager.selectedConfiguration.launch;
+// 		if (launch) {
+// 			const { editor, created } = await launch.openConfigFile({ preserveFocus: false });
+// 			if (editor && !created) {
+// 				const codeEditor = <ICodeEditor>editor.getControl();
+// 				if (codeEditor) {
+// 					await codeEditor.getContribution<IDebugEditorContribution>(EDITOR_CONTRIBUTION_ID)?.addLaunchConfiguration();
+// 				}
+// 			}
+// 		}
+// 	}
+// });
 
 const inlineBreakpointHandler = (accessor: ServicesAccessor) => {
 	const debugService = accessor.get(IDebugService);

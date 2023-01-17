@@ -43,6 +43,8 @@
     "@vscode/iconv-lite-umd": "0.7.0",
     "@vscode/vsce": "^2.16.0",
     "byline": "^5.0.0",
+    "compression": "^1.7.4",
+    "connect": "^3.7.0",
     "colors": "^1.4.0",
     "compression": "^1.7.4",
     "connect": "^3.7.0",
