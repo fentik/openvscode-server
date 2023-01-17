@@ -13,7 +13,7 @@ import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensio
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ThemeIcon } from 'vs/platform/theme/common/themeService';
+import { ThemeIcon } from 'vs/base/common/themables';
 import { Extensions as ViewletExtensions, PaneCompositeRegistry } from 'vs/workbench/browser/panecomposite';
 import { CustomTreeView, RawCustomTreeViewContextKey, TreeViewPane } from 'vs/workbench/browser/parts/views/treeView';
 import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneContainer';
@@ -103,7 +103,7 @@ interface IUserFriendlyViewDescriptor {
 	group?: string;
 	remoteName?: string | string[];
 	order?: number;
-	canMoveView?: boolean
+	canMoveView?: boolean;
 }
 
 enum InitialVisibility {

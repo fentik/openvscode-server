@@ -25,7 +25,7 @@ import { EditorExtensions } from 'vs/workbench/common/editor';
 import { BreakpointEditorContribution } from 'vs/workbench/contrib/debug/browser/breakpointEditorContribution';
 import { CallStackEditorContribution } from 'vs/workbench/contrib/debug/browser/callStackEditorContribution';
 import { registerColors } from 'vs/workbench/contrib/debug/browser/debugColors';
-import { ADD_CONFIGURATION_ID, CONTINUE_ID, CONTINUE_LABEL, COPY_STACK_TRACE_ID, DEBUG_COMMAND_CATEGORY, DEBUG_QUICK_ACCESS_PREFIX, DEBUG_RUN_COMMAND_ID, DEBUG_RUN_LABEL, DEBUG_START_COMMAND_ID, DEBUG_START_LABEL, DISCONNECT_AND_SUSPEND_ID, DISCONNECT_AND_SUSPEND_LABEL, DISCONNECT_ID, DISCONNECT_LABEL, EDIT_EXPRESSION_COMMAND_ID, FOCUS_REPL_ID, JUMP_TO_CURSOR_ID, PAUSE_ID, PAUSE_LABEL, REMOVE_EXPRESSION_COMMAND_ID, RESTART_FRAME_ID, RESTART_LABEL, RESTART_SESSION_ID, SELECT_AND_START_ID, SELECT_AND_START_LABEL, SET_EXPRESSION_COMMAND_ID, STEP_INTO_ID, STEP_INTO_LABEL, STEP_OUT_ID, STEP_OUT_LABEL, STEP_OVER_ID, STEP_OVER_LABEL, STOP_ID, STOP_LABEL, TERMINATE_THREAD_ID, TOGGLE_INLINE_BREAKPOINT_ID } from 'vs/workbench/contrib/debug/browser/debugCommands';
+import { CONTINUE_ID, CONTINUE_LABEL, COPY_STACK_TRACE_ID, DEBUG_COMMAND_CATEGORY, DEBUG_QUICK_ACCESS_PREFIX, DEBUG_RUN_COMMAND_ID, DEBUG_RUN_LABEL, DEBUG_START_COMMAND_ID, DEBUG_START_LABEL, DISCONNECT_AND_SUSPEND_ID, DISCONNECT_AND_SUSPEND_LABEL, DISCONNECT_ID, DISCONNECT_LABEL, EDIT_EXPRESSION_COMMAND_ID, FOCUS_REPL_ID, JUMP_TO_CURSOR_ID, PAUSE_ID, PAUSE_LABEL, REMOVE_EXPRESSION_COMMAND_ID, RESTART_FRAME_ID, RESTART_LABEL, RESTART_SESSION_ID, SELECT_AND_START_ID, SELECT_AND_START_LABEL, SET_EXPRESSION_COMMAND_ID, STEP_INTO_ID, STEP_INTO_LABEL, STEP_OUT_ID, STEP_OUT_LABEL, STEP_OVER_ID, STEP_OVER_LABEL, STOP_ID, STOP_LABEL, TERMINATE_THREAD_ID, TOGGLE_INLINE_BREAKPOINT_ID } from 'vs/workbench/contrib/debug/browser/debugCommands';
 import { RunToCursorAction, SelectionToReplAction, SelectionToWatchExpressionsAction } from 'vs/workbench/contrib/debug/browser/debugEditorActions';
 import { DebugEditorContribution } from 'vs/workbench/contrib/debug/browser/debugEditorContribution';
 import * as icons from 'vs/workbench/contrib/debug/browser/debugIcons';
@@ -260,15 +260,15 @@ MenuRegistry.appendMenuItem(MenuId.MenubarDebugMenu, {
  */
 // Configuration
 
-MenuRegistry.appendMenuItem(MenuId.MenubarDebugMenu, {
-	group: '2_configuration',
-	command: {
-		id: ADD_CONFIGURATION_ID,
-		title: nls.localize({ key: 'miAddConfiguration', comment: ['&& denotes a mnemonic'] }, "A&&dd Configuration...")
-	},
-	order: 2,
-	when: CONTEXT_DEBUGGERS_AVAILABLE
-});
+// MenuRegistry.appendMenuItem(MenuId.MenubarDebugMenu, {
+// 	group: '2_configuration',
+// 	command: {
+// 		id: ADD_CONFIGURATION_ID,
+// 		title: nls.localize({ key: 'miAddConfiguration', comment: ['&& denotes a mnemonic'] }, "A&&dd Configuration...")
+// 	},
+// 	order: 2,
+// 	when: CONTEXT_DEBUGGERS_AVAILABLE
+// });
 
 // Step Commands
 MenuRegistry.appendMenuItem(MenuId.MenubarDebugMenu, {
