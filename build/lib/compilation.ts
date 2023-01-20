@@ -78,15 +78,6 @@ function createCompile(src: string, build: boolean, emitError: boolean, transpil
 			dataFolderName: `${productJson.dataFolderName}-dev`
 		});
 
-		const productJsFilter = util.filter(data => !build && data.path.endsWith('vs/platform/product/common/product.ts'));
-		const productConfiguration = JSON.stringify({
-			...productJson,
-			version: `${packageJson.version}-dev`,
-			nameShort: `${productJson.nameShort} Dev`,
-			nameLong: `${productJson.nameLong} Dev`,
-			dataFolderName: `${productJson.dataFolderName}-dev`
-		});
-
 		const input = es.through();
 		const output = input
 			.pipe(productJsFilter)
