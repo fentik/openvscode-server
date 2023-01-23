@@ -28,6 +28,24 @@ Running editor commands requires installing ",
 {all-args}"
 );
 const INTEGRATED_TEMPLATE: &str = concatcp!(
+const HELP_COMMANDS: &str = "Usage: {name} [options][paths...]
+
+To read output from another program, append '-' (e.g. 'echo Hello World | {name} -')";
+
+const STANDALONE_TEMPLATE: &str = concatcp!(
+	CLI_NAME,
+	" Standalone - {version}
+
+",
+	HELP_COMMANDS,
+	"
+Running editor commands requires installing ",
+	constants::QUALITYLESS_PRODUCT_NAME,
+	", and may differ slightly.
+
+{all-args}"
+);
+const INTEGRATED_TEMPLATE: &str = concatcp!(
 	CLI_NAME,
 	" - {version}
 
@@ -146,6 +164,22 @@ impl<'a> From<&'a CliCore> for CodeServerArgs {
 pub enum StandaloneCommands {
 	/// Updates the CLI.
 	Update(StandaloneUpdateArgs),
+
+	/// Internal commands for WSL serving.
+	#[clap(hide = true)]
+	Wsl(WslArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WslArgs {
+	#[clap(subcommand)]
+	pub command: WslCommands,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WslCommands {
+	/// Runs the WSL server on stdin/out
+	Serve,
 }
 
 #[derive(Args, Debug, Clone)]
