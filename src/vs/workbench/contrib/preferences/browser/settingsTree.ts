@@ -1611,7 +1611,7 @@ export class SettingEnumRenderer extends AbstractSettingRenderer implements ITre
 			selectForeground: settingsSelectForeground,
 			selectBorder: settingsSelectBorder,
 			selectListBorder: settingsSelectListBorder
-		}));
+		});
 		const selectBox = new SelectBox([], 0, this._contextViewService, styles, {
 			useCustomDrawn: !(isIOS && BrowserFeatures.pointerEvents)
 		});
