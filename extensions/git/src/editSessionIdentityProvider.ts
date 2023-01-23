@@ -6,6 +6,7 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { RefType } from './api/git';
+import { RefType } from './api/git';
 import { Model } from './model';
 
 export class GitEditSessionIdentityProvider implements vscode.EditSessionIdentityProvider, vscode.Disposable {

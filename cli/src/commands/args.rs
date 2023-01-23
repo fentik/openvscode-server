@@ -28,6 +28,24 @@ Running editor commands requires installing ",
 {all-args}"
 );
 const INTEGRATED_TEMPLATE: &str = concatcp!(
+const HELP_COMMANDS: &str = "Usage: {name} [options][paths...]
+
+To read output from another program, append '-' (e.g. 'echo Hello World | {name} -')";
+
+const STANDALONE_TEMPLATE: &str = concatcp!(
+	CLI_NAME,
+	" Standalone - {version}
+
+",
+	HELP_COMMANDS,
+	"
+Running editor commands requires installing ",
+	constants::QUALITYLESS_PRODUCT_NAME,
+	", and may differ slightly.
+
+{all-args}"
+);
+const INTEGRATED_TEMPLATE: &str = concatcp!(
 	CLI_NAME,
 	" - {version}
 

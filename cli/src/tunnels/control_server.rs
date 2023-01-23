@@ -5,6 +5,7 @@
 use crate::constants::{CONTROL_PORT, EDITOR_WEB_URL, QUALITYLESS_SERVER_NAME};
 use crate::log;
 use crate::rpc::{MaybeSync, RpcBuilder, RpcDispatcher, Serialization};
+use crate::rpc::{MaybeSync, RpcBuilder, RpcDispatcher, Serialization};
 use crate::self_update::SelfUpdate;
 use crate::state::LauncherPaths;
 use crate::tunnels::protocol::HttpRequestParams;
@@ -54,6 +55,13 @@ use super::socket_signal::{
 
 type HttpRequestsMap = Arc<std::sync::Mutex<HashMap<u32, DelegatedHttpRequest>>>;
 type CodeServerCell = Arc<Mutex<Option<SocketCodeServer>>>;
+
+struct ServerBridgeRec {
+	id: u16,
+	// bridge is removed when there's a write loop currently active
+	bridge: Option<ServerBridge>,
+	write_queue: Vec<Vec<u8>>,
+}
 
 struct HandlerContext {
 	/// Log handle for the server
