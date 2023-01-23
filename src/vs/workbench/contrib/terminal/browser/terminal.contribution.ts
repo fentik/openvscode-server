@@ -18,7 +18,6 @@ import { ITerminalEditorService, ITerminalGroupService, ITerminalInstanceService
 
 import { registerTerminalConfiguration } from 'vs/workbench/contrib/terminal/common/terminalConfiguration';
 import { CONTEXT_ACCESSIBILITY_MODE_ENABLED } from 'vs/platform/accessibility/common/accessibility';
-import { terminalViewIcon } from 'vs/workbench/contrib/terminal/browser/terminalIcons';
 import { TerminalSettingId, WindowsShellType } from 'vs/platform/terminal/common/terminal';
 import { isIOS, isWindows } from 'vs/base/common/platform';
 import { TerminalInstanceService } from 'vs/workbench/contrib/terminal/browser/terminalInstanceService';
