@@ -377,6 +377,7 @@ export class WebClientServer {
 			'Content-Type': 'text/html',
 			'Content-Security-Policy': cspDirectives,
 			'Access-Control-Allow-Origin': cdn,
+			'Access-Control-Allow-Credentials': 'true'
 		};
 		if (this._connectionToken.type !== ServerConnectionTokenType.None) {
 			// At this point we know the client has a valid cookie
