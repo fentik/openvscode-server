@@ -16,6 +16,7 @@ const util = require("./util");
 const fancyLog = require("fancy-log");
 const ansiColors = require("ansi-colors");
 const os = require("os");
+const ts = require("typescript");
 const File = require("vinyl");
 const task = require("./task");
 const mangleTypeScript_1 = require("./mangleTypeScript");
@@ -121,7 +122,8 @@ function compileTask(src, out, build) {
             let ts2tsMangler = new mangleTypeScript_1.Mangler(compile.projectPath, (...data) => fancyLog(ansiColors.blue('[mangler]'), ...data));
             const newContentsByFileName = ts2tsMangler.computeNewFileContents();
             mangleStream = es.through(function write(data) {
-                const newContents = newContentsByFileName.get(data.path);
+                const tsNormalPath = ts.normalizePath(data.path);
+                const newContents = newContentsByFileName.get(tsNormalPath);
                 if (newContents !== undefined) {
                     data.contents = Buffer.from(newContents.out);
                     data.sourceMap = newContents.sourceMap && JSON.parse(newContents.sourceMap);

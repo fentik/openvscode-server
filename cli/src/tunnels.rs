@@ -11,6 +11,13 @@ pub mod shutdown_signal;
 
 mod control_server;
 mod name_generator;
+mod nosleep;
+#[cfg(target_os = "macos")]
+mod nosleep_macos;
+#[cfg(target_os = "windows")]
+mod nosleep_windows;
+#[cfg(target_os = "linux")]
+mod nosleep_linux;
 mod port_forwarder;
 mod protocol;
 #[cfg_attr(unix, path = "tunnels/server_bridge_unix.rs")]
@@ -28,6 +35,7 @@ mod socket_signal;
 mod wsl_server;
 
 pub use control_server::serve;
+pub use nosleep::SleepInhibitor;
 pub use service::{
 	create_service_manager, ServiceContainer, ServiceManager, SERVICE_LOG_FILE_NAME,
 };
