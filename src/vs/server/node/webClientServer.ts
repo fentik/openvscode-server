@@ -366,15 +366,9 @@ export class WebClientServer {
 			`media-src \'self\' ${cdn};`,
 			`script-src 'self' 'unsafe-eval' ${this._getScriptCspHashes(data).join(' ')} 'sha256-fh3TwPMflhsEIpR8g1OYTIMVWhXTLcjQ9kh2tIpmv54=' http://${remoteAuthority} ${cdn};`, // the sha is the same as in src/vs/workbench/services/extensions/worker/webWorkerExtensionHostIframe.html
 			'child-src \'self\';',
-<<<<<<< HEAD
 			`frame-src 'self' https://*.vscode-cdn.net ${cdn} data:;`,
 			`worker-src \'self\' ${cdn} data: blob: ;`,
 			`style-src \'self\' \'unsafe-inline\' ${cdn};`,
-=======
-			`frame-src 'self' https://*.vscode-cdn.net data:;`,
-			'worker-src \'self\' data: blob:;',
-			'style-src \'self\' \'unsafe-inline\';',
->>>>>>> 67f0395f2825114a4d79ae88cf286d7ea5313fb9
 			'connect-src \'self\' ws: wss: https:;',
 			`font-src \'self\' ${cdn} blob:;`,
 			`manifest-src \'self\' ${cdn};`
